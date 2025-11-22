@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
-import { LogOut, User, Clock, Plus, Database, Wifi, Grid3X3, Download } from 'lucide-react';
+import { LogOut, User, Clock, Database, Wifi, Grid3X3, Download } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getEnvironmentConfig } from '../../lib/environment';
 import { htmlExportService } from '../../services/htmlExportService';
 
-interface HeaderProps {
-  onCreateTicket?: () => void;
-}
-
-const Header: React.FC<HeaderProps> = ({ onCreateTicket }) => {
+const Header: React.FC = () => {
   const { user, logout, selectedModule, setSelectedModule } = useAuth();
   const envConfig = getEnvironmentConfig();
   const [isExporting, setIsExporting] = useState(false);
@@ -37,23 +33,6 @@ const Header: React.FC<HeaderProps> = ({ onCreateTicket }) => {
     }
   };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'EO': return 'bg-purple-100 text-purple-800';
-      case 'DO': return 'bg-blue-100 text-blue-800';
-      case 'EMPLOYEE': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getRoleDisplayName = (role: string) => {
-    switch (role) {
-      case 'EO': return 'Executive Officer';
-      case 'DO': return 'Department Officer';
-      case 'EMPLOYEE': return 'Employee';
-      default: return role;
-    }
-  };
 
   return (
     <>

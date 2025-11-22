@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Module, ModuleFieldConfiguration, FieldDropdownOption, FieldContext, User } from '../../types';
 import { FieldConfigService } from '../../services/fieldConfigService';
-import { Settings, Plus, Edit, Trash2, Save, X, GripVertical } from 'lucide-react';
+import { Settings, Plus, Edit, Trash2, GripVertical } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { FieldEditorModal } from './FieldEditorModal';
 

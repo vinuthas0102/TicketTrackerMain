@@ -51,14 +51,8 @@ npm install
 
 1. Create a new Supabase project at [supabase.com](https://supabase.com)
 2. Go to the SQL Editor in your Supabase dashboard
-3. Run the schema creation script:
-   ```sql
-   -- Copy and paste the contents of supabase/migrations/create_ticket_tracker_schema.sql
-   ```
-4. Run the sample data script:
-   ```sql
-   -- Copy and paste the contents of supabase/migrations/insert_sample_data.sql
-   ```
+3. Run all migration files in the `supabase/migrations/` directory in chronological order (they are numbered sequentially)
+4. The migrations will create all necessary tables, policies, and seed data automatically
 
 ### 3. Environment Configuration
 
@@ -118,19 +112,29 @@ The application comes with pre-configured sample users for testing:
 ## Application Structure
 
 ```
-src/
-├── components/           # React components
-│   ├── auth/            # Authentication components
-│   ├── dashboard/       # Dashboard and ticket grid
-│   ├── ticket/          # Ticket management components
-│   ├── layout/          # Layout components
-│   └── common/          # Shared components
-├── context/             # React Context providers
-├── services/            # API service layers
-├── lib/                 # Utility libraries
-├── types/               # TypeScript type definitions
-└── data/                # Mock data (for fallback)
+ticket-tracker/
+├── src/
+│   ├── components/           # React components
+│   │   ├── auth/            # Authentication components
+│   │   ├── admin/           # Admin and configuration panels
+│   │   ├── dashboard/       # Dashboard and ticket grid
+│   │   ├── ticket/          # Ticket management components
+│   │   ├── fields/          # Dynamic field components
+│   │   ├── layout/          # Layout components
+│   │   └── common/          # Shared components
+│   ├── context/             # React Context providers
+│   ├── services/            # API service layers
+│   ├── lib/                 # Utility libraries
+│   ├── types/               # TypeScript type definitions
+│   └── data/                # Mock data (for fallback)
+├── supabase/
+│   └── migrations/          # Database migration files
+├── docs/                    # Additional documentation
+├── public/                  # Static assets
+└── .env.example            # Environment template
 ```
+
+For detailed guides on specific features, see the `/docs` directory.
 
 ## Key Features Explained
 

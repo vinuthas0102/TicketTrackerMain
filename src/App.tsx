@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Plus, Grid3X3, List, LayoutGrid, Settings, MoreVertical, Ticket as TicketIcon, Layers, ChevronRight, Users, FileJson } from 'lucide-react';
+import { Plus, Settings, MoreVertical, Ticket as TicketIcon, Layers, ChevronRight, Users, FileJson } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { TicketProvider, useTickets } from './context/TicketContext';
 import LoginForm from './components/auth/LoginForm';
@@ -18,7 +18,7 @@ import FieldConfigurationManager from './components/admin/FieldConfigurationMana
 import UserManagementPage from './components/admin/UserManagementPage';
 import UserPreferencesPage from './components/admin/UserPreferencesPage';
 import FileReferenceTemplateManager from './components/admin/FileReferenceTemplateManager';
-import { Ticket, TicketStatus, Module } from './types';
+import { Ticket, TicketStatus } from './types';
 
 interface SearchFilters {
   search: string;
@@ -125,13 +125,9 @@ const Dashboard: React.FC = () => {
   };
 
   const handleDeleteTicket = async (ticketId: string) => {
-    try {
-      // In real app, this would call the delete function
-      console.log('Delete ticket:', ticketId);
-      // await deleteTicket(ticketId);
-    } catch (error) {
-      alert('Failed to delete ticket');
-    }
+    // In real app, this would call the delete function
+    console.log('Delete ticket:', ticketId);
+    // await deleteTicket(ticketId);
   };
 
   const handleToggleExpand = (ticketId: string) => {
