@@ -462,12 +462,6 @@ export interface FinanceApproval {
   financeOfficerId: string;
   status: FinanceApprovalStatus;
   rejectionReason?: string;
-  approvalRemarks?: string;
-  approvalDocumentFileName?: string;
-  approvalDocumentFilePath?: string;
-  approvalDocumentFileSize?: number;
-  approvalDocumentFileType?: string;
-  approvalDocumentUploadedAt?: Date;
   submittedBy: string;
   submittedAt: Date;
   decidedAt?: Date;
@@ -489,5 +483,4 @@ export interface FinanceApprovalDecision {
   decision: 'approved' | 'rejected';
   remarks?: string;
   rejectionReason?: string;
-  approvalDocumentFile?: File;
 }
