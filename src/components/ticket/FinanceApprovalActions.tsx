@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { CheckCircle, XCircle, IndianRupee, Calendar, User, FileText, AlertCircle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { CheckCircle, XCircle, IndianRupee, Calendar, User, FileText, AlertCircle, Download, Upload, X as XIcon } from 'lucide-react';
 import { FinanceApproval, FinanceApprovalDecision } from '../../types';
 import { FinanceApprovalService } from '../../services/financeApprovalService';
 import { useAuth } from '../../context/AuthContext';
+import { FileService } from '../../services/fileService';
+import FinanceApprovalModal from './FinanceApprovalModal';
 
 interface FinanceApprovalActionsProps {
   approval: FinanceApproval;
@@ -14,29 +16,32 @@ const FinanceApprovalActions: React.FC<FinanceApprovalActionsProps> = ({
   onActionComplete
 }) => {
   const { user } = useAuth();
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionFile, setRejectionFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const canTakeAction = user && user.id === approval.financeOfficerId && approval.status === 'pending';
 
-  const handleApprove = async () => {
+  const handleApprove = async (remarks: string, file: File | null) => {
     if (!user || !canTakeAction) return;
-
-    if (!confirm(`Are you sure you want to approve this request for Rs ${approval.tentativeCost.toLocaleString('en-IN')}?`)) {
-      return;
-    }
 
     setLoading(true);
     try {
       const decision: FinanceApprovalDecision = {
         approvalId: approval.id,
         ticketId: approval.ticketId,
-        decision: 'approved'
+        decision: 'approved',
+        remarks: remarks || undefined,
+        approvalDocumentFile: file || undefined
       };
 
       await FinanceApprovalService.approveFinanceRequest(decision, user.id);
       alert('Finance approval granted successfully');
+      setShowApprovalModal(false);
       onActionComplete();
     } catch (error) {
       console.error('Error approving request:', error);
@@ -47,6 +52,29 @@ const FinanceApprovalActions: React.FC<FinanceApprovalActionsProps> = ({
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validation = FileService.validateFile(file);
+    if (!validation.valid) {
+      setFileError(validation.error || 'Invalid file');
+      setRejectionFile(null);
+      return;
+    }
+
+    setFileError(null);
+    setRejectionFile(file);
+  };
+
+  const handleRemoveFile = () => {
+    setRejectionFile(null);
+    setFileError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -64,12 +92,15 @@ const FinanceApprovalActions: React.FC<FinanceApprovalActionsProps> = ({
         approvalId: approval.id,
         ticketId: approval.ticketId,
         decision: 'rejected',
-        rejectionReason: rejectionReason.trim()
+        rejectionReason: rejectionReason.trim(),
+        approvalDocumentFile: rejectionFile || undefined
       };
 
       await FinanceApprovalService.rejectFinanceRequest(decision, user.id);
       alert('Finance approval rejected');
       setRejectionReason('');
+      setRejectionFile(null);
+      setFileError(null);
       setShowRejectModal(false);
       onActionComplete();
     } catch (error) {
@@ -81,6 +112,18 @@ const FinanceApprovalActions: React.FC<FinanceApprovalActionsProps> = ({
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadDocument = async () => {
+    if (!approval.approvalDocumentFilePath) return;
+
+    try {
+      const url = await FileService.getFileUrl(approval.approvalDocumentFilePath, 'finance-approval-documents');
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      alert('Failed to download document. Please try again.');
     }
   };
 
@@ -174,6 +217,42 @@ const FinanceApprovalActions: React.FC<FinanceApprovalActionsProps> = ({
                   </div>
                 </div>
               )}
+
+              {approval.approvalRemarks && (
+                <div className="flex items-start space-x-2 p-2 bg-green-50 rounded border border-green-200">
+                  <FileText className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <span className="font-medium text-green-800">Finance Officer Remarks:</span>
+                    <p className="text-green-700 mt-1 text-xs leading-relaxed">{approval.approvalRemarks}</p>
+                  </div>
+                </div>
+              )}
+
+              {approval.approvalDocumentFileName && (
+                <div className="flex items-start space-x-2 p-2 bg-blue-50 rounded border border-blue-200">
+                  <FileText className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="font-medium text-blue-800">Attached Document:</span>
+                        <p className="text-blue-700 text-xs mt-1">{approval.approvalDocumentFileName}</p>
+                        {approval.approvalDocumentFileSize && (
+                          <p className="text-blue-600 text-xs">
+                            {FileService.formatFileSize(approval.approvalDocumentFileSize)}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={handleDownloadDocument}
+                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                        title="Download document"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -181,12 +260,12 @@ const FinanceApprovalActions: React.FC<FinanceApprovalActionsProps> = ({
         {canTakeAction && (
           <div className="flex items-center space-x-2 pt-3 border-t border-gray-200">
             <button
-              onClick={handleApprove}
+              onClick={() => setShowApprovalModal(true)}
               disabled={loading}
               className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <CheckCircle className="w-4 h-4 mr-2" />
-              {loading ? 'Processing...' : 'Approve'}
+              Approve
             </button>
             <button
               onClick={() => setShowRejectModal(true)}
@@ -254,6 +333,65 @@ const FinanceApprovalActions: React.FC<FinanceApprovalActionsProps> = ({
                   </p>
                 </div>
 
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Supporting Document <span className="text-gray-500 font-normal">(Optional)</span>
+                  </label>
+
+                  {fileError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
+                      <p className="text-xs text-red-800">{fileError}</p>
+                    </div>
+                  )}
+
+                  {rejectionFile ? (
+                    <div className="border-2 border-red-300 bg-red-50 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <FileText className="w-5 h-5 text-red-600" />
+                          <div>
+                            <p className="text-sm font-medium text-red-900">{rejectionFile.name}</p>
+                            <p className="text-xs text-red-700">
+                              {FileService.formatFileSize(rejectionFile.size)}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveFile}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                          disabled={loading}
+                        >
+                          <XIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-red-400 transition-colors">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx"
+                        onChange={handleFileChange}
+                        disabled={loading}
+                      />
+                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-red-600 hover:text-red-700 font-medium text-sm"
+                        disabled={loading}
+                      >
+                        Click to upload
+                      </button>
+                      <p className="text-xs text-gray-500 mt-1">
+                        PDF, Images, Word, Excel (max 5MB)
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-end space-x-2">
                   <button
                     onClick={() => setShowRejectModal(false)}
@@ -275,6 +413,14 @@ const FinanceApprovalActions: React.FC<FinanceApprovalActionsProps> = ({
           </div>
         </div>
       )}
+
+      <FinanceApprovalModal
+        isOpen={showApprovalModal}
+        onClose={() => !loading && setShowApprovalModal(false)}
+        approval={approval}
+        onApprove={handleApprove}
+        loading={loading}
+      />
     </>
   );
 };

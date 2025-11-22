@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { FinanceApproval, FinanceApprovalRequest, FinanceApprovalDecision } from '../types';
+import { FileService } from './fileService';
 
 export class FinanceApprovalService {
   static async submitToFinance(request: FinanceApprovalRequest, submittedBy: string): Promise<FinanceApproval> {
@@ -117,11 +118,43 @@ export class FinanceApprovalService {
         throw new Error('You are not authorized to approve this request');
       }
 
+      let fileMetadata: {
+        approval_document_file_name?: string;
+        approval_document_file_path?: string;
+        approval_document_file_size?: number;
+        approval_document_file_type?: string;
+        approval_document_uploaded_at?: string;
+      } = {};
+
+      if (decision.approvalDocumentFile) {
+        try {
+          const storagePath = `finance-approvals/${decision.approvalId}/${decision.approvalDocumentFile.name}`;
+          const uploadedFile = await FileService.uploadFile(
+            decision.approvalDocumentFile,
+            storagePath,
+            'finance-approval-documents'
+          );
+
+          fileMetadata = {
+            approval_document_file_name: decision.approvalDocumentFile.name,
+            approval_document_file_path: uploadedFile.storagePath,
+            approval_document_file_size: decision.approvalDocumentFile.size,
+            approval_document_file_type: decision.approvalDocumentFile.type,
+            approval_document_uploaded_at: new Date().toISOString()
+          };
+        } catch (fileError) {
+          console.error('Error uploading approval document:', fileError);
+          throw new Error('Failed to upload approval document. Please try again.');
+        }
+      }
+
       const { error: approvalUpdateError } = await supabase
         .from('finance_approvals')
         .update({
           status: 'approved',
-          decided_at: new Date().toISOString()
+          decided_at: new Date().toISOString(),
+          approval_remarks: decision.remarks || null,
+          ...fileMetadata
         })
         .eq('id', decision.approvalId);
 
@@ -137,6 +170,21 @@ export class FinanceApprovalService {
 
       if (ticketUpdateError) throw ticketUpdateError;
 
+      const auditMetadata: any = {
+        approval_id: decision.approvalId,
+        tentative_cost: approval.tentative_cost,
+        cost_deducted_from: approval.cost_deducted_from
+      };
+
+      if (decision.remarks) {
+        auditMetadata.approval_remarks = decision.remarks;
+      }
+
+      if (fileMetadata.approval_document_file_name) {
+        auditMetadata.has_document = true;
+        auditMetadata.document_name = fileMetadata.approval_document_file_name;
+      }
+
       const { error: auditError } = await supabase
         .from('audit_logs')
         .insert({
@@ -146,13 +194,8 @@ export class FinanceApprovalService {
           action_category: 'finance_action',
           old_data: 'sent_to_finance',
           new_data: 'approved_by_finance',
-          description: `Finance officer approved the cost of Rs ${approval.tentative_cost.toLocaleString('en-IN')}`,
-          metadata: {
-            approval_id: decision.approvalId,
-            tentative_cost: approval.tentative_cost,
-            cost_deducted_from: approval.cost_deducted_from,
-            remarks: decision.remarks
-          }
+          description: `Finance officer approved the cost of Rs ${approval.tentative_cost.toLocaleString('en-IN')}${decision.remarks ? ' with remarks' : ''}${fileMetadata.approval_document_file_name ? ' (document attached)' : ''}`,
+          metadata: auditMetadata
         });
 
       if (auditError) console.error('Failed to create audit log:', auditError);
@@ -186,12 +229,43 @@ export class FinanceApprovalService {
         throw new Error('You are not authorized to reject this request');
       }
 
+      let fileMetadata: {
+        approval_document_file_name?: string;
+        approval_document_file_path?: string;
+        approval_document_file_size?: number;
+        approval_document_file_type?: string;
+        approval_document_uploaded_at?: string;
+      } = {};
+
+      if (decision.approvalDocumentFile) {
+        try {
+          const storagePath = `finance-approvals/${decision.approvalId}/${decision.approvalDocumentFile.name}`;
+          const uploadedFile = await FileService.uploadFile(
+            decision.approvalDocumentFile,
+            storagePath,
+            'finance-approval-documents'
+          );
+
+          fileMetadata = {
+            approval_document_file_name: decision.approvalDocumentFile.name,
+            approval_document_file_path: uploadedFile.storagePath,
+            approval_document_file_size: decision.approvalDocumentFile.size,
+            approval_document_file_type: decision.approvalDocumentFile.type,
+            approval_document_uploaded_at: new Date().toISOString()
+          };
+        } catch (fileError) {
+          console.error('Error uploading rejection document:', fileError);
+          throw new Error('Failed to upload rejection document. Please try again.');
+        }
+      }
+
       const { error: approvalUpdateError } = await supabase
         .from('finance_approvals')
         .update({
           status: 'rejected',
           rejection_reason: decision.rejectionReason.trim(),
-          decided_at: new Date().toISOString()
+          decided_at: new Date().toISOString(),
+          ...fileMetadata
         })
         .eq('id', decision.approvalId);
 
@@ -207,6 +281,18 @@ export class FinanceApprovalService {
 
       if (ticketUpdateError) throw ticketUpdateError;
 
+      const auditMetadata: any = {
+        approval_id: decision.approvalId,
+        tentative_cost: approval.tentative_cost,
+        cost_deducted_from: approval.cost_deducted_from,
+        rejection_reason: decision.rejectionReason
+      };
+
+      if (fileMetadata.approval_document_file_name) {
+        auditMetadata.has_document = true;
+        auditMetadata.document_name = fileMetadata.approval_document_file_name;
+      }
+
       const { error: auditError } = await supabase
         .from('audit_logs')
         .insert({
@@ -216,13 +302,8 @@ export class FinanceApprovalService {
           action_category: 'finance_action',
           old_data: 'sent_to_finance',
           new_data: 'rejected_by_finance',
-          description: `Finance officer rejected the request. Reason: ${decision.rejectionReason.substring(0, 100)}`,
-          metadata: {
-            approval_id: decision.approvalId,
-            tentative_cost: approval.tentative_cost,
-            cost_deducted_from: approval.cost_deducted_from,
-            rejection_reason: decision.rejectionReason
-          }
+          description: `Finance officer rejected the request. Reason: ${decision.rejectionReason.substring(0, 100)}${fileMetadata.approval_document_file_name ? ' (document attached)' : ''}`,
+          metadata: auditMetadata
         });
 
       if (auditError) console.error('Failed to create audit log:', auditError);
@@ -333,6 +414,12 @@ export class FinanceApprovalService {
       financeOfficerId: data.finance_officer_id,
       status: data.status,
       rejectionReason: data.rejection_reason,
+      approvalRemarks: data.approval_remarks,
+      approvalDocumentFileName: data.approval_document_file_name,
+      approvalDocumentFilePath: data.approval_document_file_path,
+      approvalDocumentFileSize: data.approval_document_file_size,
+      approvalDocumentFileType: data.approval_document_file_type,
+      approvalDocumentUploadedAt: data.approval_document_uploaded_at ? new Date(data.approval_document_uploaded_at) : undefined,
       submittedBy: data.submitted_by,
       submittedAt: new Date(data.submitted_at),
       decidedAt: data.decided_at ? new Date(data.decided_at) : undefined,
