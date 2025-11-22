@@ -23,6 +23,12 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'no-useless-catch': 'warn',
+      'no-unsafe-optional-chaining': 'warn',
+      'no-case-declarations': 'warn',
+      'no-useless-escape': 'warn',
     },
   }
 );
