@@ -82,6 +82,18 @@ const CopyTicketModal: React.FC<CopyTicketModalProps> = ({ onClose, onSelectTick
   }, [tickets, selectedModule, user, searchTerm, statusFilter, sortColumn, sortDirection]);
 
   useEffect(() => {
+    console.log('CopyTicketModal Debug:', {
+      totalTickets: tickets.length,
+      selectedModuleId: selectedModule?.id,
+      eligibleTicketsCount: eligibleTickets.length,
+      sampleTicket: tickets[0],
+      userRole: user?.role,
+      userId: user?.id,
+      filters: { searchTerm, statusFilter }
+    });
+  }, [tickets, selectedModule, eligibleTickets, user, searchTerm, statusFilter]);
+
+  useEffect(() => {
     if (selectedTicket) {
       fetchTicketAttachments(selectedTicket.id);
     } else {
@@ -260,7 +272,7 @@ const CopyTicketModal: React.FC<CopyTicketModalProps> = ({ onClose, onSelectTick
                   {ticket.priority}
                 </span>
               </td>
-              <td className="p-3 text-sm text-gray-700">{ticket.category}</td>
+              <td className="p-3 text-sm text-gray-700">{ticket.category || 'N/A'}</td>
               <td className="p-3 text-xs text-gray-600">{new Date(ticket.createdAt).toLocaleDateString()}</td>
             </tr>
           ))}
@@ -299,11 +311,11 @@ const CopyTicketModal: React.FC<CopyTicketModalProps> = ({ onClose, onSelectTick
               <div className="flex items-center space-x-4 text-xs text-gray-500">
                 <span className="flex items-center">
                   <span className="font-medium text-gray-700">Category:</span>
-                  <span className="ml-1">{ticket.category}</span>
+                  <span className="ml-1">{ticket.category || 'N/A'}</span>
                 </span>
                 <span className="flex items-center">
                   <span className="font-medium text-gray-700">Department:</span>
-                  <span className="ml-1">{ticket.department}</span>
+                  <span className="ml-1">{ticket.department || 'N/A'}</span>
                 </span>
                 <span className="flex items-center">
                   <span className="font-medium text-gray-700">Created:</span>
@@ -360,7 +372,7 @@ const CopyTicketModal: React.FC<CopyTicketModalProps> = ({ onClose, onSelectTick
           <div className="text-xs text-gray-500 space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-gray-600">Category:</span>
-              <span className="font-medium text-gray-700">{ticket.category}</span>
+              <span className="font-medium text-gray-700">{ticket.category || 'N/A'}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-600">Created:</span>

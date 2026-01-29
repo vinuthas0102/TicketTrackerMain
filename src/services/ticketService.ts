@@ -146,6 +146,7 @@ export class TicketService {
             dueDate: ticket.due_date ? new Date(ticket.due_date) : undefined,
             startDate: ticket.start_date ? new Date(ticket.start_date) : undefined,
             department: ticket.data?.department || '',
+            category: ticket.data?.category || '',
             propertyId: ticket.property_id || 'PROP001',
             propertyLocation: ticket.property_location || 'Location01',
             completionDocumentsRequired: ticket.completion_documents_required !== false,
@@ -928,6 +929,64 @@ export class TicketService {
       if (error) throw error;
     } catch (error) {
       console.error('Error adding step comment:', error);
+      throw error;
+    }
+  }
+
+  static async getStepComments(stepId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('workflow_comments')
+        .select(`
+          *,
+          created_by_user:users!workflow_comments_created_by_fkey(id, name, role)
+        `)
+        .eq('step_id', stepId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      return (data || []).map((comment: any) => ({
+        id: comment.id,
+        stepId: comment.step_id,
+        content: comment.content,
+        createdBy: comment.created_by,
+        createdAt: new Date(comment.created_at),
+        createdByName: comment.created_by_user?.name || 'Unknown User',
+        createdByRole: comment.created_by_user?.role || 'EMPLOYEE',
+      }));
+    } catch (error) {
+      console.error('Error fetching step comments:', error);
+      throw error;
+    }
+  }
+
+  static async updateStepComment(commentId: string, content: string, userId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('workflow_comments')
+        .update({ content: content.trim() })
+        .eq('id', commentId)
+        .eq('created_by', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating step comment:', error);
+      throw error;
+    }
+  }
+
+  static async deleteStepComment(commentId: string, userId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('workflow_comments')
+        .delete()
+        .eq('id', commentId)
+        .eq('created_by', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting step comment:', error);
       throw error;
     }
   }

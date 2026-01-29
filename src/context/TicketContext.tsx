@@ -74,6 +74,17 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
             user.role
           );
           console.log('TicketContext: Loaded tickets:', ticketsData.length);
+          if (ticketsData.length > 0) {
+            console.log('TicketContext: Sample ticket data:', {
+              id: ticketsData[0].id,
+              ticketNumber: ticketsData[0].ticketNumber,
+              title: ticketsData[0].title,
+              category: ticketsData[0].category,
+              department: ticketsData[0].department,
+              hasCategory: ticketsData[0].category !== undefined,
+              hasDepartment: ticketsData[0].department !== undefined
+            });
+          }
           setTickets(ticketsData);
         } else {
           console.log('TicketContext: No module or user selected, clearing tickets');
