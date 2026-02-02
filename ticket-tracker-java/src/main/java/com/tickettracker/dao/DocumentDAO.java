@@ -10,8 +10,8 @@ public class DocumentDAO extends BaseDAO {
 
     public Document create(Document document) throws SQLException {
         String sql = "INSERT INTO documents (id, ticket_id, step_id, name, type, file_size, url, " +
-                "storage_path, uploaded_by, is_mandatory, is_completion_certificate) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "storage_path, uploaded_by, is_mandatory, is_completion_certificate, file_content) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -38,14 +38,17 @@ public class DocumentDAO extends BaseDAO {
             stmt.setInt(10, document.isMandatory() ? 1 : 0);
             stmt.setInt(11, document.isCompletionCertificate() ? 1 : 0);
 
-           /* if (document.getFileContent() != null) {
+            if (document.getFileContent() != null) {
                 stmt.setBytes(12, document.getFileContent());
             } else {
                 stmt.setNull(12, Types.BLOB);
-            }*/
+            }
 
             int rowsAffected = stmt.executeUpdate();
-            logger.info("Created document: {} (rows affected: {})", document.getName(), rowsAffected);
+            logger.info("Created document: {} with file content: {} bytes (rows affected: {})",
+                document.getName(),
+                document.getFileContent() != null ? document.getFileContent().length : 0,
+                rowsAffected);
 
             return document;
         } finally {

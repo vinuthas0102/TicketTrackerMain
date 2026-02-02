@@ -167,6 +167,14 @@ public class DocumentService {
             validation.addError("Document size must be greater than 0");
         }
 
+        if (document.getSize() > 5242880) {
+            validation.addError("Document size must not exceed 5MB");
+        }
+
+        if (document.getFileContent() != null && document.getFileContent().length > 5242880) {
+            validation.addError("File content size must not exceed 5MB");
+        }
+
         if (document.getStoragePath() == null || document.getStoragePath().trim().isEmpty()) {
             validation.addError("Storage path is required");
         }
