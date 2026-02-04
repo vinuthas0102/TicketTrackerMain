@@ -107,7 +107,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user || !selectedModule) return;
 
     setLoading(true);
@@ -127,112 +127,136 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
         createdBy: user.id,
       };
 
-      let newTicketId: string | undefined;
+      let targetTicketId: string | undefined;
 
       if (isEditing && ticket) {
+        console.log('[TicketForm] Updating existing ticket:', ticket.id);
         await updateTicket(ticket.id, ticketData);
+        targetTicketId = ticket.id;
       } else {
-        newTicketId = await createTicket(ticketData, copiedTicket?.id);
+        console.log('[TicketForm] Creating new ticket');
+        targetTicketId = await createTicket(ticketData, copiedTicket?.id);
+        console.log('[TicketForm] Ticket created with ID:', targetTicketId);
       }
 
-      if (newTicketId) {
-        if (files && files.length > 0) {
-          setCopyingAttachments(true);
-          setAttachmentCopyStatus(`Uploading ${files.length} file${files.length !== 1 ? 's' : ''}...`);
+      if (!targetTicketId) {
+        console.error('[TicketForm] No ticket ID available for file upload');
+        throw new Error('Ticket ID is missing after save operation');
+      }
 
-          try {
-            let uploadedCount = 0;
-            let failedCount = 0;
-            const errors: string[] = [];
+      let hasFileOperations = false;
 
-            for (let i = 0; i < files.length; i++) {
-              try {
-                await FileService.uploadStepDocument({
-                  file: files[i],
-                  ticketId: newTicketId,
-                  userId: user.id,
-                  isMandatory: false,
-                });
-                uploadedCount++;
-              } catch (error) {
-                failedCount++;
-                errors.push(`${files[i].name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-              }
+      if (files && files.length > 0) {
+        hasFileOperations = true;
+        console.log(`[TicketForm] Uploading ${files.length} file(s) to ticket ${targetTicketId}`);
+        setCopyingAttachments(true);
+        setAttachmentCopyStatus(`Uploading ${files.length} file${files.length !== 1 ? 's' : ''}...`);
+
+        try {
+          let uploadedCount = 0;
+          let failedCount = 0;
+          const errors: string[] = [];
+
+          for (let i = 0; i < files.length; i++) {
+            console.log(`[TicketForm] Uploading file ${i + 1}/${files.length}: ${files[i].name}`);
+            try {
+              await FileService.uploadStepDocument({
+                file: files[i],
+                ticketId: targetTicketId,
+                userId: user.id,
+                isMandatory: false,
+              });
+              uploadedCount++;
+              console.log(`[TicketForm] File uploaded successfully: ${files[i].name}`);
+            } catch (error) {
+              failedCount++;
+              const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+              console.error(`[TicketForm] File upload failed for ${files[i].name}:`, errorMsg);
+              errors.push(`${files[i].name}: ${errorMsg}`);
             }
-
-            if (uploadedCount > 0) {
-              setAttachmentCopyStatus(`Successfully uploaded ${uploadedCount} file${uploadedCount !== 1 ? 's' : ''}`);
-            }
-
-            if (failedCount > 0) {
-              console.error('File upload errors:', errors);
-              alert(
-                `Ticket created successfully, but ${failedCount} file${failedCount !== 1 ? 's' : ''} failed to upload:\n${errors.slice(0, 3).join('\n')}`
-              );
-            }
-          } catch (error) {
-            console.error('Error uploading files:', error);
-            alert('Ticket created successfully, but files failed to upload.');
-          } finally {
-            setCopyingAttachments(false);
-            setTimeout(() => setAttachmentCopyStatus(''), 2000);
           }
-        }
 
-        if (copiedTicket && copiedAttachmentIds.length > 0) {
-          setCopyingAttachments(true);
-          setAttachmentCopyStatus(`Copying ${copiedAttachmentIds.length} attachment${copiedAttachmentIds.length !== 1 ? 's' : ''}...`);
+          if (uploadedCount > 0) {
+            setAttachmentCopyStatus(`Successfully uploaded ${uploadedCount} file${uploadedCount !== 1 ? 's' : ''}`);
+            console.log(`[TicketForm] Upload complete: ${uploadedCount} success, ${failedCount} failed`);
+          }
 
-          try {
-            const copyResult = await FileService.copyTicketAttachments(
-              copiedTicket.id,
-              newTicketId,
-              user.id,
-              copiedAttachmentIds
+          if (failedCount > 0) {
+            console.error('[TicketForm] File upload errors:', errors);
+            alert(
+              `Ticket ${isEditing ? 'updated' : 'created'} successfully, but ${failedCount} file${failedCount !== 1 ? 's' : ''} failed to upload:\n${errors.slice(0, 3).join('\n')}`
             );
-
-            if (copyResult.successCount > 0) {
-              setAttachmentCopyStatus(
-                `Successfully copied ${copyResult.successCount} attachment${copyResult.successCount !== 1 ? 's' : ''}`
-              );
-            }
-
-            if (copyResult.failedCount > 0) {
-              console.error('Attachment copy errors:', copyResult.errors);
-              alert(
-                `Ticket created successfully, but ${copyResult.failedCount} attachment${copyResult.failedCount !== 1 ? 's' : ''} failed to copy:\n${copyResult.errors.slice(0, 3).join('\n')}`
-              );
-            }
-          } catch (error) {
-            console.error('Error copying attachments:', error);
-            alert('Ticket created successfully, but attachments failed to copy.');
-          } finally {
-            setCopyingAttachments(false);
-            setTimeout(() => setAttachmentCopyStatus(''), 2000);
           }
+        } catch (error) {
+          console.error('[TicketForm] Error during file upload:', error);
+          alert(`Ticket ${isEditing ? 'updated' : 'created'} successfully, but files failed to upload.`);
+        } finally {
+          setCopyingAttachments(false);
+          setTimeout(() => setAttachmentCopyStatus(''), 2000);
+        }
+      } else {
+        console.log('[TicketForm] No files selected for upload');
+      }
+
+      if (!isEditing && copiedTicket && copiedAttachmentIds.length > 0) {
+        hasFileOperations = true;
+        console.log(`[TicketForm] Copying ${copiedAttachmentIds.length} attachment(s)`);
+        setCopyingAttachments(true);
+        setAttachmentCopyStatus(`Copying ${copiedAttachmentIds.length} attachment${copiedAttachmentIds.length !== 1 ? 's' : ''}...`);
+
+        try {
+          const copyResult = await FileService.copyTicketAttachments(
+            copiedTicket.id,
+            targetTicketId,
+            user.id,
+            copiedAttachmentIds
+          );
+
+          if (copyResult.successCount > 0) {
+            setAttachmentCopyStatus(
+              `Successfully copied ${copyResult.successCount} attachment${copyResult.successCount !== 1 ? 's' : ''}`
+            );
+            console.log(`[TicketForm] Copied ${copyResult.successCount} attachments`);
+          }
+
+          if (copyResult.failedCount > 0) {
+            console.error('[TicketForm] Attachment copy errors:', copyResult.errors);
+            alert(
+              `Ticket created successfully, but ${copyResult.failedCount} attachment${copyResult.failedCount !== 1 ? 's' : ''} failed to copy:\n${copyResult.errors.slice(0, 3).join('\n')}`
+            );
+          }
+        } catch (error) {
+          console.error('[TicketForm] Error copying attachments:', error);
+          alert('Ticket created successfully, but attachments failed to copy.');
+        } finally {
+          setCopyingAttachments(false);
+          setTimeout(() => setAttachmentCopyStatus(''), 2000);
         }
       }
+
+      const delayBeforeClose = hasFileOperations ? 2500 : 0;
+      console.log(`[TicketForm] Closing modal in ${delayBeforeClose}ms`);
 
       setTimeout(() => {
         onClose();
-      }, copyingAttachments ? 2000 : 0);
-      // Reset form data
-      setFormData({
-        ticketNumber: '', // Will be regenerated by useEffect
-        title: '',
-        description: '',
-        status: 'DRAFT',
-        priority: 'MEDIUM',
-        category: 'General',
-        assignedTo: '',
-        estCompletionDate: '',
-        department: user?.department || '',
-        propertyId: 'PROP001',
-        propertyLocation: 'Location01'
-      });
-      setFiles(null);
+        setFormData({
+          ticketNumber: '',
+          title: '',
+          description: '',
+          status: 'DRAFT',
+          priority: 'MEDIUM',
+          category: 'General',
+          assignedTo: '',
+          estCompletionDate: '',
+          department: user?.department || '',
+          propertyId: 'PROP001',
+          propertyLocation: 'Location01'
+        });
+        setFiles(null);
+      }, delayBeforeClose);
+
     } catch (error) {
-      console.error('Ticket creation error:', error);
+      console.error('[TicketForm] Ticket operation error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to save ticket';
       alert(errorMessage);
     } finally {
@@ -241,7 +265,17 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFiles(e.target.files);
+    const selectedFiles = e.target.files;
+    setFiles(selectedFiles);
+
+    if (selectedFiles && selectedFiles.length > 0) {
+      console.log(`[TicketForm] ${selectedFiles.length} file(s) selected:`);
+      Array.from(selectedFiles).forEach((file, index) => {
+        console.log(`  [${index + 1}] ${file.name} (${(file.size / 1024).toFixed(2)} KB, ${file.type})`);
+      });
+    } else {
+      console.log('[TicketForm] No files selected');
+    }
   };
 
   const availableUsers = users.filter(u => {

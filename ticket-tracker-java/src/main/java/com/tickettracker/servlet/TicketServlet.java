@@ -101,6 +101,24 @@ public class TicketServlet extends HttpServlet {
 
             Ticket createdTicket = ticketService.createTicket(ticket, currentUser.getId());
 
+            logger.info("Created ticket object - ID: {}, TicketNumber: {}, ModuleId: {}, Data: {}",
+                createdTicket.getId() != null ? ByteArrayUtil.bytesToHex(createdTicket.getId()) : "null",
+                createdTicket.getTicketNumber(),
+                createdTicket.getModuleId() != null ? ByteArrayUtil.bytesToHex(createdTicket.getModuleId()) : "null",
+                createdTicket.getData());
+
+            try {
+                String jsonTest = objectMapper.writeValueAsString(createdTicket);
+                logger.info("Ticket serialized JSON length: {} characters", jsonTest.length());
+                logger.debug("Ticket serialized JSON: {}", jsonTest);
+
+                if (jsonTest.equals("{}")) {
+                    logger.error("WARNING: Ticket serialized to empty object {}!");
+                }
+            } catch (Exception e) {
+                logger.error("Failed to serialize ticket for logging", e);
+            }
+
             response.setStatus(HttpServletResponse.SC_CREATED);
             sendJsonResponse(response, createdTicket);
 

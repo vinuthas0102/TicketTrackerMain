@@ -86,27 +86,50 @@ export class FileService {
   ): Promise<DocumentMetadata> {
     const { file, stepId, ticketId, userId, isMandatory, isCompletionCertificate = false } = options;
 
+    console.log('[FileService] uploadStepDocument called with:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      ticketId,
+      stepId,
+      userId,
+      isMandatory,
+      isCompletionCertificate
+    });
+
     const validation = this.validateFile(file);
     if (!validation.valid) {
+      console.error('[FileService] File validation failed:', validation.error);
       throw new Error(validation.error);
     }
+
+    console.log('[FileService] File validation passed');
 
     try {
       if (onProgress) {
         onProgress({ loaded: 0, total: file.size, percentage: 0 });
       }
 
+      console.log('[FileService] Calling API endpoint:', API_ENDPOINTS.FILES.UPLOAD);
+
+      const additionalData: Record<string, any> = {
+        ticketId,
+        userId,
+        isMandatory: isMandatory.toString(),
+        isCompletionCertificate: isCompletionCertificate.toString(),
+      };
+
+      if (stepId) {
+        additionalData.stepId = stepId;
+      }
+
       const response = await apiClient.uploadFile<DocumentMetadata>(
         API_ENDPOINTS.FILES.UPLOAD,
         file,
-        {
-          ticketId,
-          userId,
-          stepId: stepId || null,
-          isMandatory: isMandatory.toString(),
-          isCompletionCertificate: isCompletionCertificate.toString(),
-        }
+        additionalData
       );
+
+      console.log('[FileService] Upload successful:', response);
 
       if (onProgress) {
         onProgress({ loaded: file.size, total: file.size, percentage: 100 });
@@ -117,7 +140,7 @@ export class FileService {
         uploadedAt: new Date(response.uploadedAt),
       };
     } catch (error) {
-      console.error('File upload failed:', error);
+      console.error('[FileService] File upload failed:', error);
       throw error;
     }
   }

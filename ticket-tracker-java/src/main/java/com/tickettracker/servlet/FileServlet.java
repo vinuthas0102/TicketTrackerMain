@@ -112,6 +112,9 @@ public class FileServlet extends HttpServlet {
         String docType = request.getParameter("type");
         String isMandatory = request.getParameter("isMandatory");
 
+        logger.debug("File upload parameters - ticketId: {}, stepId: {}, fileName: {}",
+                     ticketIdStr, stepIdStr, fileName);
+
         Document document = new Document();
         document.setName(fileName);
         document.setType(docType != null ? docType : "general");
@@ -119,10 +122,10 @@ public class FileServlet extends HttpServlet {
         document.setStoragePath("blob_" + System.currentTimeMillis());
         document.setUploadedBy(currentUser.getId());
 
-        if (ticketIdStr != null) {
+        if (isValidParameter(ticketIdStr)) {
             document.setTicketId(ByteArrayUtil.hexToBytes(ticketIdStr));
         }
-        if (stepIdStr != null) {
+        if (isValidParameter(stepIdStr)) {
             document.setStepId(ByteArrayUtil.hexToBytes(stepIdStr));
         }
         if (isMandatory != null) {
@@ -273,6 +276,17 @@ public class FileServlet extends HttpServlet {
                     + Character.digit(hex.charAt(i + 1), 16));
         }
         return data;
+    }
+
+    private boolean isValidParameter(String param) {
+        if (param == null || param.isEmpty()) {
+            return false;
+        }
+        if ("null".equalsIgnoreCase(param) || "undefined".equalsIgnoreCase(param)) {
+            logger.debug("Rejecting invalid parameter value: {}", param);
+            return false;
+        }
+        return true;
     }
 
     private static class ErrorResponse {

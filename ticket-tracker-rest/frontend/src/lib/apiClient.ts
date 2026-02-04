@@ -100,7 +100,25 @@ class ApiClient {
         throw error;
       }
 
-      return data.data !== undefined ? data.data : data;
+      if (import.meta.env.DEV) {
+        console.log('[ApiClient] Response structure:', {
+          endpoint: endpoint,
+          responseType: typeof data,
+          isObject: typeof data === 'object' && data !== null,
+          hasDataField: data && 'data' in data,
+          hasSuccessField: data && 'success' in data,
+          hasErrorField: data && 'error' in data,
+          topLevelKeys: data && typeof data === 'object' ? Object.keys(data).slice(0, 10) : [],
+          willUnwrap: typeof data === 'object' && data !== null && 'data' in data && ('success' in data || 'error' in data)
+        });
+      }
+
+      if (typeof data === 'object' && data !== null && 'data' in data) {
+        if ('success' in data || 'error' in data) {
+          return data.data !== undefined ? data.data : data;
+        }
+      }
+      return data;
     } catch (error: any) {
       clearTimeout(timeoutId);
 
@@ -164,12 +182,28 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     const token = getAuthToken();
 
+    console.log('[ApiClient] uploadFile:', {
+      endpoint,
+      url,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      additionalData,
+      hasToken: !!token
+    });
+
     const formData = new FormData();
     formData.append('file', file);
 
     if (additionalData) {
       Object.keys(additionalData).forEach((key) => {
-        formData.append(key, additionalData[key]);
+        const value = additionalData[key];
+        if (value !== null && value !== undefined && value !== 'null' && value !== 'undefined') {
+          formData.append(key, value);
+          console.log(`[ApiClient] FormData field: ${key} = ${value}`);
+        } else {
+          console.log(`[ApiClient] Skipping null/undefined field: ${key} = ${value}`);
+        }
       });
     }
 
@@ -181,13 +215,22 @@ class ApiClient {
     logApiRequest('POST', url, { file: file.name, ...additionalData });
 
     try {
+      console.log('[ApiClient] Sending fetch request to:', url);
       const response = await fetch(url, {
         method: 'POST',
         credentials: 'include',
         body: formData,
       });
 
+      console.log('[ApiClient] Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       if (response.status === 401) {
+        console.error('[ApiClient] Authentication error (401)');
         clearAuthToken();
         window.location.href = '/';
         throw new Error('Session expired. Please login again.');
@@ -195,6 +238,7 @@ class ApiClient {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error('[ApiClient] Upload failed with error data:', errorData);
         const error: ApiError = {
           code: errorData.error?.code || 'UPLOAD_ERROR',
           message: errorData.error?.message || 'File upload failed',
@@ -205,10 +249,17 @@ class ApiClient {
       }
 
       const data = await response.json();
+      console.log('[ApiClient] Upload successful, response data:', data);
       logApiResponse(response.status, data);
 
-      return data.data !== undefined ? data.data : data;
+      if (typeof data === 'object' && data !== null && 'data' in data) {
+        if ('success' in data || 'error' in data) {
+          return data.data !== undefined ? data.data : data;
+        }
+      }
+      return data;
     } catch (error: any) {
+      console.error('[ApiClient] Upload exception:', error);
       if (error.code) {
         throw error;
       }

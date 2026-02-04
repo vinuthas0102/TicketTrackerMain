@@ -190,8 +190,47 @@ export class TicketService {
         copiedFromTicketId,
       };
 
-      const response = await apiClient.post<{ id: string }>(API_ENDPOINTS.TICKETS.CREATE, payload);
-      return response.id;
+      const response = await apiClient.post<any>(API_ENDPOINTS.TICKETS.CREATE, payload);
+
+      console.log('[TicketService] createTicket response type:', typeof response);
+      console.log('[TicketService] createTicket response:', response);
+
+      let ticketId: string | undefined;
+
+      if (!response) {
+        console.error('[TicketService] Received null/undefined response');
+        throw new Error('Server returned empty response');
+      }
+
+      if (typeof response === 'string') {
+        if (response.length > 0 && response !== '{}') {
+          console.warn('[TicketService] Received string response, treating as ticket ID:', response);
+          ticketId = response;
+        } else {
+          console.error('[TicketService] Received invalid string response:', response);
+          throw new Error('Server returned invalid response format');
+        }
+      } else if (typeof response === 'object') {
+        if (response.id) {
+          ticketId = response.id;
+        } else if (response.data?.id) {
+          ticketId = response.data.id;
+        } else if (Object.keys(response).length === 0) {
+          console.error('[TicketService] Received empty object {}');
+          throw new Error('Server returned empty object - ticket creation may have failed');
+        } else {
+          console.error('[TicketService] Response has no id field:', Object.keys(response));
+          throw new Error('Server response missing ticket ID');
+        }
+      }
+
+      if (!ticketId) {
+        console.error('[TicketService] Failed to extract ticket ID from response:', response);
+        throw new Error('Could not determine ticket ID from server response');
+      }
+
+      console.log('[TicketService] Successfully created ticket with ID:', ticketId);
+      return ticketId;
     } catch (error) {
       console.error('Error creating ticket:', error);
       throw error;

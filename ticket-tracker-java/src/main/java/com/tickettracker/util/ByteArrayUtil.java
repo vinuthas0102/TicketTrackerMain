@@ -9,13 +9,29 @@ public class ByteArrayUtil {
             return null;
         }
 
+        if ("null".equalsIgnoreCase(hex) || "undefined".equalsIgnoreCase(hex)) {
+            return null;
+        }
+
         hex = hex.replaceAll("-", "");
+
+        if (!hex.matches("^[0-9A-Fa-f]+$")) {
+            return null;
+        }
+
+        if (hex.length() % 2 != 0) {
+            return null;
+        }
 
         int len = hex.length();
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-                    + Character.digit(hex.charAt(i + 1), 16));
+            int highNibble = Character.digit(hex.charAt(i), 16);
+            int lowNibble = Character.digit(hex.charAt(i + 1), 16);
+            if (highNibble == -1 || lowNibble == -1) {
+                return null;
+            }
+            data[i / 2] = (byte) ((highNibble << 4) + lowNibble);
         }
         return data;
     }
