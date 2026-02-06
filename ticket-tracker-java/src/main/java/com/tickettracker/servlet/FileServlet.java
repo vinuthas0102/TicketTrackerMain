@@ -177,7 +177,7 @@ public class FileServlet extends HttpServlet {
                 return;
             }
 
-            byte[] documentId = hexToBytes(pathParts[1]);
+            byte[] documentId = ByteArrayUtil.hexToBytes(pathParts[1]);
             documentService.deleteDocument(documentId, currentUser.getId());
 
             response.setStatus(HttpServletResponse.SC_NO_CONTENT);
@@ -196,11 +196,11 @@ public class FileServlet extends HttpServlet {
         String stepIdParam = request.getParameter("stepId");
 
         if (ticketIdParam != null) {
-            byte[] ticketId = hexToBytes(ticketIdParam);
+            byte[] ticketId = ByteArrayUtil.hexToBytes(ticketIdParam);
             List<Document> documents = documentService.getDocumentsByTicketId(ticketId);
             sendJsonResponse(response, documents);
         } else if (stepIdParam != null) {
-            byte[] stepId = hexToBytes(stepIdParam);
+            byte[] stepId = ByteArrayUtil.hexToBytes(stepIdParam);
             List<Document> documents = documentService.getDocumentsByStepId(stepId);
             sendJsonResponse(response, documents);
         } else {
@@ -210,7 +210,7 @@ public class FileServlet extends HttpServlet {
 
     private void handleGetDocument(HttpServletRequest request, String documentId, HttpServletResponse response)
             throws TicketTrackerException, IOException {
-        byte[] id = hexToBytes(documentId);
+        byte[] id = ByteArrayUtil.hexToBytes(documentId);
         Document document = documentService.getDocumentById(id);
 
         String download = request.getParameter("download");
@@ -263,19 +263,6 @@ public class FileServlet extends HttpServlet {
             throws IOException {
         logger.error("Application error: {}", e.getMessage());
         sendError(response, e.getHttpStatus(), e.getMessage());
-    }
-
-    private byte[] hexToBytes(String hex) {
-        if (hex == null || hex.isEmpty()) {
-            return null;
-        }
-        int len = hex.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-                    + Character.digit(hex.charAt(i + 1), 16));
-        }
-        return data;
     }
 
     private boolean isValidParameter(String param) {

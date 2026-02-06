@@ -3,8 +3,10 @@ package com.tickettracker.servlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tickettracker.exception.TicketTrackerException;
 import com.tickettracker.model.User;
+import com.tickettracker.model.WorkflowStepFileReference;
 import com.tickettracker.service.FileReferenceService;
 import com.tickettracker.util.JsonUtil;
+import com.tickettracker.util.UuidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +37,8 @@ public class FileReferenceServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        String pathInfo = request.getPathInfo();
+
         try {
             User currentUser = getCurrentUser(request);
             if (currentUser == null) {
@@ -42,9 +46,16 @@ public class FileReferenceServlet extends HttpServlet {
                 return;
             }
 
+            // Handle path-based routing: /step/{stepId}
+            if (pathInfo != null && pathInfo.startsWith("/step/")) {
+                handleGetStepFileReferences(request, response, pathInfo);
+                return;
+            }
+
+            // Handle query parameter routing: ?entityId=...
             String entityIdParam = request.getParameter("entityId");
             if (entityIdParam == null) {
-                sendError(response, 400, "entityId parameter required");
+                sendError(response, 400, "entityId parameter required or use /step/{stepId} path");
                 return;
             }
 
@@ -59,6 +70,51 @@ public class FileReferenceServlet extends HttpServlet {
         } catch (Exception e) {
             logger.error("Unexpected error in GET /api/file-references", e);
             sendError(response, 500, "Internal server error");
+        }
+    }
+
+    private void handleGetStepFileReferences(HttpServletRequest request, HttpServletResponse response, String pathInfo)
+            throws IOException {
+        try {
+            // Extract stepId from path: /step/{stepId}
+            String[] pathParts = pathInfo.split("/");
+            if (pathParts.length < 3) {
+                sendError(response, 400, "Invalid path format. Expected: /step/{stepId}");
+                return;
+            }
+
+            String stepIdStr = pathParts[2];
+            if (stepIdStr == null || stepIdStr.trim().isEmpty()) {
+                sendError(response, 400, "Step ID cannot be empty");
+                return;
+            }
+
+            logger.debug("Fetching file references for step: {}", stepIdStr);
+
+            // Convert UUID string to byte array
+            byte[] stepId;
+            try {
+                stepId = UuidUtil.uuidStringToBytes(stepIdStr);
+            } catch (Exception e) {
+                logger.warn("Invalid UUID format for stepId: {}", stepIdStr);
+                sendError(response, 400, "Invalid UUID format for stepId");
+                return;
+            }
+
+            // Fetch step file references
+            List<WorkflowStepFileReference> references = fileReferenceService.getStepFileReferences(stepId);
+
+            logger.debug("Found {} file references for step: {}", references.size(), stepIdStr);
+
+            // Return the list (empty array if no references)
+            sendJsonResponse(response, references);
+
+        } catch (TicketTrackerException e) {
+            logger.error("Error fetching step file references: {}", e.getMessage());
+            handleException(response, e);
+        } catch (Exception e) {
+            logger.error("Unexpected error fetching step file references", e);
+            sendError(response, 500, "Internal server error: " + e.getMessage());
         }
     }
 

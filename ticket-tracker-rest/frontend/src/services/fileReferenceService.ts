@@ -43,6 +43,22 @@ export class FileReferenceService {
     }
   }
 
+  static async getAllTemplates(activeOnly?: boolean): Promise<FileReferenceTemplate[]> {
+    try {
+      const queryParam = activeOnly !== undefined ? `?activeOnly=${activeOnly}` : '';
+      const templates = await apiClient.get<any[]>(API_ENDPOINTS.FILE_REFERENCES.TEMPLATES + queryParam);
+
+      return templates.map(template => ({
+        ...template,
+        created_at: new Date(template.created_at),
+        updated_at: new Date(template.updated_at),
+      }));
+    } catch (error) {
+      console.error('Error fetching file reference templates:', error);
+      return [];
+    }
+  }
+
   static async getTemplateById(templateId: string): Promise<FileReferenceTemplate | null> {
     try {
       const template = await apiClient.get<any>(API_ENDPOINTS.FILE_REFERENCES.TEMPLATE(templateId));

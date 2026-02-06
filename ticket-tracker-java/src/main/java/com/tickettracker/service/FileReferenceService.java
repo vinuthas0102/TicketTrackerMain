@@ -56,6 +56,197 @@ public class FileReferenceService {
         }
     }
 
+    public FileReferenceTemplate getTemplateByName(String templateName) throws TicketTrackerException {
+        try {
+            return templateDAO.findByName(templateName);
+        } catch (SQLException e) {
+            logger.error("Error fetching template by name: {}", templateName, e);
+            throw new DatabaseException("Failed to fetch file reference template by name", e);
+        }
+    }
+
+    public Map<String, Object> validateTemplateJSON(String jsonContent) {
+        Map<String, Object> result = new HashMap<>();
+
+        if (jsonContent == null || jsonContent.trim().isEmpty()) {
+            result.put("valid", false);
+            result.put("error", "JSON content cannot be empty");
+            return result;
+        }
+
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            Map<String, Object> jsonMap = mapper.readValue(jsonContent, Map.class);
+
+            if (!jsonMap.containsKey("fileReferences")) {
+                result.put("valid", false);
+                result.put("error", "JSON must contain 'fileReferences' array at root level");
+                return result;
+            }
+
+            Object fileReferencesObj = jsonMap.get("fileReferences");
+            if (!(fileReferencesObj instanceof List)) {
+                result.put("valid", false);
+                result.put("error", "'fileReferences' must be an array");
+                return result;
+            }
+
+            List<?> fileReferences = (List<?>) fileReferencesObj;
+            java.util.Set<String> referenceNames = new java.util.HashSet<>();
+            String[] allowedFileTypes = {"pdf", "docx", "xlsx", "doc", "xls", "jpg", "jpeg", "png", "txt", "csv"};
+            java.util.Set<String> allowedFileTypesSet = new java.util.HashSet<>(java.util.Arrays.asList(allowedFileTypes));
+            int maxNestingDepth = 5;
+
+            for (int i = 0; i < fileReferences.size(); i++) {
+                Object refObj = fileReferences.get(i);
+                if (!(refObj instanceof Map)) {
+                    result.put("valid", false);
+                    result.put("error", "File reference at index " + i + " must be an object");
+                    return result;
+                }
+
+                Map<String, Object> reference = (Map<String, Object>) refObj;
+
+                if (!reference.containsKey("name") || !(reference.get("name") instanceof String)) {
+                    result.put("valid", false);
+                    result.put("error", "File reference at index " + i + " must have a 'name' field of type string");
+                    return result;
+                }
+
+                String name = (String) reference.get("name");
+                if (name.trim().isEmpty()) {
+                    result.put("valid", false);
+                    result.put("error", "File reference name at index " + i + " cannot be empty");
+                    return result;
+                }
+
+                if (name.contains("<") || name.contains(">") || name.contains("script")) {
+                    result.put("valid", false);
+                    result.put("error", "File reference name at index " + i + " contains unsafe characters");
+                    return result;
+                }
+
+                if (referenceNames.contains(name)) {
+                    result.put("valid", false);
+                    result.put("error", "Duplicate file reference name '" + name + "' found at index " + i);
+                    return result;
+                }
+                referenceNames.add(name);
+
+                if (reference.containsKey("isMandatory") && !(reference.get("isMandatory") instanceof Boolean)) {
+                    result.put("valid", false);
+                    result.put("error", "File reference 'isMandatory' at index " + i + " must be boolean");
+                    return result;
+                }
+
+                if (reference.containsKey("description")) {
+                    Object descObj = reference.get("description");
+                    if (!(descObj instanceof String)) {
+                        result.put("valid", false);
+                        result.put("error", "File reference 'description' at index " + i + " must be a string");
+                        return result;
+                    }
+                    String desc = (String) descObj;
+                    if (desc.contains("<script") || desc.contains("javascript:")) {
+                        result.put("valid", false);
+                        result.put("error", "File reference description at index " + i + " contains unsafe content");
+                        return result;
+                    }
+                }
+
+                if (reference.containsKey("fileTypes")) {
+                    Object fileTypesObj = reference.get("fileTypes");
+                    if (!(fileTypesObj instanceof List)) {
+                        result.put("valid", false);
+                        result.put("error", "File reference 'fileTypes' at index " + i + " must be an array");
+                        return result;
+                    }
+                    List<?> fileTypes = (List<?>) fileTypesObj;
+                    for (Object ftObj : fileTypes) {
+                        if (!(ftObj instanceof String)) {
+                            result.put("valid", false);
+                            result.put("error", "All file types in reference at index " + i + " must be strings");
+                            return result;
+                        }
+                        String fileType = ((String) ftObj).toLowerCase().replace(".", "");
+                        if (!allowedFileTypesSet.contains(fileType)) {
+                            result.put("valid", false);
+                            result.put("error", "Unsupported file type '" + fileType + "' in reference at index " + i);
+                            return result;
+                        }
+                    }
+                }
+
+                if (reference.containsKey("maxSize")) {
+                    Object maxSizeObj = reference.get("maxSize");
+                    if (!(maxSizeObj instanceof Number)) {
+                        result.put("valid", false);
+                        result.put("error", "File reference 'maxSize' at index " + i + " must be a number");
+                        return result;
+                    }
+                    long maxSize = ((Number) maxSizeObj).longValue();
+                    if (maxSize <= 0 || maxSize > 10485760) {
+                        result.put("valid", false);
+                        result.put("error", "File reference 'maxSize' at index " + i + " must be between 1 and 10485760 bytes (10MB)");
+                        return result;
+                    }
+                }
+
+                if (reference.containsKey("allowMultiple") && !(reference.get("allowMultiple") instanceof Boolean)) {
+                    result.put("valid", false);
+                    result.put("error", "File reference 'allowMultiple' at index " + i + " must be boolean");
+                    return result;
+                }
+            }
+
+            int depth = calculateJSONDepth(jsonMap, 0);
+            if (depth > maxNestingDepth) {
+                result.put("valid", false);
+                result.put("error", "JSON nesting depth exceeds maximum allowed depth of " + maxNestingDepth);
+                return result;
+            }
+
+            result.put("valid", true);
+            return result;
+
+        } catch (com.fasterxml.jackson.core.JsonParseException e) {
+            result.put("valid", false);
+            result.put("error", "Invalid JSON syntax at line " + e.getLocation().getLineNr() +
+                              ", column " + e.getLocation().getColumnNr() + ": " + e.getOriginalMessage());
+            return result;
+        } catch (Exception e) {
+            logger.error("Error validating template JSON", e);
+            result.put("valid", false);
+            result.put("error", "JSON validation failed: " + e.getMessage());
+            return result;
+        }
+    }
+
+    private int calculateJSONDepth(Object obj, int currentDepth) {
+        if (currentDepth > 10) {
+            return currentDepth;
+        }
+
+        if (obj instanceof Map) {
+            Map<?, ?> map = (Map<?, ?>) obj;
+            int maxDepth = currentDepth;
+            for (Object value : map.values()) {
+                int depth = calculateJSONDepth(value, currentDepth + 1);
+                maxDepth = Math.max(maxDepth, depth);
+            }
+            return maxDepth;
+        } else if (obj instanceof List) {
+            List<?> list = (List<?>) obj;
+            int maxDepth = currentDepth;
+            for (Object item : list) {
+                int depth = calculateJSONDepth(item, currentDepth + 1);
+                maxDepth = Math.max(maxDepth, depth);
+            }
+            return maxDepth;
+        }
+        return currentDepth;
+    }
+
     public FileReferenceTemplate createTemplate(FileReferenceTemplate template, byte[] currentUserId)
             throws TicketTrackerException {
         try {
@@ -65,6 +256,10 @@ public class FileReferenceService {
             logger.error("Error creating template", e);
             throw new DatabaseException("Failed to create file reference template", e);
         }
+    }
+
+    public FileReferenceTemplate createTemplate(FileReferenceTemplate template) throws TicketTrackerException {
+        return createTemplate(template, template.getUploadedBy());
     }
 
     public FileReferenceTemplate updateTemplate(FileReferenceTemplate template, byte[] currentUserId)
@@ -81,12 +276,29 @@ public class FileReferenceService {
         }
     }
 
+    public FileReferenceTemplate updateTemplate(FileReferenceTemplate template) throws TicketTrackerException {
+        return updateTemplate(template, template.getUploadedBy());
+    }
+
     public void deleteTemplate(byte[] templateId, byte[] currentUserId) throws TicketTrackerException {
         try {
             boolean deleted = templateDAO.delete(templateId);
             if (!deleted) {
                 throw new ResourceNotFoundException("File reference template not found");
             }
+        } catch (SQLException e) {
+            logger.error("Error deleting template", e);
+            throw new DatabaseException("Failed to delete file reference template", e);
+        }
+    }
+
+    public boolean deleteTemplate(byte[] templateId) throws TicketTrackerException {
+        try {
+            boolean deleted = templateDAO.delete(templateId);
+            if (!deleted) {
+                throw new ResourceNotFoundException("File reference template not found");
+            }
+            return true;
         } catch (SQLException e) {
             logger.error("Error deleting template", e);
             throw new DatabaseException("Failed to delete file reference template", e);

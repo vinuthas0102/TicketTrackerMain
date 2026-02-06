@@ -46,8 +46,8 @@ public class WorkflowStepProgressDocumentService {
             throw new ValidationException("File size exceeds maximum allowed size of 5 MB");
         }
 
-        if (document.getFileContent() == null || document.getFileContent().length == 0) {
-            throw new ValidationException("File content is required");
+        if (document.getFilePath() == null || document.getFilePath().trim().isEmpty()) {
+            throw new ValidationException("File path is required for external storage");
         }
 
         if (document.getUploadedBy() == null) {

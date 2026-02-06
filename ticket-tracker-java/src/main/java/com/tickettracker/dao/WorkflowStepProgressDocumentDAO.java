@@ -117,6 +117,10 @@ public class WorkflowStepProgressDocumentDAO extends BaseDAO {
         }
     }
 
+    public ProgressDocument findById(byte[] id, boolean includeContent) throws SQLException {
+        return findById(id);
+    }
+
     public List<ProgressDocument> findByStepId(byte[] stepId) throws SQLException {
         String sql = "SELECT * FROM workflow_step_progress_documents WHERE step_id = ? " +
                 "AND is_deleted = 0 ORDER BY uploaded_at DESC";

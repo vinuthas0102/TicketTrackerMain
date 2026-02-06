@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tickettracker.exception.TicketTrackerException;
 import com.tickettracker.model.BulkTicketCreateRequest;
 import com.tickettracker.model.BulkTicketOperationResult;
+import com.tickettracker.model.Document;
 import com.tickettracker.model.Ticket;
 import com.tickettracker.model.User;
+import com.tickettracker.service.DocumentService;
 import com.tickettracker.service.TicketService;
 import com.tickettracker.util.ByteArrayUtil;
 import com.tickettracker.util.JsonUtil;
@@ -27,12 +29,14 @@ public class TicketServlet extends HttpServlet {
 
     private static final Logger logger = LoggerFactory.getLogger(TicketServlet.class);
     private TicketService ticketService;
+    private DocumentService documentService;
     private ObjectMapper objectMapper;
 
     @Override
     public void init() throws ServletException {
         super.init();
         this.ticketService = new TicketService();
+        this.documentService = new DocumentService();
         this.objectMapper = JsonUtil.getObjectMapper();
     }
 
@@ -48,6 +52,8 @@ public class TicketServlet extends HttpServlet {
                 String[] pathParts = pathInfo.split("/");
                 if (pathParts.length == 2) {
                     handleGetTicket(pathParts[1], response);
+                } else if (pathParts.length == 3 && "files".equals(pathParts[2])) {
+                    handleGetTicketFiles(pathParts[1], response);
                 } else {
                     sendError(response, 400, "Invalid request path");
                 }
@@ -302,6 +308,14 @@ public class TicketServlet extends HttpServlet {
         byte[] id = ByteArrayUtil.hexToBytes(ticketId);
         Ticket ticket = ticketService.getTicket(id);
         sendJsonResponse(response, ticket);
+    }
+
+    private void handleGetTicketFiles(String ticketId, HttpServletResponse response)
+            throws TicketTrackerException, IOException {
+        logger.debug("Fetching files for ticket ID: {}", ticketId);
+        byte[] id = ByteArrayUtil.hexToBytes(ticketId);
+        List<Document> documents = documentService.getDocumentsByTicketId(id);
+        sendJsonResponse(response, documents);
     }
 
     private User getCurrentUser(HttpServletRequest request) {
