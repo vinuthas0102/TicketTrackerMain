@@ -2,13 +2,21 @@ package com.tickettracker.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * FileReferenceTemplate model representing JSON-based file reference templates
  * for defining required documents for workflow steps.
  */
 public class FileReferenceTemplate {
+
+    private static final Logger logger = LoggerFactory.getLogger(FileReferenceTemplate.class);
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private byte[] id;
     private String templateName;
@@ -58,12 +66,27 @@ public class FileReferenceTemplate {
         this.description = description;
     }
 
+    @JsonIgnore
     public String getJsonContent() {
         return jsonContent;
     }
 
     public void setJsonContent(String jsonContent) {
         this.jsonContent = jsonContent;
+    }
+
+    @JsonProperty("jsonContent")
+    public Object getJsonContentAsObject() {
+        if (jsonContent == null || jsonContent.trim().isEmpty()) {
+            return new HashMap<String, Object>();
+        }
+
+        try {
+            return objectMapper.readValue(jsonContent, Object.class);
+        } catch (Exception e) {
+            logger.warn("Failed to parse jsonContent as JSON object, returning as string: {}", e.getMessage());
+            return jsonContent;
+        }
     }
 
     @JsonIgnore

@@ -54,7 +54,7 @@ export const FileReferenceSelector: React.FC<FileReferenceSelectorProps> = ({
   };
 
   const handleSelectAll = () => {
-    if (!selectedTemplate) return;
+    if (!selectedTemplate || !selectedTemplate.jsonContent?.fileReferences) return;
 
     const allReferences: SelectedFileReference[] = selectedTemplate.jsonContent.fileReferences.map((ref, index) => ({
       referenceName: ref,
@@ -85,11 +85,14 @@ export const FileReferenceSelector: React.FC<FileReferenceSelectorProps> = ({
           disabled={disabled}
         >
           <option value="">No template - Manual upload only</option>
-          {templates.map(template => (
-            <option key={template.id} value={template.id}>
-              {template.templateName} ({template.jsonContent.fileReferences.length} file reference{template.jsonContent.fileReferences.length !== 1 ? 's' : ''})
-            </option>
-          ))}
+          {templates.map(template => {
+            const fileRefCount = template.jsonContent?.fileReferences?.length || 0;
+            return (
+              <option key={template.id} value={template.id}>
+                {template.templateName} ({fileRefCount} file reference{fileRefCount !== 1 ? 's' : ''})
+              </option>
+            );
+          })}
         </select>
         <p className="text-xs text-gray-500 mt-1">
           Select a template to choose specific file references for this workflow step.
@@ -136,8 +139,8 @@ export const FileReferenceSelector: React.FC<FileReferenceSelectorProps> = ({
               Choose which file references to include for this workflow step:
             </p>
 
-            {selectedTemplate.jsonContent.fileReferences.map((ref, index) => {
-              const isMandatory = selectedTemplate.jsonContent.mandatoryFlags?.[index] || false;
+            {(selectedTemplate.jsonContent?.fileReferences || []).map((ref, index) => {
+              const isMandatory = selectedTemplate.jsonContent?.mandatoryFlags?.[index] || false;
               const isSelected = isReferenceSelected(ref);
 
               return (
@@ -179,7 +182,7 @@ export const FileReferenceSelector: React.FC<FileReferenceSelectorProps> = ({
           <div className="mt-3 pt-3 border-t border-blue-200">
             <div className="flex items-center justify-between text-xs">
               <span className="text-blue-700 font-medium">
-                Selected: {selectedReferences.length} of {selectedTemplate.jsonContent.fileReferences.length}
+                Selected: {selectedReferences.length} of {selectedTemplate.jsonContent?.fileReferences?.length || 0}
               </span>
               <div className="flex items-center space-x-3">
                 <span className="text-blue-700">

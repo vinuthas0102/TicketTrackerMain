@@ -54,7 +54,7 @@ export const FileReferenceSelector: React.FC<FileReferenceSelectorProps> = ({
   };
 
   const handleSelectAll = () => {
-    if (!selectedTemplate) return;
+    if (!selectedTemplate || !selectedTemplate.jsonContent?.fileReferences) return;
 
     const allReferences: SelectedFileReference[] = selectedTemplate.jsonContent.fileReferences.map((ref, index) => ({
       referenceName: ref,
@@ -85,11 +85,14 @@ export const FileReferenceSelector: React.FC<FileReferenceSelectorProps> = ({
           disabled={disabled}
         >
           <option value="">No template - Manual upload only</option>
-          {templates.map(template => (
-            <option key={template.id} value={template.id}>
-              {template.templateName} ({template.jsonContent.fileReferences.length} file reference{template.jsonContent.fileReferences.length !== 1 ? 's' : ''})
-            </option>
-          ))}
+          {templates.map(template => {
+            const fileRefCount = template.jsonContent?.fileReferences?.length || 0;
+            return (
+              <option key={template.id} value={template.id}>
+                {template.templateName} ({fileRefCount} file reference{fileRefCount !== 1 ? 's' : ''})
+              </option>
+            );
+          })}
         </select>
         <p className="text-xs text-gray-500 mt-1">
           Select a template to choose specific file references for this workflow step.
@@ -98,46 +101,60 @@ export const FileReferenceSelector: React.FC<FileReferenceSelectorProps> = ({
 
       {showReferenceSelection && selectedTemplate && (
         <div className="border border-blue-300 rounded-lg p-4 bg-blue-50">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-blue-600" />
-              <h4 className="text-sm font-semibold text-blue-900">
-                Select File References from Template
-              </h4>
+          {!selectedTemplate.jsonContent?.fileReferences || selectedTemplate.jsonContent.fileReferences.length === 0 ? (
+            <div className="flex items-start space-x-2 bg-red-50 border border-red-200 rounded-md p-3">
+              <XCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-red-900 mb-1">
+                  Invalid Template Data
+                </p>
+                <p className="text-xs text-red-800">
+                  This template does not contain any file references. Please contact an administrator to fix this template or select a different one.
+                </p>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <button
-                type="button"
-                onClick={handleSelectAll}
-                className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                disabled={disabled}
-              >
-                Select All
-              </button>
-              <button
-                type="button"
-                onClick={handleClearAll}
-                className="text-xs px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
-                disabled={disabled}
-              >
-                Clear All
-              </button>
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  <h4 className="text-sm font-semibold text-blue-900">
+                    Select File References from Template
+                  </h4>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleSelectAll}
+                    className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    disabled={disabled}
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearAll}
+                    className="text-xs px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                    disabled={disabled}
+                  >
+                    Clear All
+                  </button>
+                </div>
+              </div>
 
-          {selectedTemplate.description && (
-            <p className="text-xs text-blue-700 mb-3 italic">
-              {selectedTemplate.description}
-            </p>
-          )}
+              {selectedTemplate.description && (
+                <p className="text-xs text-blue-700 mb-3 italic">
+                  {selectedTemplate.description}
+                </p>
+              )}
 
           <div className="space-y-2">
             <p className="text-xs text-blue-800 font-medium mb-2">
               Choose which file references to include for this workflow step:
             </p>
 
-            {selectedTemplate.jsonContent.fileReferences.map((ref, index) => {
-              const isMandatory = selectedTemplate.jsonContent.mandatoryFlags?.[index] || false;
+            {(selectedTemplate.jsonContent?.fileReferences || []).map((ref, index) => {
+              const isMandatory = selectedTemplate.jsonContent?.mandatoryFlags?.[index] || false;
               const isSelected = isReferenceSelected(ref);
 
               return (
@@ -179,7 +196,7 @@ export const FileReferenceSelector: React.FC<FileReferenceSelectorProps> = ({
           <div className="mt-3 pt-3 border-t border-blue-200">
             <div className="flex items-center justify-between text-xs">
               <span className="text-blue-700 font-medium">
-                Selected: {selectedReferences.length} of {selectedTemplate.jsonContent.fileReferences.length}
+                Selected: {selectedReferences.length} of {selectedTemplate.jsonContent?.fileReferences?.length || 0}
               </span>
               <div className="flex items-center space-x-3">
                 <span className="text-blue-700">
@@ -199,6 +216,8 @@ export const FileReferenceSelector: React.FC<FileReferenceSelectorProps> = ({
                 No file references selected. The manager will not be required to upload any files from this template.
               </p>
             </div>
+          )}
+            </>
           )}
         </div>
       )}

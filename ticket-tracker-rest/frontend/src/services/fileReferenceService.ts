@@ -15,6 +15,23 @@ export interface FileReferenceItem {
   isMandatory: boolean;
 }
 
+function parseJsonContent(jsonContent: any): any {
+  if (typeof jsonContent === 'string') {
+    try {
+      return JSON.parse(jsonContent);
+    } catch (error) {
+      console.error('Failed to parse jsonContent string:', error);
+      return { fileReferences: [], mandatoryFlags: [] };
+    }
+  }
+
+  if (typeof jsonContent === 'object' && jsonContent !== null) {
+    return jsonContent;
+  }
+
+  return { fileReferences: [], mandatoryFlags: [] };
+}
+
 export interface WorkflowStepFileReference {
   id: string;
   step_id: string;
@@ -34,8 +51,9 @@ export class FileReferenceService {
 
       return templates.map(template => ({
         ...template,
-        created_at: new Date(template.created_at),
-        updated_at: new Date(template.updated_at),
+        jsonContent: parseJsonContent(template.jsonContent),
+        created_at: new Date(template.created_at || template.createdAt),
+        updated_at: new Date(template.updated_at || template.updatedAt),
       }));
     } catch (error) {
       console.error('Error fetching file reference templates:', error);
@@ -50,8 +68,9 @@ export class FileReferenceService {
 
       return templates.map(template => ({
         ...template,
-        created_at: new Date(template.created_at),
-        updated_at: new Date(template.updated_at),
+        jsonContent: parseJsonContent(template.jsonContent),
+        created_at: new Date(template.created_at || template.createdAt),
+        updated_at: new Date(template.updated_at || template.updatedAt),
       }));
     } catch (error) {
       console.error('Error fetching file reference templates:', error);
@@ -65,8 +84,9 @@ export class FileReferenceService {
 
       return {
         ...template,
-        created_at: new Date(template.created_at),
-        updated_at: new Date(template.updated_at),
+        jsonContent: parseJsonContent(template.jsonContent),
+        created_at: new Date(template.created_at || template.createdAt),
+        updated_at: new Date(template.updated_at || template.updatedAt),
       };
     } catch (error) {
       console.error('Error fetching file reference template:', error);
