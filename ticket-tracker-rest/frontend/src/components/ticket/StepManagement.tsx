@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, CheckCircle, Clock, Users, Trash2, Edit, X, ChevronDown, ChevronRight, FileText, Upload, Layers, Search, Filter, XCircle, Workflow, ArrowRight, History, ExternalLink, AlertCircle } from 'lucide-react';
+import { Plus, CheckCircle, Clock, Users, Trash2, Edit, X, ChevronDown, ChevronRight, FileText, Upload, Layers, Search, Filter, XCircle, Workflow, ArrowRight, History, ExternalLink, AlertCircle, MessageSquare } from 'lucide-react';
 import { Ticket, WorkflowStep, WorkflowStepStatus, ActionIconDefinition, FileReferenceTemplate } from '../../types';
 import { FileReferenceService } from '../../services/fileReferenceService';
 import FileReferenceUpload from './FileReferenceUpload';
@@ -14,6 +14,7 @@ import DependencySelector from './DependencySelector';
 import DependencyBadge from './DependencyBadge';
 import ProgressDocuments from './ProgressDocuments';
 import ProgressHistoryView from './ProgressHistoryView';
+import WorkflowStepComments from './WorkflowStepComments';
 import { DocumentMetadata, FileService } from '../../services/fileService';
 import { TicketService } from '../../services/ticketService';
 import { DependencyService } from '../../services/dependencyService';
@@ -306,6 +307,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
   const [showDocUpload, setShowDocUpload] = useState<Set<string>>(new Set());
   const [showProgressHistory, setShowProgressHistory] = useState<Set<string>>(new Set());
+  const [showComments, setShowComments] = useState<Set<string>>(new Set());
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkParentStep, setBulkParentStep] = useState<WorkflowStep | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -388,6 +390,16 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       newShowHistory.add(stepId);
     }
     setShowProgressHistory(newShowHistory);
+  };
+
+  const toggleComments = (stepId: string) => {
+    const newShowComments = new Set(showComments);
+    if (newShowComments.has(stepId)) {
+      newShowComments.delete(stepId);
+    } else {
+      newShowComments.add(stepId);
+    }
+    setShowComments(newShowComments);
   };
 
   const getChildren = (parentId: string) => {
@@ -1121,6 +1133,16 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       color: showProgressHistory.has(step.id) ? 'text-blue-600' : 'text-gray-600'
     });
 
+    // Comments
+    actions.push({
+      id: 'comments',
+      icon: MessageSquare,
+      label: showComments.has(step.id) ? 'Hide comments' : 'Show comments',
+      action: () => toggleComments(step.id),
+      category: 'view',
+      color: showComments.has(step.id) ? 'text-amber-600' : 'text-gray-600'
+    });
+
     // Upload Documents
     actions.push({
       id: 'upload',
@@ -1315,6 +1337,19 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                   <ProgressHistoryView
                     step={step}
                     ticketId={ticket.id}
+                    onRefresh={() => window.location.reload()}
+                  />
+                </div>
+              )}
+
+              {showComments.has(step.id) && (
+                <div className="mt-3">
+                  <div className="mb-3 flex items-center space-x-2 bg-gradient-to-r from-amber-50 to-yellow-50 px-4 py-2 rounded-lg border border-amber-200">
+                    <MessageSquare className="w-4 h-4 text-amber-600" />
+                    <h5 className="text-sm font-semibold text-amber-900">Workflow Comments</h5>
+                  </div>
+                  <WorkflowStepComments
+                    stepId={step.id}
                     onRefresh={() => window.location.reload()}
                   />
                 </div>
