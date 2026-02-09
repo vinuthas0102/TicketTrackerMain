@@ -106,4 +106,11 @@ export const API_ENDPOINTS = {
     LIST_BY_TICKET: (ticketId: string) => `/audit-logs?ticketId=${ticketId}`,
     LIST_BY_STEP: (stepId: string) => `/audit-logs?stepId=${stepId}`,
   },
+
+  WORKFLOW_COMMENTS: {
+    LIST: (stepId: string) => `/workflow-comments?stepId=${stepId}`,
+    CREATE: '/workflow-comments',
+    UPDATE: (commentId: string) => `/workflow-comments/${commentId}`,
+    DELETE: (commentId: string) => `/workflow-comments/${commentId}`,
+  },
 };

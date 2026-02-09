@@ -486,15 +486,55 @@ export class TicketService {
     }
   }
 
+  static async getStepComments(stepId: string): Promise<any[]> {
+    try {
+      const comments = await apiClient.get<any[]>(API_ENDPOINTS.WORKFLOW_COMMENTS.LIST(stepId));
+      return comments.map((comment: any) => ({
+        id: comment.id,
+        stepId: comment.stepId || comment.step_id,
+        content: comment.content,
+        createdBy: comment.createdBy || comment.created_by,
+        createdAt: safeParseDate(comment.createdAt || comment.created_at) || new Date(),
+        updatedAt: safeParseDate(comment.updatedAt || comment.updated_at),
+        createdByName: comment.createdByName || comment.created_by_name,
+        createdByRole: comment.createdByRole || comment.created_by_role,
+      }));
+    } catch (error) {
+      console.error('Error fetching step comments:', error);
+      return [];
+    }
+  }
+
   static async addStepComment(stepId: string, content: string, userId: string): Promise<void> {
     try {
-      await apiClient.post(`/workflow-comments`, {
+      await apiClient.post(API_ENDPOINTS.WORKFLOW_COMMENTS.CREATE, {
         stepId,
         content: content.trim(),
         userId,
       });
     } catch (error) {
       console.error('Error adding step comment:', error);
+      throw error;
+    }
+  }
+
+  static async updateStepComment(commentId: string, content: string, userId: string): Promise<void> {
+    try {
+      await apiClient.put(API_ENDPOINTS.WORKFLOW_COMMENTS.UPDATE(commentId), {
+        content: content.trim(),
+        userId,
+      });
+    } catch (error) {
+      console.error('Error updating step comment:', error);
+      throw error;
+    }
+  }
+
+  static async deleteStepComment(commentId: string, userId: string): Promise<void> {
+    try {
+      await apiClient.delete(API_ENDPOINTS.WORKFLOW_COMMENTS.DELETE(commentId));
+    } catch (error) {
+      console.error('Error deleting step comment:', error);
       throw error;
     }
   }

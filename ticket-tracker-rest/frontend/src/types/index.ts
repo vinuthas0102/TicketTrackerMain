@@ -94,6 +94,9 @@ export interface WorkflowComment {
   content: string;
   createdBy: string;
   createdAt: Date;
+  updatedAt?: Date;
+  createdByName?: string;
+  createdByRole?: string;
 }
 
 export interface FileAttachment {

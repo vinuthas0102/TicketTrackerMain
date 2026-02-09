@@ -30,6 +30,7 @@ public class AuthenticationFilter implements Filter {
             "/api/modules",
             "/api/tickets",
             "/api/workflow-steps",
+            "/api/workflow-comments",
             "/api/files/",
             "/api/file-references/"
     ));
