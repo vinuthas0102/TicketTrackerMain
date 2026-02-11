@@ -1,11 +1,19 @@
 package com.tickettracker.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tickettracker.dao.AuditLogDAO;
+import com.tickettracker.dao.UserDAO;
+import com.tickettracker.dao.WorkflowStepProgressDocumentDAO;
+import com.tickettracker.dao.WorkflowStepProgressDocumentDAO.ProgressDocument;
 import com.tickettracker.exception.TicketTrackerException;
+import com.tickettracker.model.AuditLog;
+import com.tickettracker.model.Document;
 import com.tickettracker.model.User;
 import com.tickettracker.model.WorkflowStep;
 import com.tickettracker.model.WorkflowStepUpdateRequest;
+import com.tickettracker.service.DocumentService;
 import com.tickettracker.service.WorkflowService;
+import com.tickettracker.service.WorkflowStepProgressDocumentService;
 import com.tickettracker.util.ByteArrayUtil;
 import com.tickettracker.util.JsonUtil;
 import org.slf4j.Logger;
@@ -18,6 +26,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,12 +38,20 @@ public class WorkflowStepServlet extends HttpServlet {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkflowStepServlet.class);
     private WorkflowService workflowService;
+    private DocumentService documentService;
+    private WorkflowStepProgressDocumentService progressDocumentService;
+    private AuditLogDAO auditLogDAO;
+    private UserDAO userDAO;
     private ObjectMapper objectMapper;
 
     @Override
     public void init() throws ServletException {
         super.init();
         this.workflowService = new WorkflowService();
+        this.documentService = new DocumentService();
+        this.progressDocumentService = new WorkflowStepProgressDocumentService();
+        this.auditLogDAO = new AuditLogDAO();
+        this.userDAO = new UserDAO();
         this.objectMapper = JsonUtil.getObjectMapper();
     }
 
@@ -48,6 +67,23 @@ public class WorkflowStepServlet extends HttpServlet {
                 String[] pathParts = pathInfo.split("/");
                 if (pathParts.length == 2) {
                     handleGetStep(pathParts[1], response);
+                } else if (pathParts.length == 3) {
+                    String stepId = pathParts[1];
+                    String subResource = pathParts[2];
+
+                    switch (subResource) {
+                        case "files":
+                            handleGetStepFiles(stepId, response);
+                            break;
+                        case "progress-documents":
+                            handleGetProgressDocuments(stepId, request, response);
+                            break;
+                        case "progress-history":
+                            handleGetProgressHistory(stepId, response);
+                            break;
+                        default:
+                            sendError(response, 400, "Invalid sub-resource: " + subResource);
+                    }
                 } else {
                     sendError(response, 400, "Invalid request path");
                 }
@@ -69,6 +105,13 @@ public class WorkflowStepServlet extends HttpServlet {
             User currentUser = getCurrentUser(request);
             if (currentUser == null) {
                 sendError(response, 401, "Authentication required");
+                return;
+            }
+
+            if (!currentUser.isAdmin()) {
+                logger.warn("Permission denied: User {} (role: {}) attempted to create workflow step",
+                        currentUser.getEmail(), currentUser.getRole());
+                sendError(response, 403, "Forbidden: Only EO users can create workflow steps");
                 return;
             }
 
@@ -135,10 +178,16 @@ public class WorkflowStepServlet extends HttpServlet {
             if (pathParts.length != 2) {
                 sendError(response, 400, "Invalid request path");
                 return;
-            }	
-            System.out.println("--before stepid-----"+pathParts[1]);
+            }
             byte[] stepId = ByteArrayUtil.hexToBytes(pathParts[1]);
-            System.out.println("--after stepid-----"+ByteArrayUtil.bytesToHex(stepId));
+
+            boolean canUpdate = workflowService.canUserUpdateWorkflowStep(currentUser.getId(), stepId);
+            if (!canUpdate) {
+                logger.warn("Permission denied: User {} (role: {}) attempted to update workflow step {}",
+                        currentUser.getEmail(), currentUser.getRole(), pathParts[1]);
+                sendError(response, 403, "Forbidden: You do not have permission to update this workflow step");
+                return;
+            }
 
             String body = getRequestBody(request);
             WorkflowStepUpdateRequest updateRequest;
@@ -173,6 +222,13 @@ public class WorkflowStepServlet extends HttpServlet {
             User currentUser = getCurrentUser(request);
             if (currentUser == null) {
                 sendError(response, 401, "Authentication required");
+                return;
+            }
+
+            if (!currentUser.isAdmin()) {
+                logger.warn("Permission denied: User {} (role: {}) attempted to delete workflow step",
+                        currentUser.getEmail(), currentUser.getRole());
+                sendError(response, 403, "Forbidden: Only EO users can delete workflow steps");
                 return;
             }
 
@@ -218,6 +274,218 @@ public class WorkflowStepServlet extends HttpServlet {
         byte[] id = hexToBytes(stepId);
         WorkflowStep step = workflowService.getWorkflowStepById(id);
         sendJsonResponse(response, step);
+    }
+
+    private void handleGetStepFiles(String stepId, HttpServletResponse response)
+            throws TicketTrackerException, IOException {
+        logger.debug("Fetching files for step ID: {}", stepId);
+        byte[] id = hexToBytes(stepId);
+        List<Document> documents = documentService.getDocumentsByStepId(id);
+        sendJsonResponse(response, documents);
+    }
+
+    private void handleGetProgressDocuments(String stepId, HttpServletRequest request,
+            HttpServletResponse response) throws TicketTrackerException, IOException {
+        logger.debug("Fetching progress documents for step ID: {}", stepId);
+        byte[] id = hexToBytes(stepId);
+
+        List<ProgressDocument> documents = progressDocumentService.getProgressDocumentsByStepId(id);
+        sendJsonResponse(response, documents);
+    }
+
+    private void handleGetProgressHistory(String stepId, HttpServletResponse response)
+            throws TicketTrackerException, IOException {
+        logger.debug("Fetching progress history for step ID: {}", stepId);
+        byte[] id = hexToBytes(stepId);
+
+        try {
+            List<AuditLog> auditLogs = auditLogDAO.findByStepId(id);
+            List<ProgressDocument> progressDocuments = new WorkflowStepProgressDocumentDAO().findByStepId(id);
+            List<Document> allDocuments = documentService.getDocumentsByStepId(id);
+            List<User> allUsers = userDAO.findAll();
+
+            Map<String, User> userMap = new HashMap<>();
+            for (User user : allUsers) {
+                userMap.put(ByteArrayUtil.bytesToHex(user.getId()), user);
+            }
+
+            Map<String, List<Map<String, Object>>> progressDocsMap = new HashMap<>();
+            for (ProgressDocument doc : progressDocuments) {
+                if (doc.getAuditLogId() != null) {
+                    String auditLogIdHex = ByteArrayUtil.bytesToHex(doc.getAuditLogId());
+                    if (!progressDocsMap.containsKey(auditLogIdHex)) {
+                        progressDocsMap.put(auditLogIdHex, new ArrayList<>());
+                    }
+                    Map<String, Object> docMap = new HashMap<>();
+                    docMap.put("id", ByteArrayUtil.bytesToHex(doc.getId()));
+                    docMap.put("stepId", ByteArrayUtil.bytesToHex(doc.getStepId()));
+                    docMap.put("ticketId", ByteArrayUtil.bytesToHex(doc.getTicketId()));
+                    docMap.put("auditLogId", auditLogIdHex);
+                    docMap.put("fileName", doc.getFileName());
+                    docMap.put("filePath", doc.getFilePath());
+                    docMap.put("fileSize", doc.getFileSize());
+                    docMap.put("fileType", doc.getFileType());
+                    docMap.put("uploadedBy", ByteArrayUtil.bytesToHex(doc.getUploadedBy()));
+                    docMap.put("uploadedAt", doc.getUploadedAt());
+                    docMap.put("isDeleted", doc.isDeleted());
+                    if (doc.getDeletedAt() != null) {
+                        docMap.put("deletedAt", doc.getDeletedAt());
+                        docMap.put("deletedBy", ByteArrayUtil.bytesToHex(doc.getDeletedBy()));
+                        docMap.put("deleteReason", doc.getDeleteReason());
+                    }
+                    progressDocsMap.get(auditLogIdHex).add(docMap);
+                }
+            }
+
+            List<Map<String, Object>> historyEntries = new ArrayList<>();
+
+            for (AuditLog auditLog : auditLogs) {
+                String auditLogIdHex = ByteArrayUtil.bytesToHex(auditLog.getId());
+                User performedByUser = userMap.get(ByteArrayUtil.bytesToHex(auditLog.getPerformedBy()));
+                String userName = performedByUser != null ? performedByUser.getName() : "Unknown User";
+                String userRole = performedByUser != null ? performedByUser.getRole() : "unknown";
+
+                Map<String, Object> baseEntry = new HashMap<>();
+                baseEntry.put("id", auditLogIdHex);
+                baseEntry.put("timestamp", auditLog.getPerformedAt());
+                baseEntry.put("userId", ByteArrayUtil.bytesToHex(auditLog.getPerformedBy()));
+                baseEntry.put("userName", userName);
+                baseEntry.put("userRole", userRole);
+                baseEntry.put("comment", auditLog.getDescription());
+                baseEntry.put("auditLogId", auditLogIdHex);
+                baseEntry.put("metadata", auditLog.getMetadata());
+
+                String action = auditLog.getAction();
+                String actionCategory = auditLog.getActionCategory();
+
+                if ("PROGRESS_DOCUMENTS_UPLOADED".equals(action) ||
+                    ("document_action".equals(actionCategory) && action != null && action.contains("PROGRESS"))) {
+                    List<Map<String, Object>> docs = progressDocsMap.getOrDefault(auditLogIdHex, new ArrayList<>());
+                    if (!docs.isEmpty() || auditLog.getDescription() != null) {
+                        Map<String, Object> entry = new HashMap<>(baseEntry);
+                        entry.put("type", "progress_update");
+                        entry.put("documents", docs);
+                        Integer progress = extractProgressFromMetadata(auditLog.getMetadata());
+                        if (progress != null) {
+                            entry.put("progress", progress);
+                        }
+                        historyEntries.add(entry);
+                    }
+                } else if ("WORKFLOW_UPDATED".equals(action)) {
+                    Integer progress = null;
+                    Integer oldProgress = null;
+
+                    if (auditLog.getNewData() != null && !auditLog.getNewData().isEmpty()) {
+                        try {
+                            progress = Integer.parseInt(auditLog.getNewData().trim());
+                        } catch (NumberFormatException e) {
+                            progress = extractProgressFromMetadata(auditLog.getMetadata());
+                        }
+                    } else {
+                        progress = extractProgressFromMetadata(auditLog.getMetadata());
+                    }
+
+                    if (auditLog.getOldData() != null && !auditLog.getOldData().isEmpty()) {
+                        try {
+                            oldProgress = Integer.parseInt(auditLog.getOldData().trim());
+                        } catch (NumberFormatException e) {
+                        }
+                    }
+
+                    if (progress != null || auditLog.getDescription() != null) {
+                        Map<String, Object> entry = new HashMap<>(baseEntry);
+                        entry.put("type", "progress_update");
+                        if (progress != null) {
+                            entry.put("progress", progress);
+                        }
+                        if (oldProgress != null) {
+                            entry.put("oldProgress", oldProgress);
+                        }
+                        List<Map<String, Object>> docs = progressDocsMap.getOrDefault(auditLogIdHex, new ArrayList<>());
+                        if (!docs.isEmpty()) {
+                            entry.put("documents", docs);
+                        }
+                        historyEntries.add(entry);
+                    }
+                } else if ("STATUS_CHANGED".equals(action) || "status_change".equals(actionCategory)) {
+                    Map<String, Object> entry = new HashMap<>(baseEntry);
+                    entry.put("type", "status_change");
+                    entry.put("status", auditLog.getNewData());
+                    entry.put("oldStatus", auditLog.getOldData());
+                    historyEntries.add(entry);
+                }
+            }
+
+            for (Document cert : allDocuments) {
+                if (cert.isCompletionCertificate()) {
+                    User uploadedByUser = userMap.get(ByteArrayUtil.bytesToHex(cert.getUploadedBy()));
+                    String userName = uploadedByUser != null ? uploadedByUser.getName() : "Unknown User";
+                    String userRole = uploadedByUser != null ? uploadedByUser.getRole() : "unknown";
+
+                    Map<String, Object> entry = new HashMap<>();
+                    entry.put("id", ByteArrayUtil.bytesToHex(cert.getId()));
+                    entry.put("type", "completion_certificate");
+                    entry.put("timestamp", cert.getUploadedAt());
+                    entry.put("userId", ByteArrayUtil.bytesToHex(cert.getUploadedBy()));
+                    entry.put("userName", userName);
+                    entry.put("userRole", userRole);
+
+                    List<Map<String, Object>> completionCerts = new ArrayList<>();
+                    Map<String, Object> certMap = new HashMap<>();
+                    certMap.put("id", ByteArrayUtil.bytesToHex(cert.getId()));
+                    certMap.put("name", cert.getName());
+                    certMap.put("type", cert.getType());
+                    certMap.put("size", cert.getSize());
+                    certMap.put("url", cert.getUrl());
+                    certMap.put("storagePath", cert.getStoragePath());
+                    certMap.put("uploadedBy", ByteArrayUtil.bytesToHex(cert.getUploadedBy()));
+                    certMap.put("uploadedAt", cert.getUploadedAt());
+                    certMap.put("isMandatory", cert.isMandatory());
+                    certMap.put("isCompletionCertificate", cert.isCompletionCertificate());
+                    certMap.put("stepId", ByteArrayUtil.bytesToHex(cert.getStepId()));
+                    completionCerts.add(certMap);
+
+                    entry.put("completionCertificates", completionCerts);
+                    historyEntries.add(entry);
+                }
+            }
+
+            historyEntries.sort((a, b) -> {
+                Timestamp tsA = (Timestamp) a.get("timestamp");
+                Timestamp tsB = (Timestamp) b.get("timestamp");
+                return tsB.compareTo(tsA);
+            });
+
+            sendJsonResponse(response, historyEntries);
+        } catch (Exception e) {
+            logger.error("Error fetching progress history", e);
+            throw new TicketTrackerException("Failed to fetch progress history", e);
+        }
+    }
+
+    private Integer extractProgressFromMetadata(String metadata) {
+        if (metadata == null || metadata.isEmpty()) {
+            return null;
+        }
+        try {
+            if (metadata.contains("\"progress\"")) {
+                int startIdx = metadata.indexOf("\"progress\"");
+                int colonIdx = metadata.indexOf(":", startIdx);
+                if (colonIdx != -1) {
+                    int endIdx = metadata.indexOf(",", colonIdx);
+                    if (endIdx == -1) {
+                        endIdx = metadata.indexOf("}", colonIdx);
+                    }
+                    if (endIdx != -1) {
+                        String progressStr = metadata.substring(colonIdx + 1, endIdx).trim();
+                        return Integer.parseInt(progressStr);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Failed to extract progress from metadata: {}", metadata);
+        }
+        return null;
     }
 
     private User getCurrentUser(HttpServletRequest request) {

@@ -1,6 +1,7 @@
 package com.tickettracker.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tickettracker.dao.WorkflowStepFileReferenceDAO;
 import com.tickettracker.exception.TicketTrackerException;
 import com.tickettracker.model.Document;
 import com.tickettracker.model.User;
@@ -34,12 +35,14 @@ public class FileServlet extends HttpServlet {
 
     private static final Logger logger = LoggerFactory.getLogger(FileServlet.class);
     private DocumentService documentService;
+    private WorkflowStepFileReferenceDAO fileReferenceDAO;
     private ObjectMapper objectMapper;
 
     @Override
     public void init() throws ServletException {
         super.init();
         this.documentService = new DocumentService();
+        this.fileReferenceDAO = new WorkflowStepFileReferenceDAO();
         this.objectMapper = JsonUtil.getObjectMapper();
     }
 
@@ -109,11 +112,12 @@ public class FileServlet extends HttpServlet {
         String fileName = getFileName(filePart);
         String ticketIdStr = request.getParameter("ticketId");
         String stepIdStr = request.getParameter("stepId");
+        String fileReferenceIdStr = request.getParameter("fileReferenceId");
         String docType = request.getParameter("type");
         String isMandatory = request.getParameter("isMandatory");
 
-        logger.debug("File upload parameters - ticketId: {}, stepId: {}, fileName: {}",
-                     ticketIdStr, stepIdStr, fileName);
+        logger.debug("File upload parameters - ticketId: {}, stepId: {}, fileReferenceId: {}, fileName: {}",
+                     ticketIdStr, stepIdStr, fileReferenceIdStr, fileName);
 
         Document document = new Document();
         document.setName(fileName);
@@ -138,7 +142,31 @@ public class FileServlet extends HttpServlet {
             document.setFileContent(fileData);
         }
 
+        // Step 1: Create the document
         Document createdDocument = documentService.createDocument(document, currentUser.getId());
+
+        // Step 2: Link document to file reference if provided (CRITICAL FIX)
+        if (isValidParameter(fileReferenceIdStr)) {
+            try {
+                byte[] fileReferenceId = ByteArrayUtil.hexToBytes(fileReferenceIdStr);
+                boolean linked = fileReferenceDAO.updateDocumentLink(
+                    fileReferenceId,
+                    createdDocument.getId(),
+                    currentUser.getId()
+                );
+
+                if (linked) {
+                    logger.info("Successfully linked document {} to file reference {}",
+                               ByteArrayUtil.bytesToHex(createdDocument.getId()),
+                               fileReferenceIdStr);
+                } else {
+                    logger.warn("File reference {} not found or could not be linked", fileReferenceIdStr);
+                }
+            } catch (Exception e) {
+                logger.error("Failed to link document to file reference: {}", e.getMessage(), e);
+                // Don't fail the entire upload, document is already created
+            }
+        }
 
         response.setStatus(HttpServletResponse.SC_CREATED);
         sendJsonResponse(response, createdDocument);

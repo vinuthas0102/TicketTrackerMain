@@ -20,11 +20,13 @@ public class WorkflowService {
 
     private final WorkflowStepDAO workflowStepDAO;
     private final WorkflowStepDependencyDAO dependencyDAO;
+    private final WorkflowStepFileReferenceDAO fileReferenceDAO;
     private final AuditLogDAO auditLogDAO;
 
     public WorkflowService() {
         this.workflowStepDAO = new WorkflowStepDAO();
         this.dependencyDAO = new WorkflowStepDependencyDAO();
+        this.fileReferenceDAO = new WorkflowStepFileReferenceDAO();
         this.auditLogDAO = new AuditLogDAO();
     }
 
@@ -38,6 +40,25 @@ public class WorkflowService {
             step.setStatus("pending");
 
             WorkflowStep createdStep = workflowStepDAO.create(step);
+
+            // Create file references from template if provided
+            if (step.getFileReferenceTemplateId() != null &&
+                step.getSelectedFileReferences() != null &&
+                !step.getSelectedFileReferences().isEmpty()) {
+
+                for (SelectedFileReference selectedRef : step.getSelectedFileReferences()) {
+                    WorkflowStepFileReference fileRef = new WorkflowStepFileReference();
+                    fileRef.setStepId(createdStep.getId());
+                    fileRef.setTemplateId(step.getFileReferenceTemplateId());
+                    fileRef.setReferenceName(selectedRef.getReferenceName());
+                    fileRef.setMandatory(selectedRef.isMandatory());
+
+                    fileReferenceDAO.create(fileRef);
+                }
+
+                logger.info("Created {} file references for workflow step {}",
+                        step.getSelectedFileReferences().size(), step.getStepNumber());
+            }
 
             createAuditLog(step.getTicketId(), step.getId(), currentUserId,
                     "Workflow step created",
@@ -69,6 +90,25 @@ public class WorkflowService {
 
                 WorkflowStep createdStep = workflowStepDAO.create(step);
                 createdSteps.add(createdStep);
+
+                // Create file references from template if provided
+                if (step.getFileReferenceTemplateId() != null &&
+                    step.getSelectedFileReferences() != null &&
+                    !step.getSelectedFileReferences().isEmpty()) {
+
+                    for (SelectedFileReference selectedRef : step.getSelectedFileReferences()) {
+                        WorkflowStepFileReference fileRef = new WorkflowStepFileReference();
+                        fileRef.setStepId(createdStep.getId());
+                        fileRef.setTemplateId(step.getFileReferenceTemplateId());
+                        fileRef.setReferenceName(selectedRef.getReferenceName());
+                        fileRef.setMandatory(selectedRef.isMandatory());
+
+                        fileReferenceDAO.create(fileRef);
+                    }
+
+                    logger.info("Created {} file references for workflow step {}",
+                            step.getSelectedFileReferences().size(), step.getStepNumber());
+                }
 
                 createAuditLog(step.getTicketId(), step.getId(), currentUserId,
                         "Workflow step created",
@@ -122,6 +162,11 @@ public class WorkflowService {
             WorkflowStep existingStep = getWorkflowStepById(updateRequest.getId());
 
             if (updateRequest.getStatus() != null && "completed".equals(updateRequest.getStatus())) {
+                boolean allMandatoryFilesComplete = checkMandatoryFileReferencesComplete(updateRequest.getId());
+                if (!allMandatoryFilesComplete) {
+                    throw new ValidationException("Cannot complete step: All mandatory file references must be uploaded");
+                }
+
                 if (updateRequest.getCompletedAt() == null) {
                     updateRequest.setCompletedAt(new Timestamp(System.currentTimeMillis()));
                 }
@@ -387,6 +432,89 @@ public class WorkflowService {
         } catch (SQLException e) {
             logger.error("Error calculating step levels", e);
             throw new DatabaseException("Failed to calculate step levels", e);
+        }
+    }
+
+    public boolean canUserUpdateWorkflowStep(byte[] userId, byte[] stepId) throws TicketTrackerException {
+        try {
+            UserDAO userDAO = new UserDAO();
+            User user = userDAO.findById(userId);
+            if (user == null) {
+                return false;
+            }
+
+            if ("eo".equalsIgnoreCase(user.getRoleInternal())) {
+                return true;
+            }
+
+            WorkflowStep step = workflowStepDAO.findById(stepId);
+            if (step == null) {
+                return false;
+            }
+
+            if (step.getAssignedToUser() != null && bytesEquals(step.getAssignedToUser(), userId)) {
+                return true;
+            }
+
+            if (step.getAssignedToGroup() != null &&
+                user.getDepartment() != null &&
+                step.getAssignedToGroup().equalsIgnoreCase(user.getDepartment())) {
+                return true;
+            }
+
+            return false;
+        } catch (SQLException e) {
+            logger.error("Error checking workflow step update permission", e);
+            throw new DatabaseException("Failed to check permissions", e);
+        }
+    }
+
+    public boolean canUserCreateWorkflowStep(byte[] userId, byte[] ticketId) throws TicketTrackerException {
+        try {
+            UserDAO userDAO = new UserDAO();
+            User user = userDAO.findById(userId);
+            if (user == null) {
+                return false;
+            }
+
+            return "eo".equalsIgnoreCase(user.getRoleInternal());
+        } catch (SQLException e) {
+            logger.error("Error checking workflow step creation permission", e);
+            throw new DatabaseException("Failed to check permissions", e);
+        }
+    }
+
+    public boolean canUserDeleteWorkflowStep(byte[] userId, byte[] stepId) throws TicketTrackerException {
+        try {
+            UserDAO userDAO = new UserDAO();
+            User user = userDAO.findById(userId);
+            if (user == null) {
+                return false;
+            }
+
+            return "eo".equalsIgnoreCase(user.getRoleInternal());
+        } catch (SQLException e) {
+            logger.error("Error checking workflow step deletion permission", e);
+            throw new DatabaseException("Failed to check permissions", e);
+        }
+    }
+
+    public boolean checkMandatoryFileReferencesComplete(byte[] stepId) throws TicketTrackerException {
+        try {
+            List<WorkflowStepFileReference> references = fileReferenceDAO.findByStepId(stepId);
+
+            for (WorkflowStepFileReference ref : references) {
+                if (ref.isMandatory() && ref.getFileUrl() == null) {
+                    logger.warn("Mandatory file reference '{}' not completed for step {}",
+                            ref.getReferenceName(), bytesToHex(stepId));
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (SQLException e) {
+            logger.error("Error checking mandatory file references", e);
+            throw new DatabaseException("Failed to check file references", e);
         }
     }
 

@@ -13,10 +13,20 @@ import java.io.IOException;
 public class CorsFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(CorsFilter.class);
+    private String allowedOrigins;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        logger.info("CorsFilter initialized");
+        // Read allowed origins from environment variable or system property
+        // Supports comma-separated list of origins
+        allowedOrigins = System.getenv("CORS_ALLOWED_ORIGINS");
+        if (allowedOrigins == null || allowedOrigins.trim().isEmpty()) {
+            allowedOrigins = System.getProperty("cors.allowed.origins");
+        }
+        if (allowedOrigins == null || allowedOrigins.trim().isEmpty()) {
+            allowedOrigins = "http://localhost:3000";
+        }
+        logger.info("CorsFilter initialized with allowed origins: {}", allowedOrigins);
     }
 
     @Override
@@ -28,8 +38,8 @@ public class CorsFilter implements Filter {
 
         String origin = httpRequest.getHeader("Origin");
 
-        // Allow only your frontend
-        if (origin != null && origin.equals("http://localhost:3000")) {
+        // Check if origin is in allowed list
+        if (origin != null && isOriginAllowed(origin)) {
         	httpResponse.setHeader("Access-Control-Allow-Origin", origin);
         }
 
@@ -51,5 +61,19 @@ public class CorsFilter implements Filter {
     @Override
     public void destroy() {
         logger.info("CorsFilter destroyed");
+    }
+
+    private boolean isOriginAllowed(String origin) {
+        if (allowedOrigins == null || origin == null) {
+            return false;
+        }
+
+        String[] allowedList = allowedOrigins.split(",");
+        for (String allowed : allowedList) {
+            if (origin.trim().equalsIgnoreCase(allowed.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

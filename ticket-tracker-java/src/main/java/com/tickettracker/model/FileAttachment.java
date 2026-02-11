@@ -53,7 +53,7 @@ public class FileAttachment {
         return bytesToUuid(ticketId);
     }
 
-    @JsonProperty("ticket_id")
+    @JsonProperty("ticketId")
     public void setTicketIdAsString(String ticketIdStr) {
         this.ticketId = UuidUtil.uuidStringToBytes(ticketIdStr);
     }
@@ -72,7 +72,7 @@ public class FileAttachment {
         return bytesToUuid(stepId);
     }
 
-    @JsonProperty("step_id")
+    @JsonProperty("stepId")
     public void setStepIdAsString(String stepIdStr) {
         this.stepId = UuidUtil.uuidStringToBytes(stepIdStr);
     }
@@ -123,15 +123,17 @@ public class FileAttachment {
         return bytesToUuid(uploadedBy);
     }
 
-    @JsonProperty("uploaded_by")
+    @JsonProperty("uploadedBy")
     public void setUploadedByAsString(String uploadedByStr) {
         this.uploadedBy = UuidUtil.uuidStringToBytes(uploadedByStr);
     }
 
+    @JsonProperty("createdAt")
     public Timestamp getCreatedAt() {
         return createdAt;
     }
 
+    @JsonProperty("createdAt")
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }

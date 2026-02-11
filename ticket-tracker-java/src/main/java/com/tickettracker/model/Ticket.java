@@ -180,10 +180,12 @@ public class Ticket {
         this.assignedTo = UuidUtil.uuidStringToBytes(assignedToStr);
     }
 
+    @JsonProperty("dueDate")
     public Timestamp getDueDate() {
         return dueDate;
     }
 
+    @JsonProperty("dueDate")
     public void setDueDate(Timestamp dueDate) {
         this.dueDate = dueDate;
     }
@@ -279,26 +281,32 @@ public class Ticket {
         this.requiresFinanceApproval = requiresFinanceApproval;
     }
 
+    @JsonProperty("startDate")
     public Timestamp getStartDate() {
         return startDate;
     }
 
+    @JsonProperty("startDate")
     public void setStartDate(Timestamp startDate) {
         this.startDate = startDate;
     }
 
+    @JsonProperty("createdAt")
     public Timestamp getCreatedAt() {
         return createdAt;
     }
 
+    @JsonProperty("createdAt")
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }
 
+    @JsonProperty("updatedAt")
     public Timestamp getUpdatedAt() {
         return updatedAt;
     }
 
+    @JsonProperty("updatedAt")
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
     }

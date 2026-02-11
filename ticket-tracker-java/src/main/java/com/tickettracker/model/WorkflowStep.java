@@ -44,6 +44,10 @@ public class WorkflowStep {
     private Timestamp completedAt;
     private Timestamp startDate;
 
+    // File reference fields (not persisted in workflow_steps table)
+    private byte[] fileReferenceTemplateId;
+    private java.util.List<SelectedFileReference> selectedFileReferences;
+
     // Transient fields for joined data
     private String assignedToName;
     private String createdByName;
@@ -167,26 +171,32 @@ public class WorkflowStep {
         this.parentStepId = UuidUtil.uuidStringToBytes(parentStepIdStr);
     }
 
+    @JsonProperty("level_1")
     public Integer getLevel1() {
         return level1;
     }
 
+    @JsonProperty("level_1")
     public void setLevel1(Integer level1) {
         this.level1 = level1;
     }
 
+    @JsonProperty("level_2")
     public Integer getLevel2() {
         return level2;
     }
 
+    @JsonProperty("level_2")
     public void setLevel2(Integer level2) {
         this.level2 = level2;
     }
 
+    @JsonProperty("level_3")
     public Integer getLevel3() {
         return level3;
     }
 
+    @JsonProperty("level_3")
     public void setLevel3(Integer level3) {
         this.level3 = level3;
     }
@@ -199,26 +209,32 @@ public class WorkflowStep {
         this.dependencies = dependencies;
     }
 
+    @JsonProperty("is_parallel")
     public boolean isParallel() {
         return isParallel;
     }
 
+    @JsonProperty("is_parallel")
     public void setParallel(boolean parallel) {
         isParallel = parallel;
     }
 
+    @JsonProperty("mandatory_documents")
     public String getMandatoryDocuments() {
         return mandatoryDocuments;
     }
 
+    @JsonProperty("mandatory_documents")
     public void setMandatoryDocuments(String mandatoryDocuments) {
         this.mandatoryDocuments = mandatoryDocuments;
     }
 
+    @JsonProperty("optional_documents")
     public String getOptionalDocuments() {
         return optionalDocuments;
     }
 
+    @JsonProperty("optional_documents")
     public void setOptionalDocuments(String optionalDocuments) {
         this.optionalDocuments = optionalDocuments;
     }
@@ -231,10 +247,12 @@ public class WorkflowStep {
         this.completionCertificateRequired = completionCertificateRequired;
     }
 
+    @JsonProperty("dueDate")
     public Timestamp getDueDate() {
         return dueDate;
     }
 
+    @JsonProperty("dueDate")
     public void setDueDate(Timestamp dueDate) {
         this.dueDate = dueDate;
     }
@@ -255,18 +273,22 @@ public class WorkflowStep {
         this.progress = progress;
     }
 
+    @JsonProperty("dependency_mode")
     public String getDependencyMode() {
         return dependencyMode;
     }
 
+    @JsonProperty("dependency_mode")
     public void setDependencyMode(String dependencyMode) {
         this.dependencyMode = dependencyMode;
     }
 
+    @JsonProperty("is_dependency_locked")
     public boolean isDependencyLocked() {
         return isDependencyLocked;
     }
 
+    @JsonProperty("is_dependency_locked")
     public void setDependencyLocked(boolean dependencyLocked) {
         isDependencyLocked = dependencyLocked;
     }
@@ -290,34 +312,42 @@ public class WorkflowStep {
         this.createdBy = UuidUtil.uuidStringToBytes(createdByStr);
     }
 
+    @JsonProperty("createdAt")
     public Timestamp getCreatedAt() {
         return createdAt;
     }
 
+    @JsonProperty("createdAt")
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }
 
+    @JsonProperty("updatedAt")
     public Timestamp getUpdatedAt() {
         return updatedAt;
     }
 
+    @JsonProperty("updatedAt")
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
     }
 
+    @JsonProperty("completedAt")
     public Timestamp getCompletedAt() {
         return completedAt;
     }
 
+    @JsonProperty("completedAt")
     public void setCompletedAt(Timestamp completedAt) {
         this.completedAt = completedAt;
     }
 
+    @JsonProperty("startDate")
     public Timestamp getStartDate() {
         return startDate;
     }
 
+    @JsonProperty("startDate")
     public void setStartDate(Timestamp startDate) {
         this.startDate = startDate;
     }
@@ -336,6 +366,35 @@ public class WorkflowStep {
 
     public void setCreatedByName(String createdByName) {
         this.createdByName = createdByName;
+    }
+
+    @JsonIgnore
+    public byte[] getFileReferenceTemplateId() {
+        return fileReferenceTemplateId;
+    }
+
+    public void setFileReferenceTemplateId(byte[] fileReferenceTemplateId) {
+        this.fileReferenceTemplateId = fileReferenceTemplateId;
+    }
+
+    @JsonProperty("fileReferenceTemplateId")
+    public String getFileReferenceTemplateIdAsString() {
+        return bytesToUuid(fileReferenceTemplateId);
+    }
+
+    @JsonProperty("fileReferenceTemplateId")
+    public void setFileReferenceTemplateIdAsString(String templateIdStr) {
+        this.fileReferenceTemplateId = templateIdStr != null ? UuidUtil.uuidStringToBytes(templateIdStr) : null;
+    }
+
+    @JsonProperty("selectedFileReferences")
+    public java.util.List<SelectedFileReference> getSelectedFileReferences() {
+        return selectedFileReferences;
+    }
+
+    @JsonProperty("selectedFileReferences")
+    public void setSelectedFileReferences(java.util.List<SelectedFileReference> selectedFileReferences) {
+        this.selectedFileReferences = selectedFileReferences;
     }
 
     private String bytesToUuid(byte[] bytes) {

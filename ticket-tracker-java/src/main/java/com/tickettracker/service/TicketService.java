@@ -311,6 +311,108 @@ public class TicketService {
         }
     }
 
+    public boolean canUserAccessTicket(byte[] userId, byte[] ticketId) throws TicketTrackerException {
+        try {
+            User user = userDAO.findById(userId);
+            if (user == null) {
+                return false;
+            }
+
+            Ticket ticket = ticketDAO.findById(ticketId);
+            if (ticket == null) {
+                return false;
+            }
+
+            String userRole = user.getRole();
+            if (userRole == null) {
+                return false;
+            }
+
+            if ("eo".equalsIgnoreCase(userRole)) {
+                return true;
+            }
+
+            if ("dept_officer".equalsIgnoreCase(userRole) || "DO".equalsIgnoreCase(userRole)) {
+                return user.getDepartment() != null &&
+                       user.getDepartment().equalsIgnoreCase(ticket.getDepartment());
+            }
+
+            if ("employee".equalsIgnoreCase(userRole) || "vendor".equalsIgnoreCase(userRole)) {
+                List<WorkflowStep> steps = workflowStepDAO.findByTicketId(ticketId);
+                for (WorkflowStep step : steps) {
+                    if (step.getAssignedToGroup() != null && step.getAssignedToGroup().equalsIgnoreCase(user.getDepartment())) {
+                        return true;
+                    }
+                    if (step.getAssignedToUser() != null && java.util.Arrays.equals(step.getAssignedToUser(), userId)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            return false;
+        } catch (SQLException e) {
+            logger.error("Error checking ticket access permissions", e);
+            throw new DatabaseException("Failed to check ticket access", e);
+        }
+    }
+
+    public List<byte[]> getAccessibleTicketIdsForUser(byte[] userId) throws TicketTrackerException {
+        try {
+            User user = userDAO.findById(userId);
+            if (user == null) {
+                return new ArrayList<>();
+            }
+
+            String userRole = user.getRole();
+            if (userRole == null) {
+                return new ArrayList<>();
+            }
+
+            if ("eo".equalsIgnoreCase(userRole)) {
+                List<Ticket> allTickets = ticketDAO.findAll();
+                List<byte[]> ticketIds = new ArrayList<>();
+                for (Ticket ticket : allTickets) {
+                    ticketIds.add(ticket.getId());
+                }
+                return ticketIds;
+            }
+
+            if ("dept_officer".equalsIgnoreCase(userRole) || "DO".equalsIgnoreCase(userRole)) {
+                List<Ticket> departmentTickets = ticketDAO.findByDepartment(user.getDepartment());
+                List<byte[]> ticketIds = new ArrayList<>();
+                for (Ticket ticket : departmentTickets) {
+                    ticketIds.add(ticket.getId());
+                }
+                return ticketIds;
+            }
+
+            if ("employee".equalsIgnoreCase(userRole) || "vendor".equalsIgnoreCase(userRole)) {
+                List<WorkflowStep> assignedSteps = workflowStepDAO.findByAssignedUser(userId);
+                List<byte[]> ticketIds = new ArrayList<>();
+                for (WorkflowStep step : assignedSteps) {
+                    if (!ticketIds.contains(step.getTicketId())) {
+                        ticketIds.add(step.getTicketId());
+                    }
+                }
+
+                List<WorkflowStep> groupSteps = workflowStepDAO.findByAssignedGroup(user.getDepartment());
+                for (WorkflowStep step : groupSteps) {
+                    if (!ticketIds.contains(step.getTicketId())) {
+                        ticketIds.add(step.getTicketId());
+                    }
+                }
+
+                return ticketIds;
+            }
+
+            return new ArrayList<>();
+        } catch (SQLException e) {
+            logger.error("Error getting accessible ticket IDs for user", e);
+            throw new DatabaseException("Failed to get accessible tickets", e);
+        }
+    }
+
     private void validateTicket(Ticket ticket) throws ValidationException {
         logger.info("Validating ticket: {}", ticket);
         logger.info("  - Title: '{}'", ticket.getTitle());

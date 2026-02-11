@@ -78,6 +78,13 @@ public class TicketServlet extends HttpServlet {
                 return;
             }
 
+            if (!currentUser.isAdmin()) {
+                logger.warn("Permission denied: User {} (role: {}) attempted to create ticket",
+                        currentUser.getEmail(), currentUser.getRole());
+                sendError(response, 403, "Forbidden: Only EO users can create tickets");
+                return;
+            }
+
             if (pathInfo != null && pathInfo.equals("/bulk")) {
                 handleBulkCreate(request, response, currentUser);
                 return;
@@ -208,6 +215,15 @@ public class TicketServlet extends HttpServlet {
                 return;
             }
 
+            boolean canUpdate = ticketService.canUserAccessTicket(currentUser.getId(), ticket.getId());
+            if (!canUpdate) {
+                logger.warn("Permission denied: User {} (role: {}) attempted to update ticket {}",
+                        currentUser.getEmail(), currentUser.getRole(),
+                        ByteArrayUtil.bytesToHex(ticket.getId()));
+                sendError(response, 403, "Forbidden: You do not have permission to update this ticket");
+                return;
+            }
+
             Ticket updatedTicket = ticketService.updateTicket(ticket, currentUser.getId());
 
             sendJsonResponse(response, updatedTicket);
@@ -229,6 +245,13 @@ public class TicketServlet extends HttpServlet {
             User currentUser = getCurrentUser(request);
             if (currentUser == null) {
                 sendError(response, 401, "Authentication required");
+                return;
+            }
+
+            if (!currentUser.isAdmin()) {
+                logger.warn("Permission denied: User {} (role: {}) attempted to delete ticket",
+                        currentUser.getEmail(), currentUser.getRole());
+                sendError(response, 403, "Forbidden: Only EO users can delete tickets");
                 return;
             }
 
@@ -259,12 +282,28 @@ public class TicketServlet extends HttpServlet {
 
     private void handleGetAllTickets(HttpServletRequest request, HttpServletResponse response)
             throws TicketTrackerException, IOException {
+        User currentUser = getCurrentUser(request);
         String status = request.getParameter("status");
         String moduleId = request.getParameter("moduleId");
         String search = request.getParameter("search");
         String accessible = request.getParameter("accessible");
 
         List<Ticket> tickets;
+
+        if (currentUser == null && !"true".equalsIgnoreCase(accessible)) {
+            logger.debug("Fetching all tickets (no authentication)");
+            tickets = ticketService.getAllTickets();
+            sendJsonResponse(response, tickets);
+            return;
+        }
+
+        if (currentUser != null && (accessible == null || "true".equalsIgnoreCase(accessible))) {
+            logger.debug("Fetching accessible tickets for user: {} (role: {})",
+                    ByteArrayUtil.bytesToHex(currentUser.getId()), currentUser.getRole());
+            tickets = ticketService.getAccessibleTickets(currentUser.getId());
+            sendJsonResponse(response, tickets);
+            return;
+        }
 
         if (search != null && !search.trim().isEmpty()) {
             logger.debug("Searching tickets with term: {}", search);
@@ -285,21 +324,28 @@ public class TicketServlet extends HttpServlet {
             logger.debug("Converted moduleId to bytes: {}", ByteArrayUtil.bytesToHex(moduleIdBytes));
             tickets = ticketService.getTicketsByModule(moduleIdBytes);
             logger.debug("Found {} tickets for moduleId: {}", tickets.size(), moduleId);
-        } else if ("true".equalsIgnoreCase(accessible)) {
-            User currentUser = getCurrentUser(request);
-            if (currentUser != null) {
-                logger.debug("Fetching accessible tickets for user: {}", ByteArrayUtil.bytesToHex(currentUser.getId()));
-                tickets = ticketService.getAccessibleTickets(currentUser.getId());
-            } else {
-                sendError(response, 401, "Authentication required");
-                return;
-            }
         } else {
             logger.debug("Fetching all tickets");
             tickets = ticketService.getAllTickets();
         }
 
+        if (currentUser != null && !currentUser.isAdmin()) {
+            List<byte[]> accessibleIds = ticketService.getAccessibleTicketIdsForUser(currentUser.getId());
+            tickets.removeIf(ticket -> !containsByteArray(accessibleIds, ticket.getId()));
+            logger.debug("Filtered to {} accessible tickets for user", tickets.size());
+        }
+
         sendJsonResponse(response, tickets);
+    }
+
+    private boolean containsByteArray(List<byte[]> list, byte[] target) {
+        if (target == null) return false;
+        for (byte[] item : list) {
+            if (java.util.Arrays.equals(item, target)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void handleGetTicket(String ticketId, HttpServletResponse response)

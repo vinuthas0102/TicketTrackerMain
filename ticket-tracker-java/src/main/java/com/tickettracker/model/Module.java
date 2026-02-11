@@ -87,10 +87,12 @@ public class Module {
         this.color = color;
     }
 
+    @JsonProperty("schema_id")
     public String getSchemaId() {
         return schemaId;
     }
 
+    @JsonProperty("schema_id")
     public void setSchemaId(String schemaId) {
         this.schemaId = schemaId;
     }
@@ -111,18 +113,22 @@ public class Module {
         this.active = active;
     }
 
+    @JsonProperty("created_at")
     public Timestamp getCreatedAt() {
         return createdAt;
     }
 
+    @JsonProperty("created_at")
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }
 
+    @JsonProperty("updated_at")
     public Timestamp getUpdatedAt() {
         return updatedAt;
     }
 
+    @JsonProperty("updated_at")
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
     }

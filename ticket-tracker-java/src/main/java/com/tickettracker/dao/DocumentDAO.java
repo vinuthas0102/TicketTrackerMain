@@ -18,6 +18,14 @@ public class DocumentDAO extends BaseDAO {
 
         try {
             conn = getConnection();
+
+            // Ensure autocommit is enabled for immediate persistence
+            boolean originalAutoCommit = conn.getAutoCommit();
+            if (!originalAutoCommit) {
+                conn.setAutoCommit(true);
+                logger.debug("Auto-commit was disabled, enabled for document creation");
+            }
+
             stmt = conn.prepareStatement(sql);
 
             byte[] id = document.getId();
@@ -45,12 +53,21 @@ public class DocumentDAO extends BaseDAO {
             }
 
             int rowsAffected = stmt.executeUpdate();
+
+            if (rowsAffected == 0) {
+                logger.error("Document creation failed: no rows affected for document: {}", document.getName());
+                throw new SQLException("Document creation failed: no rows were inserted");
+            }
+
             logger.info("Created document: {} with file content: {} bytes (rows affected: {})",
                 document.getName(),
                 document.getFileContent() != null ? document.getFileContent().length : 0,
                 rowsAffected);
 
             return document;
+        } catch (SQLException e) {
+            logger.error("SQL exception during document creation: {}", e.getMessage(), e);
+            throw e;
         } finally {
             closeResources(conn, stmt, null);
         }

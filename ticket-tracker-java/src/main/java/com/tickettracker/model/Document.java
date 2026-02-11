@@ -99,26 +99,32 @@ public class Document {
         this.stepId = UuidUtil.uuidStringToBytes(stepIdStr);
     }
 
+    @JsonProperty("fileName")
     public String getName() {
         return name;
     }
 
+    @JsonProperty("fileName")
     public void setName(String name) {
         this.name = name;
     }
 
+    @JsonProperty("fileType")
     public String getType() {
         return type;
     }
 
+    @JsonProperty("fileType")
     public void setType(String type) {
         this.type = type;
     }
 
+    @JsonProperty("fileSize")
     public long getSize() {
         return size;
     }
 
+    @JsonProperty("fileSize")
     public void setSize(long size) {
         this.size = size;
     }
@@ -158,10 +164,12 @@ public class Document {
         this.uploadedBy = UuidUtil.uuidStringToBytes(uploadedByStr);
     }
 
+    @JsonProperty("uploadedAt")
     public Timestamp getUploadedAt() {
         return uploadedAt;
     }
 
+    @JsonProperty("uploadedAt")
     public void setUploadedAt(Timestamp uploadedAt) {
         this.uploadedAt = uploadedAt;
     }

@@ -338,6 +338,58 @@ public class FileReferenceService {
         }
     }
 
+    public WorkflowStepFileReference updateStepFileReference(byte[] referenceId, Map<String, Object> updates, byte[] currentUserId)
+            throws TicketTrackerException {
+        try {
+            WorkflowStepFileReference reference = referenceDAO.findById(referenceId);
+            if (reference == null) {
+                throw new ResourceNotFoundException("File reference not found");
+            }
+
+            if (updates.containsKey("documentId")) {
+                String documentIdStr = (String) updates.get("documentId");
+                byte[] documentId = documentIdStr != null ? hexToBytes(documentIdStr) : null;
+                reference.setDocumentId(documentId);
+            }
+
+            if (updates.containsKey("uploadedBy")) {
+                String uploadedByStr = (String) updates.get("uploadedBy");
+                byte[] uploadedBy = uploadedByStr != null ? hexToBytes(uploadedByStr) : null;
+                reference.setUploadedBy(uploadedBy);
+            }
+
+            if (updates.containsKey("uploadedAt") && updates.get("uploadedAt") != null) {
+                Object uploadedAtObj = updates.get("uploadedAt");
+                if (uploadedAtObj instanceof java.util.Date) {
+                    reference.setUploadedAt(new java.sql.Timestamp(((java.util.Date) uploadedAtObj).getTime()));
+                } else if (uploadedAtObj instanceof String) {
+                    reference.setUploadedAt(java.sql.Timestamp.valueOf((String) uploadedAtObj));
+                }
+            } else {
+                reference.setUploadedAt(new java.sql.Timestamp(System.currentTimeMillis()));
+            }
+
+            return referenceDAO.update(reference);
+        } catch (SQLException e) {
+            logger.error("Error updating step file reference", e);
+            throw new DatabaseException("Failed to update workflow step file reference", e);
+        }
+    }
+
+    private byte[] hexToBytes(String hex) {
+        if (hex == null || hex.isEmpty()) {
+            return null;
+        }
+        String cleanHex = hex.replace("-", "");
+        int len = cleanHex.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(cleanHex.charAt(i), 16) << 4)
+                    + Character.digit(cleanHex.charAt(i + 1), 16));
+        }
+        return data;
+    }
+
     public void deleteStepReference(byte[] referenceId, byte[] currentUserId) throws TicketTrackerException {
         try {
             boolean deleted = referenceDAO.delete(referenceId);
@@ -357,6 +409,25 @@ public class FileReferenceService {
         } catch (SQLException e) {
             logger.error("Error fetching pending mandatory references", e);
             throw new DatabaseException("Failed to fetch pending mandatory file references", e);
+        }
+    }
+
+    public boolean checkMandatoryFileReferencesComplete(byte[] stepId) throws TicketTrackerException {
+        try {
+            List<WorkflowStepFileReference> pendingMandatory = referenceDAO.findMandatoryPending(stepId);
+            boolean isComplete = pendingMandatory.isEmpty();
+
+            if (!isComplete) {
+                logger.info("Step {} has {} pending mandatory file references",
+                           bytesToHex(stepId), pendingMandatory.size());
+            } else {
+                logger.info("Step {} has all mandatory file references completed", bytesToHex(stepId));
+            }
+
+            return isComplete;
+        } catch (SQLException e) {
+            logger.error("Error checking mandatory file references completion", e);
+            throw new DatabaseException("Failed to check mandatory file references", e);
         }
     }
 

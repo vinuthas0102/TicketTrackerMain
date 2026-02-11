@@ -18,6 +18,7 @@ import java.sql.Timestamp;
 public class User {
 
     private byte[] id;
+    private String username;
     private String name;
     private String email;
     private String role;
@@ -33,6 +34,7 @@ public class User {
     private boolean active;
     private Timestamp createdAt;
     private Timestamp updatedAt;
+    private Timestamp lastLogin;
 
     // Default constructor
     public User() {
@@ -76,6 +78,14 @@ public class User {
         this.name = name;
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     public String getEmail() {
         return email;
     }
@@ -84,11 +94,74 @@ public class User {
         this.email = email;
     }
 
+    /**
+     * Get role in uppercase format for frontend compatibility
+     * Maps: eo -> EO, dept_officer -> DO, employee -> EMPLOYEE, vendor -> VENDOR, finance -> FINANCE
+     */
     public String getRole() {
+        if (role == null) return null;
+
+        switch (role.toLowerCase()) {
+            case "eo":
+                return "EO";
+            case "dept_officer":
+                return "DO";
+            case "employee":
+                return "EMPLOYEE";
+            case "vendor":
+                return "VENDOR";
+            case "finance":
+                return "FINANCE";
+            default:
+                return role.toUpperCase();
+        }
+    }
+
+    /**
+     * Set role from frontend format to database format
+     * Maps: EO -> eo, DO -> dept_officer, EMPLOYEE -> employee, VENDOR -> vendor, FINANCE -> finance
+     */
+    public void setRole(String role) {
+        if (role == null) {
+            this.role = null;
+            return;
+        }
+
+        switch (role.toUpperCase()) {
+            case "EO":
+                this.role = "eo";
+                break;
+            case "DO":
+                this.role = "dept_officer";
+                break;
+            case "EMPLOYEE":
+                this.role = "employee";
+                break;
+            case "VENDOR":
+                this.role = "vendor";
+                break;
+            case "FINANCE":
+                this.role = "finance";
+                break;
+            default:
+                this.role = role.toLowerCase();
+        }
+    }
+
+    /**
+     * Get the raw role value from database (for internal use)
+     */
+    @JsonIgnore
+    public String getRoleInternal() {
         return role;
     }
 
-    public void setRole(String role) {
+    /**
+     * Set the raw role value from database (for internal use)
+     * Does NOT perform any transformation
+     */
+    @JsonIgnore
+    public void setRoleInternal(String role) {
         this.role = role;
     }
 
@@ -132,20 +205,34 @@ public class User {
         this.active = active;
     }
 
+    @JsonProperty("created_at")
     public Timestamp getCreatedAt() {
         return createdAt;
     }
 
+    @JsonProperty("created_at")
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }
 
+    @JsonProperty("updated_at")
     public Timestamp getUpdatedAt() {
         return updatedAt;
     }
 
+    @JsonProperty("updated_at")
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    @JsonProperty("lastLogin")
+    public Timestamp getLastLogin() {
+        return lastLogin;
+    }
+
+    @JsonProperty("lastLogin")
+    public void setLastLogin(Timestamp lastLogin) {
+        this.lastLogin = lastLogin;
     }
 
     // Utility methods

@@ -104,18 +104,28 @@ public class AuthServlet extends HttpServlet {
 
         User user = authService.authenticate(email, password);
 
+        HttpSession oldSession = request.getSession(false);
+        if (oldSession != null) {
+            logger.debug("Invalidating old session to prevent session fixation: {}", oldSession.getId());
+            oldSession.invalidate();
+        }
+
         HttpSession session = request.getSession(true);
         session.setAttribute("currentUser", user);
         session.setAttribute("userId", user.getId());
-        session.setMaxInactiveInterval(3600);
+        session.setMaxInactiveInterval(1800);
+
+        logger.info("Created new session after login to prevent fixation: {}", session.getId());
 
         Map<String, Object> loginResponse = new HashMap<>();
         loginResponse.put("user", sanitizeUser(user));
         loginResponse.put("message", "Login successful");
+        loginResponse.put("sessionId", session.getId());
+        loginResponse.put("expiresIn", session.getMaxInactiveInterval());
 
         sendJsonResponse(response, loginResponse);
 
-        logger.info("User logged in: {}", email);
+        logger.info("User logged in: {} with new session", email);
     }
 
     private void handleLogout(HttpServletRequest request, HttpServletResponse response)
