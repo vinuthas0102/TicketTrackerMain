@@ -16,6 +16,7 @@ import com.tickettracker.service.DocumentService;
 import com.tickettracker.service.WorkflowService;
 import com.tickettracker.service.WorkflowStepProgressDocumentService;
 import com.tickettracker.util.ByteArrayUtil;
+import com.tickettracker.util.UuidUtil;
 import com.tickettracker.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -196,7 +197,7 @@ public class WorkflowStepServlet extends HttpServlet {
                 sendError(response, 400, "Invalid request path");
                 return;
             }
-            byte[] stepId = ByteArrayUtil.hexToBytes(pathParts[1]);
+            byte[] stepId = UuidUtil.uuidStringToBytes(pathParts[1]);
 
             boolean canUpdate = workflowService.canUserUpdateWorkflowStep(currentUser.getId(), stepId);
             if (!canUpdate) {
@@ -260,7 +261,7 @@ public class WorkflowStepServlet extends HttpServlet {
                 return;
             }
 
-            byte[] stepId = ByteArrayUtil.hexToBytes(pathParts[1]);
+            byte[] stepId = UuidUtil.uuidStringToBytes(pathParts[1]);
             workflowService.deleteWorkflowStep(stepId, currentUser.getId());
 
             response.setStatus(HttpServletResponse.SC_NO_CONTENT);
@@ -278,7 +279,7 @@ public class WorkflowStepServlet extends HttpServlet {
         String ticketIdParam = request.getParameter("ticketId");
 
         if (ticketIdParam != null) {
-            byte[] ticketId = ByteArrayUtil.hexToBytes(ticketIdParam);
+            byte[] ticketId = UuidUtil.uuidStringToBytes(ticketIdParam);
             List<WorkflowStep> steps = workflowService.getWorkflowStepsByTicketId(ticketId);
             sendJsonResponse(response, steps);
         } else {
@@ -288,7 +289,7 @@ public class WorkflowStepServlet extends HttpServlet {
 
     private void handleGetStep(String stepId, HttpServletResponse response)
             throws TicketTrackerException, IOException {
-        byte[] id = ByteArrayUtil.hexToBytes(stepId);
+        byte[] id = UuidUtil.uuidStringToBytes(stepId);
         WorkflowStep step = workflowService.getWorkflowStepById(id);
         sendJsonResponse(response, step);
     }
@@ -296,7 +297,7 @@ public class WorkflowStepServlet extends HttpServlet {
     private void handleGetStepFiles(String stepId, HttpServletResponse response)
             throws TicketTrackerException, IOException {
         logger.debug("Fetching files for step ID: {}", stepId);
-        byte[] id = ByteArrayUtil.hexToBytes(stepId);
+        byte[] id = UuidUtil.uuidStringToBytes(stepId);
         List<Document> documents = documentService.getDocumentsByStepId(id);
         sendJsonResponse(response, documents);
     }
@@ -304,7 +305,7 @@ public class WorkflowStepServlet extends HttpServlet {
     private void handleGetProgressDocuments(String stepId, HttpServletRequest request,
             HttpServletResponse response) throws TicketTrackerException, IOException {
         logger.debug("Fetching progress documents for step ID: {}", stepId);
-        byte[] id = ByteArrayUtil.hexToBytes(stepId);
+        byte[] id = UuidUtil.uuidStringToBytes(stepId);
 
         List<ProgressDocument> documents = progressDocumentService.getProgressDocumentsByStepId(id);
         sendJsonResponse(response, documents);
@@ -313,7 +314,7 @@ public class WorkflowStepServlet extends HttpServlet {
     private void handleGetProgressHistory(String stepId, HttpServletResponse response)
             throws TicketTrackerException, IOException {
         logger.debug("=== Starting progress history fetch for step ID: {} ===", stepId);
-        byte[] id = ByteArrayUtil.hexToBytes(stepId);
+        byte[] id = UuidUtil.uuidStringToBytes(stepId);
         logger.debug("Converted step ID to bytes: {}", ByteArrayUtil.bytesToHex(id));
 
         try {
