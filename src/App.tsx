@@ -30,7 +30,7 @@ interface SearchFilters {
 
 const Dashboard: React.FC = () => {
   const { user, selectedModule, availableModules } = useAuth();
-  const { tickets, loading, error, getFilteredTickets, deleteTicket } = useTickets();
+  const { tickets, loading, error, getFilteredTickets, deleteTicket, users } = useTickets();
   const [errorDismissed, setErrorDismissed] = useState(false);
 
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -42,6 +42,7 @@ const Dashboard: React.FC = () => {
   const [copiedAttachmentIds, setCopiedAttachmentIds] = useState<string[]>([]);
   const [showEditForm, setShowEditForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | null>(null);
+  const [activeSubFilter, setActiveSubFilter] = useState<'HOD' | 'TECHNICIAN' | null>(null);
   const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -66,6 +67,9 @@ const Dashboard: React.FC = () => {
       ...prev,
       status: statusFilter || ''
     }));
+    if (statusFilter !== 'ACTIVE') {
+      setActiveSubFilter(null);
+    }
   }, [statusFilter]);
 
   // Update selectedTicket when tickets array changes to reflect workflow updates
@@ -95,6 +99,8 @@ const Dashboard: React.FC = () => {
     };
   }, [showActionsMenu]);
 
+  const TECHNICIAN_DEPARTMENTS = ['Civil Manager', 'Electrical Manager'];
+
   const filteredTickets = useMemo(() => {
     const filters = {
       search: searchFilters.search,
@@ -106,13 +112,29 @@ const Dashboard: React.FC = () => {
 
     // Handle unassigned filter specially
     let result = getFilteredTickets(filters);
-    
+
     if (searchFilters.assignedTo === 'unassigned') {
       result = result.filter(ticket => !ticket.assignedTo);
     }
 
+    if (activeSubFilter && statusFilter === 'ACTIVE') {
+      result = result.filter(ticket => {
+        const assigneeIds = [
+          ticket.assignedTo,
+          ...ticket.workflow.map(s => s.assignedTo)
+        ].filter(Boolean) as string[];
+
+        return assigneeIds.some(uid => {
+          const u = users.find(u => u.id === uid);
+          if (!u || u.role !== 'DO') return false;
+          const isTechnician = TECHNICIAN_DEPARTMENTS.includes(u.department);
+          return activeSubFilter === 'TECHNICIAN' ? isTechnician : !isTechnician;
+        });
+      });
+    }
+
     return result;
-  }, [tickets, searchFilters, getFilteredTickets]);
+  }, [tickets, searchFilters, getFilteredTickets, activeSubFilter, statusFilter, users]);
 
   const handleTicketClick = (ticket: Ticket) => {
     setSelectedTicket(ticket);
@@ -474,9 +496,11 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <StatusCards 
+        <StatusCards
           onStatusFilter={setStatusFilter}
           activeFilter={statusFilter}
+          activeSubFilter={activeSubFilter}
+          onSubFilter={setActiveSubFilter}
         />
 
         <SearchPanel 
