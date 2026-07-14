@@ -47,6 +47,15 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
     }
   };
 
+  const getActionLabel = (action: string) => {
+    switch (action) {
+      case 'WORKFLOW_ADDED': return 'Task Added';
+      case 'WORKFLOW_UPDATED': return 'Task Updated';
+      case 'WORKFLOW_DELETED': return 'Task Deleted';
+      default: return action;
+    }
+  };
+
   const getActionDescription = (entry: any) => {
     switch (entry.action) {
       case 'CREATED':
@@ -278,7 +287,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
           >
             <option value="">All Actions</option>
             <option value="ticket_action">Ticket Actions</option>
-            <option value="workflow_action">Workflow Actions</option>
+            <option value="workflow_action">Task Actions</option>
             <option value="document_action">Document Actions</option>
             <option value="status_change">Status Changes</option>
             <option value="assignment_change">Assignments</option>
@@ -373,7 +382,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
                               </span>
                             )}
                             <span className={`px-1.5 py-0.5 text-xs font-medium rounded border ${getActionColor(entry.action)}`}>
-                              {entry.action}
+                              {getActionLabel(entry.action)}
                             </span>
                             {entry.actionCategory && (
                               <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
@@ -396,7 +405,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
                           </p>
                           {entry.stepId && (
                             <div className="mt-1 text-xs text-gray-600 bg-blue-50 p-1.5 rounded border-l-2 border-blue-300 flex items-center space-x-1">
-                              <span className="font-medium">Workflow:</span>
+                              <span className="font-medium">Task:</span>
                               <span>{ticket.workflow.find(s => s.id === entry.stepId)?.title || 'Unknown Step'}</span>
                             </div>
                           )}

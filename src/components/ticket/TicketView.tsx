@@ -372,7 +372,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
                   <div className="bg-gray-50 rounded-lg p-3">
                     <div className="flex justify-between text-sm text-gray-600 mb-2">
                       <span className="font-medium">Overall Progress</span>
-                      <span>{completedWorkflows}/{totalWorkflows} workflows completed</span>
+                      <span>{completedWorkflows}/{totalWorkflows} tasks completed</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                       <div
@@ -591,7 +591,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
             {/* Hide workflow section from employees */}
             {user && user.role !== 'EMPLOYEE' && (
               <CollapsibleSection
-                title={`Workflow ${totalWorkflows > 0 ? `(${completedWorkflows}/${totalWorkflows})` : ''}`}
+                title={`Tasks List ${totalWorkflows > 0 ? `(${completedWorkflows}/${totalWorkflows})` : ''}`}
                 defaultExpanded={true}
                 headerContent={
                   totalWorkflows > 0 && (
