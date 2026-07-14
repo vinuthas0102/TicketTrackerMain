@@ -107,8 +107,9 @@ export class TicketService {
             .select('*')
             .eq('ticket_id', ticket.id);
 
-          // For DO and vendors, only show workflow steps assigned to them
-          if (userId && (userRole === 'DO' || userRole === 'VENDOR')) {
+          // For vendors, only show workflow steps assigned to them
+          // DO users see all steps within their accessible tickets (access is scoped at ticket level)
+          if (userId && userRole === 'VENDOR') {
             workflowQuery = workflowQuery.eq('assigned_to', userId);
           }
 
