@@ -127,41 +127,31 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
       </div>
 
       {showSubFilters && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-1">
           <button
             onClick={() => onSubFilter(activeSubFilter === 'HOD' ? null : 'HOD')}
             className={`
-              text-left rounded-lg border-l-4 border border-amber-400 p-3
-              transition-all duration-150 hover:shadow-md
-              ${activeSubFilter === 'HOD'
-                ? 'bg-amber-100 ring-1 ring-amber-400 shadow-sm'
-                : 'bg-amber-50 hover:bg-amber-100'}
+              cursor-pointer border-l-4 border border-amber-400 rounded-md p-1 min-h-[40px]
+              flex items-center justify-center space-x-1 transition-all duration-150 hover:shadow-md
+              ${activeSubFilter === 'HOD' ? 'bg-amber-100 ring-1 ring-amber-400 shadow-sm' : 'bg-amber-50 hover:bg-amber-100'}
             `}
           >
-            <div className="flex items-center gap-1.5 mb-1">
-              <Users className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-xs font-semibold tracking-wide uppercase text-amber-600">HOD Tickets</span>
-            </div>
-            <div className="text-3xl font-bold text-amber-700 leading-none mb-1">{hodCount}</div>
-            <div className="text-xs text-amber-500">Active tickets assigned to HOD</div>
+            <Users className="w-3 h-3 text-amber-500 shrink-0" />
+            <div className="text-sm font-bold text-amber-700">{hodCount}</div>
+            <div className="text-xs font-medium text-amber-700 truncate">Assigned to HOD</div>
           </button>
 
           <button
             onClick={() => onSubFilter(activeSubFilter === 'TECHNICIAN' ? null : 'TECHNICIAN')}
             className={`
-              text-left rounded-lg border-l-4 border border-teal-400 p-3
-              transition-all duration-150 hover:shadow-md
-              ${activeSubFilter === 'TECHNICIAN'
-                ? 'bg-teal-100 ring-1 ring-teal-400 shadow-sm'
-                : 'bg-teal-50 hover:bg-teal-100'}
+              cursor-pointer border-l-4 border border-teal-400 rounded-md p-1 min-h-[40px]
+              flex items-center justify-center space-x-1 transition-all duration-150 hover:shadow-md
+              ${activeSubFilter === 'TECHNICIAN' ? 'bg-teal-100 ring-1 ring-teal-400 shadow-sm' : 'bg-teal-50 hover:bg-teal-100'}
             `}
           >
-            <div className="flex items-center gap-1.5 mb-1">
-              <Wrench className="w-3.5 h-3.5 text-teal-500" />
-              <span className="text-xs font-semibold tracking-wide uppercase text-teal-600">Technician Tickets</span>
-            </div>
-            <div className="text-3xl font-bold text-teal-700 leading-none mb-1">{technicianCount}</div>
-            <div className="text-xs text-teal-500">Active tickets assigned to Technician</div>
+            <Wrench className="w-3 h-3 text-teal-500 shrink-0" />
+            <div className="text-sm font-bold text-teal-700">{technicianCount}</div>
+            <div className="text-xs font-medium text-teal-700 truncate">Assigned to Technician</div>
           </button>
         </div>
       )}
