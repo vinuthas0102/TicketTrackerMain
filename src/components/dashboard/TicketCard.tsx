@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Calendar, User, AlertTriangle, Clock, CheckCircle, XCircle, FileText, Users, CreditCard as Edit, Check, X, RotateCcw, Eye, Play, IndianRupee } from 'lucide-react';
+import { Calendar, User, AlertTriangle, Clock, CheckCircle, XCircle, FileText, Users, CreditCard as Edit, Check, X, RotateCcw, Eye, Play, IndianRupee, ChevronDown, ChevronUp } from 'lucide-react';
 import { Ticket, User as UserType, ActionIconDefinition } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTickets } from '../../context/TicketContext';
@@ -366,14 +366,16 @@ const TicketCard: React.FC<TicketCardProps> = ({
 
     return (
       <div
-        className={`bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-150 cursor-pointer overflow-hidden border-l-4 ${
+        className={`bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-150 overflow-hidden border-l-4 ${
           isOverdue ? 'border-l-rose-500' : ''
         }`}
         style={{ borderLeftColor: isOverdue ? undefined : priorityBorderColor }}
-        onClick={onClick}
       >
         {/* Header row */}
-        <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
+        <div
+          className="flex items-center justify-between px-4 pt-3 pb-1.5 cursor-pointer"
+          onClick={onClick}
+        >
           <span className="text-xs font-bold text-gray-500 font-mono tracking-wide">{ticket.ticketNumber}</span>
           <div className="flex items-center gap-2">
             {isOverdue && (
@@ -385,12 +387,19 @@ const TicketCard: React.FC<TicketCardProps> = ({
               {getStatusIcon(ticket.status)}
               <span>{ticket.status.replace(/_/g, ' ')}</span>
             </span>
+            <button
+              className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
+              title={isExpanded ? 'Collapse' : 'Expand'}
+              onClick={e => { e.stopPropagation(); onExpand?.(ticket); }}
+            >
+              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
         {/* Label-data fields row */}
-        <div className="px-4 pb-2">
-          <div className="flex flex-wrap border border-gray-100 rounded-md overflow-hidden divide-x divide-gray-100">
+        <div className="px-4 pb-2 cursor-pointer" onClick={onClick}>
+          <div className="flex flex-wrap divide-x divide-gray-100">
             <ListField label="TITLE" value={ticket.title} wide />
             <ListField label="PROPERTY ID" value={ticket.propertyId || '—'} />
             <ListField label="LOCATION" value={ticket.propertyLocation || '—'} />
@@ -398,6 +407,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
             <ListField label="DEPT" value={ticket.department} />
             <ListField label="PRIORITY" value={ticket.priority} />
             <ListField label="RAISED BY" value={createdByUser?.name || '—'} />
+            <ListField label="RAISED ON" value={formatDate(ticket.createdAt)} />
             {user?.role !== 'EMPLOYEE' && (
               <ListField
                 label="ASSIGNED TO"
@@ -412,6 +422,32 @@ const TicketCard: React.FC<TicketCardProps> = ({
             />
           </div>
         </div>
+
+        {/* Expanded details panel */}
+        {isExpanded && (
+          <div className="mx-4 mb-3 rounded-md bg-gray-50 border border-gray-100 px-4 py-3 space-y-3">
+            {ticket.description && (
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Description</p>
+                <p className="text-sm text-gray-700 leading-relaxed">{ticket.description}</p>
+              </div>
+            )}
+            {totalWorkflows > 0 && (
+              <div>
+                <div className="flex justify-between items-center text-xs text-gray-600 mb-1.5">
+                  <span className="font-semibold text-[10px] uppercase tracking-wider text-gray-400">Workflow Progress</span>
+                  <span className="font-semibold text-gray-700">{completedWorkflows}/{totalWorkflows} steps</span>
+                </div>
+                <div className="relative w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-1.5 rounded-full bg-blue-500 transition-all duration-500"
+                    style={{ width: `${(completedWorkflows / totalWorkflows) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Actions row */}
         <div
