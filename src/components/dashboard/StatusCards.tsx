@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Play, CheckCircle, XCircle, Send, Eye } from 'lucide-react';
+import { FileText, Play, CheckCircle, XCircle, Send, Eye, Users, Wrench } from 'lucide-react';
 import { TicketStatus } from '../../types';
 import { useTickets } from '../../context/TicketContext';
 
@@ -95,64 +95,76 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
     return ticket.workflow.some(step => step.assignedTo && isTechnicianUser(step.assignedTo));
   }).length;
 
-  return (
-    <div className="grid grid-cols-4 md:grid-cols-7 gap-1 mb-2">
-      {statusConfig.map((config) => {
-        const count = getStatusCount(config.status);
-        const isActive = activeFilter === config.status;
-        const IconComponent = config.icon;
-        const isActiveStatus = config.status === 'ACTIVE';
+  const showSubFilters = activeFilter === 'ACTIVE';
 
-        return (
-          <div
-            key={config.status}
-            onClick={() => onStatusFilter(isActive ? null : config.status)}
+  return (
+    <div className="flex flex-col gap-2 mb-2">
+      <div className="grid grid-cols-4 md:grid-cols-7 gap-1">
+        {statusConfig.map((config) => {
+          const count = getStatusCount(config.status);
+          const isActive = activeFilter === config.status;
+          const IconComponent = config.icon;
+
+          return (
+            <div
+              key={config.status}
+              onClick={() => onStatusFilter(isActive ? null : config.status)}
+              className={`
+                cursor-pointer border rounded-md p-1 transition-all duration-200 transform hover:scale-105
+                ${config.color} ${config.hoverColor}
+                ${isActive ? 'ring-1 ring-blue-400 ring-opacity-50 shadow-md scale-105' : 'shadow-sm hover:shadow-md'}
+                min-h-[40px] flex items-center justify-center
+              `}
+            >
+              <div className="flex items-center space-x-1">
+                <IconComponent className="w-3 h-3 opacity-70 shrink-0" />
+                <div className="text-sm font-bold">{count}</div>
+                <div className="text-xs font-medium truncate">{config.label}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {showSubFilters && (
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => onSubFilter(activeSubFilter === 'HOD' ? null : 'HOD')}
             className={`
-              cursor-pointer border rounded-md transition-all duration-200 transform hover:scale-105
-              ${config.color} ${config.hoverColor}
-              ${isActive ? 'ring-1 ring-blue-400 ring-opacity-50 shadow-md scale-105' : 'shadow-sm hover:shadow-md'}
-              ${isActiveStatus && isActive ? 'flex flex-col p-1.5 gap-1.5' : 'flex items-center justify-center p-1 min-h-[40px]'}
+              text-left rounded-lg border-l-4 border border-amber-400 p-3
+              transition-all duration-150 hover:shadow-md
+              ${activeSubFilter === 'HOD'
+                ? 'bg-amber-100 ring-1 ring-amber-400 shadow-sm'
+                : 'bg-amber-50 hover:bg-amber-100'}
             `}
           >
-            <div className="flex items-center justify-center space-x-1">
-              <IconComponent className="w-3 h-3 opacity-70 shrink-0" />
-              <div className="text-sm font-bold">{count}</div>
-              <div className="text-xs font-medium truncate">{config.label}</div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Users className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-xs font-semibold tracking-wide uppercase text-amber-600">HOD Tickets</span>
             </div>
+            <div className="text-3xl font-bold text-amber-700 leading-none mb-1">{hodCount}</div>
+            <div className="text-xs text-amber-500">Active tickets assigned to HOD</div>
+          </button>
 
-            {isActiveStatus && isActive && (
-              <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                <button
-                  onClick={() => onSubFilter(activeSubFilter === 'HOD' ? null : 'HOD')}
-                  className={`
-                    flex-1 flex items-center justify-center gap-1 rounded-full py-0.5 px-1.5
-                    text-xs font-semibold transition-all duration-150 border
-                    ${activeSubFilter === 'HOD'
-                      ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
-                      : 'bg-white/60 border-amber-300 text-amber-800 hover:bg-amber-100'}
-                  `}
-                >
-                  <span className="font-bold">{hodCount}</span>
-                  <span className="opacity-80">HOD</span>
-                </button>
-                <button
-                  onClick={() => onSubFilter(activeSubFilter === 'TECHNICIAN' ? null : 'TECHNICIAN')}
-                  className={`
-                    flex-1 flex items-center justify-center gap-1 rounded-full py-0.5 px-1.5
-                    text-xs font-semibold transition-all duration-150 border
-                    ${activeSubFilter === 'TECHNICIAN'
-                      ? 'bg-teal-500 border-teal-500 text-white shadow-sm'
-                      : 'bg-white/60 border-teal-300 text-teal-800 hover:bg-teal-100'}
-                  `}
-                >
-                  <span className="font-bold">{technicianCount}</span>
-                  <span className="opacity-80">Tech</span>
-                </button>
-              </div>
-            )}
-          </div>
-        );
-      })}
+          <button
+            onClick={() => onSubFilter(activeSubFilter === 'TECHNICIAN' ? null : 'TECHNICIAN')}
+            className={`
+              text-left rounded-lg border-l-4 border border-teal-400 p-3
+              transition-all duration-150 hover:shadow-md
+              ${activeSubFilter === 'TECHNICIAN'
+                ? 'bg-teal-100 ring-1 ring-teal-400 shadow-sm'
+                : 'bg-teal-50 hover:bg-teal-100'}
+            `}
+          >
+            <div className="flex items-center gap-1.5 mb-1">
+              <Wrench className="w-3.5 h-3.5 text-teal-500" />
+              <span className="text-xs font-semibold tracking-wide uppercase text-teal-600">Technician Tickets</span>
+            </div>
+            <div className="text-3xl font-bold text-teal-700 leading-none mb-1">{technicianCount}</div>
+            <div className="text-xs text-teal-500">Active tickets assigned to Technician</div>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
