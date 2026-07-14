@@ -122,11 +122,11 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
             </div>
 
             {isActiveStatus && isActive && (
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-row gap-1">
                 <button
                   onClick={() => onSubFilter(activeSubFilter === 'HOD' ? null : 'HOD')}
                   className={`
-                    w-full border rounded px-1 py-0.5 text-xs font-medium transition-all duration-150
+                    flex-1 border rounded px-1 py-0.5 text-xs font-medium transition-all duration-150
                     ${activeSubFilter === 'HOD'
                       ? 'bg-amber-200 border-amber-400 text-amber-900 ring-1 ring-amber-400'
                       : 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100'}
@@ -137,13 +137,13 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
                 <button
                   onClick={() => onSubFilter(activeSubFilter === 'TECHNICIAN' ? null : 'TECHNICIAN')}
                   className={`
-                    w-full border rounded px-1 py-0.5 text-xs font-medium transition-all duration-150
+                    flex-1 border rounded px-1 py-0.5 text-xs font-medium transition-all duration-150
                     ${activeSubFilter === 'TECHNICIAN'
                       ? 'bg-teal-200 border-teal-400 text-teal-900 ring-1 ring-teal-400'
                       : 'bg-teal-50 border-teal-200 text-teal-800 hover:bg-teal-100'}
                   `}
                 >
-                  Technician ({technicianCount})
+                  Tech ({technicianCount})
                 </button>
               </div>
             )}
