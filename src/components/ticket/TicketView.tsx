@@ -26,6 +26,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
   const [financeApprovals, setFinanceApprovals] = useState<FinanceApproval[]>([]);
   const [loadingFinanceData, setLoadingFinanceData] = useState(false);
   const [viewingDocument, setViewingDocument] = useState<{ document: DocumentMetadata; workflowTitle: string } | null>(null);
+  const [viewingChat, setViewingChat] = useState<WorkflowStep | null>(null);
   const [ticketAttachments, setTicketAttachments] = useState<DocumentMetadata[]>([]);
   const [loadingAttachments, setLoadingAttachments] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -634,7 +635,12 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
                     ticket={ticket}
                     canManage={canEdit()}
                     onViewDocument={(doc, step) => {
+                      setViewingChat(null);
                       setViewingDocument({ document: doc, workflowTitle: step.title });
+                    }}
+                    onOpenChat={(step) => {
+                      setViewingDocument(null);
+                      setViewingChat(step);
                     }}
                   />
                 </div>
@@ -649,8 +655,11 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
                 viewingDocument={viewingDocument}
                 onCloseDocument={() => setViewingDocument(null)}
                 onViewProgressDocument={(doc, workflowTitle) => {
+                  setViewingChat(null);
                   setViewingDocument({ document: doc, workflowTitle });
                 }}
+                viewingChat={viewingChat}
+                onCloseChat={() => setViewingChat(null)}
               />
             </div>
           </div>
