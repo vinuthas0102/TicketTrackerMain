@@ -6,6 +6,26 @@ import { useTickets } from '../../context/TicketContext';
 import { getHierarchyLevel } from '../../lib/hierarchyColors';
 import IconDisplayWrapper from '../iconDisplay/IconDisplayWrapper';
 
+interface ListFieldProps {
+  label: string;
+  value: string;
+  wide?: boolean;
+  muted?: boolean;
+  urgent?: boolean;
+}
+
+const ListField: React.FC<ListFieldProps> = ({ label, value, wide, muted, urgent }) => (
+  <div className={`flex flex-col px-3 py-2 ${wide ? 'flex-1 min-w-0' : 'shrink-0'}`}>
+    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider leading-none mb-1">{label}</span>
+    <span className={`text-sm font-semibold leading-tight ${
+      urgent ? 'text-rose-600' : muted ? 'text-gray-400 italic font-normal' : 'text-gray-800'
+    } ${wide ? 'truncate' : 'whitespace-nowrap'}`}>
+      {value}
+    </span>
+  </div>
+);
+
+
 interface TicketCardProps {
   ticket: Ticket;
   createdByUser?: UserType;
@@ -336,6 +356,77 @@ const TicketCard: React.FC<TicketCardProps> = ({
   }, [ticket, user, canModify, canApprove, canCloseOrCancel, canReopen, canReinstate, canMarkInProgress]);
 
   const accentColor = getTicketAccentColor(ticket.status, ticket.priority);
+
+  if (viewMode === 'list') {
+    const priorityBorderColor =
+      ticket.priority === 'CRITICAL' ? '#f43f5e'
+      : ticket.priority === 'HIGH' ? '#f97316'
+      : ticket.priority === 'MEDIUM' ? '#eab308'
+      : '#10b981';
+
+    return (
+      <div
+        className={`bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-150 cursor-pointer overflow-hidden border-l-4 ${
+          isOverdue ? 'border-l-rose-500' : ''
+        }`}
+        style={{ borderLeftColor: isOverdue ? undefined : priorityBorderColor }}
+        onClick={onClick}
+      >
+        {/* Header row */}
+        <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
+          <span className="text-xs font-bold text-gray-500 font-mono tracking-wide">{ticket.ticketNumber}</span>
+          <div className="flex items-center gap-2">
+            {isOverdue && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded bg-rose-500 text-white">
+                <AlertTriangle className="w-3 h-3" />OVERDUE
+              </span>
+            )}
+            <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full border ${getStatusColor(ticket.status)}`}>
+              {getStatusIcon(ticket.status)}
+              <span>{ticket.status.replace(/_/g, ' ')}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Label-data fields row */}
+        <div className="px-4 pb-2">
+          <div className="flex flex-wrap border border-gray-100 rounded-md overflow-hidden divide-x divide-gray-100">
+            <ListField label="TITLE" value={ticket.title} wide />
+            <ListField label="PROPERTY ID" value={ticket.propertyId || '—'} />
+            <ListField label="LOCATION" value={ticket.propertyLocation || '—'} />
+            <ListField label="CATEGORY" value={ticket.category || '—'} />
+            <ListField label="DEPT" value={ticket.department} />
+            <ListField label="PRIORITY" value={ticket.priority} />
+            <ListField label="RAISED BY" value={createdByUser?.name || '—'} />
+            {user?.role !== 'EMPLOYEE' && (
+              <ListField
+                label="ASSIGNED TO"
+                value={assignedToUser?.name || 'Unassigned'}
+                muted={!assignedToUser}
+              />
+            )}
+            <ListField
+              label="DUE DATE"
+              value={ticket.dueDate ? formatDate(ticket.dueDate) : formatDate(ticket.createdAt)}
+              urgent={!!isOverdue}
+            />
+          </div>
+        </div>
+
+        {/* Actions row */}
+        <div
+          className="flex items-center justify-end gap-1 px-3 py-1.5 bg-gray-50 border-t border-gray-100"
+          onClick={e => e.stopPropagation()}
+        >
+          <IconDisplayWrapper
+            actions={ticketActions}
+            preferences={displayPreferences ?? undefined}
+            loading={!displayPreferences && !!user}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

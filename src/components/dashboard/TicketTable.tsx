@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { AlertTriangle, Calendar, Check, CheckCircle, Clock, CreditCard as Edit, Eye, FileText, IndianRupee, MapPin, Play, RotateCcw, User, Users, X, XCircle } from 'lucide-react';
+import { AlertTriangle, Calendar, Check, CheckCircle, Clock, CreditCard as Edit, Eye, FileText, IndianRupee, Play, RotateCcw, User, Users, X, XCircle } from 'lucide-react';
 import { Ticket, User as UserType } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 
@@ -58,16 +58,6 @@ const getPriorityColor = (priority: string) => {
     case 'MEDIUM': return 'text-yellow-700 bg-yellow-50 border-yellow-300';
     case 'LOW': return 'text-emerald-700 bg-emerald-50 border-emerald-300';
     default: return 'text-slate-700 bg-slate-50 border-slate-300';
-  }
-};
-
-const getPriorityAccent = (priority: string) => {
-  switch (priority) {
-    case 'CRITICAL': return 'bg-rose-500';
-    case 'HIGH': return 'bg-orange-400';
-    case 'MEDIUM': return 'bg-yellow-400';
-    case 'LOW': return 'bg-emerald-400';
-    default: return 'bg-slate-300';
   }
 };
 
@@ -196,16 +186,6 @@ const RowActions: React.FC<RowActionsProps> = ({
   );
 };
 
-const Sep = () => <span className="text-gray-200 select-none mx-0.5">|</span>;
-
-interface MetaItemProps { label: string; value: React.ReactNode; }
-const MetaItem: React.FC<MetaItemProps> = ({ label, value }) => (
-  <span className="flex items-center gap-1 shrink-0">
-    <span className="text-gray-400">{label}</span>
-    <span className="text-gray-700 font-medium">{value}</span>
-  </span>
-);
-
 const TicketTable: React.FC<TicketTableProps> = ({
   tickets, getUserById, onTicketClick,
   onModify, onApprove, onClose, onCancel,
@@ -215,129 +195,103 @@ const TicketTable: React.FC<TicketTableProps> = ({
 
   return (
     <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-xl shadow-lg border border-white border-opacity-30 overflow-hidden">
-      <div className="divide-y divide-gray-100">
-        {tickets.map((ticket, idx) => {
-          const createdByUser = getUserById(ticket.createdBy);
-          const assignedToUser = ticket.assignedTo ? getUserById(ticket.assignedTo) : undefined;
-          const isOverdue = ticket.dueDate && new Date() > ticket.dueDate
-            && ticket.status !== 'COMPLETED' && ticket.status !== 'CANCELLED';
-          const completedTasks = ticket.workflow.filter(s => s.status === 'COMPLETED').length;
-          const totalTasks = ticket.workflow.length;
-          const progressPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Ticket #</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Title</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Status</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Priority</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Dept</th>
+              {user?.role !== 'EMPLOYEE' && (
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Assigned To</th>
+              )}
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />Due</span>
+              </th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />Requestor</span>
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right whitespace-nowrap">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {tickets.map((ticket, idx) => {
+              const createdByUser = getUserById(ticket.createdBy);
+              const assignedToUser = ticket.assignedTo ? getUserById(ticket.assignedTo) : undefined;
+              const isOverdue = ticket.dueDate && new Date() > ticket.dueDate
+                && ticket.status !== 'COMPLETED' && ticket.status !== 'CANCELLED';
 
-          return (
-            <div
-              key={ticket.id}
-              className={`group flex cursor-pointer transition-colors duration-100 hover:bg-blue-50 ${
-                idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'
-              } ${isOverdue ? 'border-l-2 border-l-rose-500' : 'border-l-2 border-l-transparent'}`}
-              onClick={() => onTicketClick(ticket)}
-            >
-              {/* Priority accent */}
-              <div className={`w-1 self-stretch flex-shrink-0 ${getPriorityAccent(ticket.priority)}`} />
-
-              {/* Card body */}
-              <div className="flex-1 min-w-0 px-3 py-2.5 space-y-1.5">
-
-                {/* Row 1: ticket# · title · badges · actions */}
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-xs font-bold text-gray-400 font-mono whitespace-nowrap flex-shrink-0">
-                    {ticket.ticketNumber}
-                  </span>
-                  <span className="font-semibold text-gray-900 text-sm truncate flex-1 min-w-0">
-                    {ticket.title}
-                  </span>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
+              return (
+                <tr
+                  key={ticket.id}
+                  className={`cursor-pointer transition-colors duration-100 hover:bg-blue-50 ${
+                    idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'
+                  } ${isOverdue ? 'border-l-2 border-l-rose-500' : ''}`}
+                  onClick={() => onTicketClick(ticket)}
+                >
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-xs font-bold text-gray-500 font-mono">{ticket.ticketNumber}</span>
+                  </td>
+                  <td className="px-4 py-3 max-w-xs">
+                    <span className="font-medium text-gray-900 line-clamp-1">{ticket.title}</span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded border ${getStatusColor(ticket.status)}`}>
                       {getStatusIcon(ticket.status)}
                       <span>{ticket.status.replace(/_/g, ' ')}</span>
                     </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded border ${getPriorityColor(ticket.priority)}`}>
                       {ticket.priority}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-gray-600 text-xs">{ticket.department}</span>
+                  </td>
+                  {user?.role !== 'EMPLOYEE' && (
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {assignedToUser ? (
+                        <span className="flex items-center gap-1 text-xs text-gray-700">
+                          <Users className="w-3.5 h-3.5 text-gray-400" />
+                          {assignedToUser.name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">Unassigned</span>
+                      )}
+                    </td>
+                  )}
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className={`text-xs ${isOverdue ? 'text-rose-600 font-semibold' : 'text-gray-600'}`}>
+                      {ticket.dueDate ? formatDate(ticket.dueDate) : formatDate(ticket.createdAt)}
+                    </span>
                     {isOverdue && (
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-bold rounded bg-rose-500 text-white">
-                        <AlertTriangle className="w-2.5 h-2.5" />
-                        OVERDUE
+                      <span className="ml-1 inline-flex items-center gap-0.5 text-rose-600">
+                        <AlertTriangle className="w-3 h-3" />
                       </span>
                     )}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="flex items-center gap-1 text-xs text-gray-700">
+                      <User className="w-3.5 h-3.5 text-gray-400" />
+                      {createdByUser?.name || '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-right">
                     <RowActions
                       ticket={ticket}
                       onModify={onModify} onApprove={onApprove} onClose={onClose} onCancel={onCancel}
                       onMarkInProgress={onMarkInProgress} onReopen={onReopen} onReinstate={onReinstate}
                       onSendToFinance={onSendToFinance} onView={onTicketClick}
                     />
-                  </div>
-                </div>
-
-                {/* Row 2: label-data metadata strip */}
-                <div className="flex flex-wrap items-center gap-y-0.5 text-xs leading-5">
-                  <MetaItem label="Property ID:" value={ticket.propertyId || '—'} />
-                  <Sep />
-                  <MetaItem
-                    label="Location:"
-                    value={
-                      <span className="flex items-center gap-0.5">
-                        <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                        {ticket.propertyLocation || '—'}
-                      </span>
-                    }
-                  />
-                  <Sep />
-                  <MetaItem
-                    label="Requestor:"
-                    value={
-                      <span className="flex items-center gap-0.5">
-                        <User className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                        {createdByUser?.name || '—'}
-                      </span>
-                    }
-                  />
-                  {user?.role !== 'EMPLOYEE' && (
-                    <>
-                      <Sep />
-                      <MetaItem
-                        label="Assigned To:"
-                        value={
-                          assignedToUser
-                            ? <span className="flex items-center gap-0.5"><Users className="w-3 h-3 text-gray-400 flex-shrink-0" />{assignedToUser.name}</span>
-                            : <span className="text-gray-400 italic font-normal">Unassigned</span>
-                        }
-                      />
-                    </>
-                  )}
-                  <Sep />
-                  <MetaItem label="Dept:" value={ticket.department} />
-                  <Sep />
-                  <MetaItem
-                    label="Due:"
-                    value={
-                      <span className={`flex items-center gap-0.5 ${isOverdue ? 'text-rose-600' : ''}`}>
-                        <Calendar className="w-3 h-3 flex-shrink-0" />
-                        {ticket.dueDate ? formatDate(ticket.dueDate) : formatDate(ticket.createdAt)}
-                      </span>
-                    }
-                  />
-                  {user?.role !== 'EMPLOYEE' && totalTasks > 0 && (
-                    <>
-                      <Sep />
-                      <span className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-gray-400">Tasks:</span>
-                        <span className="flex items-center gap-1">
-                          <div className="w-14 bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                            <div className="h-1.5 rounded-full bg-blue-500 transition-all duration-300" style={{ width: `${progressPct}%` }} />
-                          </div>
-                          <span className="text-gray-600 font-medium">{completedTasks}/{totalTasks}</span>
-                        </span>
-                      </span>
-                    </>
-                  )}
-                </div>
-
-              </div>
-            </div>
-          );
-        })}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
       <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
         <span className="text-xs text-gray-500">{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</span>
