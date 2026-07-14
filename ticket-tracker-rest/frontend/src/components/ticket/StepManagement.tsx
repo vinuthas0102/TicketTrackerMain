@@ -316,12 +316,14 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
 
   const canManageWorkflow = (step: WorkflowStep): boolean => {
     if (!user) return false;
-
-    // EO can manage all workflows
     if (user.role === 'EO') return true;
-
-    // All other roles (DO, VENDOR, EMPLOYEE) can only manage steps assigned to them
     return step.assignedTo === user.id;
+  };
+
+  // DO users can add sub-tasks (Level 2) only to Level 1 steps assigned to them
+  const canAddSubTaskAsManager = (step: WorkflowStep): boolean => {
+    if (!user || user.role !== 'DO') return false;
+    return step.level_2 === 0 && step.level_3 === 0 && step.assignedTo === user.id;
   };
 
   const getStatusIcon = (status: string) => {
@@ -1191,7 +1193,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       color: 'text-gray-600'
     });
 
-    // Add single sub-workflow
+    // EO: add single/bulk sub-workflows at any eligible depth
     if (canManageWorkflows && canAddSubWorkflow(step)) {
       actions.push({
         id: 'addSingle',
@@ -1207,6 +1209,26 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
         id: 'bulkAdd',
         icon: Layers,
         label: 'Bulk add multiple sub-workflows',
+        action: () => handleBulkAddSubSteps(step),
+        category: 'edit',
+        color: 'text-green-600'
+      });
+    }
+
+    // DO: add single/bulk sub-tasks (Level 2 only) on assigned Level 1 steps
+    if (canAddSubTaskAsManager(step)) {
+      actions.push({
+        id: 'addSingle',
+        icon: Plus,
+        label: 'Add sub-task',
+        action: () => handleAddSubWorkflow(step),
+        category: 'edit',
+        color: 'text-blue-600'
+      });
+      actions.push({
+        id: 'bulkAdd',
+        icon: Layers,
+        label: 'Bulk add sub-tasks',
         action: () => handleBulkAddSubSteps(step),
         category: 'edit',
         color: 'text-green-600'
@@ -1588,7 +1610,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
 
         {(hasChildren || addingSubTaskForStepId === step.id) && (isExpanded || !hasChildren) && (
           <div className="mt-2">
-            {addingSubTaskForStepId === step.id && canManageWorkflows && (
+            {addingSubTaskForStepId === step.id && (canManageWorkflows || canAddSubTaskAsManager(step)) && (
               <div ref={subTaskFormRef} className="mb-4 ml-8">
                 <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3 mb-2">
                   <p className="text-sm font-medium text-blue-800">

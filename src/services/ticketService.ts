@@ -679,6 +679,16 @@ export class TicketService {
     }
 
     try {
+      // Fetch user role to enforce DO depth restriction
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      if (userError) throw userError;
+      if (!userData) throw new Error('User not found');
+
       const { data: existingSteps, error: fetchError } = await supabase
         .from('workflow_steps')
         .select('*')
@@ -698,6 +708,16 @@ export class TicketService {
       } else {
         const parentStep = (existingSteps || []).find((s: any) => s.id === stepData.parentStepId);
         if (!parentStep) throw new Error('Parent step not found');
+
+        // DO users can only add sub-tasks (Level 2) to Level 1 steps assigned to them
+        if (userData.role.toUpperCase() === 'DO') {
+          if (!(parentStep.level_2 === 0 && parentStep.level_3 === 0)) {
+            throw new Error('Permission denied: Department Managers can only add sub-tasks to top-level tasks.');
+          }
+          if (parentStep.assigned_to !== userId) {
+            throw new Error('Permission denied: Department Managers can only add sub-tasks to tasks assigned to them.');
+          }
+        }
 
         if (parentStep.level_2 === 0 && parentStep.level_3 === 0) {
           const siblings = (existingSteps || []).filter(
@@ -953,6 +973,16 @@ export class TicketService {
     };
 
     try {
+      // Fetch user role to enforce DO depth restriction
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      if (userError) throw userError;
+      if (!userData) throw new Error('User not found');
+
       const { data: existingSteps, error: fetchError } = await supabase
         .from('workflow_steps')
         .select('*')
@@ -965,6 +995,16 @@ export class TicketService {
         parentStep = (existingSteps || []).find((s: any) => s.id === parentStepId);
         if (!parentStep) {
           throw new Error('Parent step not found');
+        }
+
+        // DO users can only add sub-tasks (Level 2) to Level 1 steps assigned to them
+        if (userData.role.toUpperCase() === 'DO') {
+          if (!(parentStep.level_2 === 0 && parentStep.level_3 === 0)) {
+            throw new Error('Permission denied: Department Managers can only add sub-tasks to top-level tasks.');
+          }
+          if (parentStep.assigned_to !== userId) {
+            throw new Error('Permission denied: Department Managers can only add sub-tasks to tasks assigned to them.');
+          }
         }
 
         if (parentStep.level_3 > 0) {
