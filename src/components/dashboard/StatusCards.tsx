@@ -104,46 +104,49 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
         const isActiveStatus = config.status === 'ACTIVE';
 
         return (
-          <div key={config.status} className="flex flex-col gap-1">
-            <div
-              onClick={() => onStatusFilter(isActive ? null : config.status)}
-              className={`
-                cursor-pointer border rounded-md p-1 transition-all duration-200 transform hover:scale-105
-                ${config.color} ${config.hoverColor}
-                ${isActive ? 'ring-1 ring-blue-400 ring-opacity-50 shadow-md scale-105' : 'shadow-sm hover:shadow-md'}
-                min-h-[40px] flex items-center justify-center space-x-1
-              `}
-            >
-              <div className="flex items-center space-x-1">
-                <IconComponent className="w-3 h-3 opacity-70" />
-                <div className="text-sm font-bold">{count}</div>
-                <div className="text-xs font-medium truncate">{config.label}</div>
-              </div>
+          <div
+            key={config.status}
+            onClick={() => onStatusFilter(isActive ? null : config.status)}
+            className={`
+              cursor-pointer border rounded-md transition-all duration-200 transform hover:scale-105
+              ${config.color} ${config.hoverColor}
+              ${isActive ? 'ring-1 ring-blue-400 ring-opacity-50 shadow-md scale-105' : 'shadow-sm hover:shadow-md'}
+              ${isActiveStatus && isActive ? 'flex flex-col p-1.5 gap-1.5' : 'flex items-center justify-center p-1 min-h-[40px]'}
+            `}
+          >
+            <div className="flex items-center justify-center space-x-1">
+              <IconComponent className="w-3 h-3 opacity-70 shrink-0" />
+              <div className="text-sm font-bold">{count}</div>
+              <div className="text-xs font-medium truncate">{config.label}</div>
             </div>
 
             {isActiveStatus && isActive && (
-              <div className="flex flex-row gap-1">
+              <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                 <button
                   onClick={() => onSubFilter(activeSubFilter === 'HOD' ? null : 'HOD')}
                   className={`
-                    flex-1 border rounded px-1 py-0.5 text-xs font-medium transition-all duration-150
+                    flex-1 flex items-center justify-center gap-1 rounded-full py-0.5 px-1.5
+                    text-xs font-semibold transition-all duration-150 border
                     ${activeSubFilter === 'HOD'
-                      ? 'bg-amber-200 border-amber-400 text-amber-900 ring-1 ring-amber-400'
-                      : 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100'}
+                      ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
+                      : 'bg-white/60 border-amber-300 text-amber-800 hover:bg-amber-100'}
                   `}
                 >
-                  HOD ({hodCount})
+                  <span className="font-bold">{hodCount}</span>
+                  <span className="opacity-80">HOD</span>
                 </button>
                 <button
                   onClick={() => onSubFilter(activeSubFilter === 'TECHNICIAN' ? null : 'TECHNICIAN')}
                   className={`
-                    flex-1 border rounded px-1 py-0.5 text-xs font-medium transition-all duration-150
+                    flex-1 flex items-center justify-center gap-1 rounded-full py-0.5 px-1.5
+                    text-xs font-semibold transition-all duration-150 border
                     ${activeSubFilter === 'TECHNICIAN'
-                      ? 'bg-teal-200 border-teal-400 text-teal-900 ring-1 ring-teal-400'
-                      : 'bg-teal-50 border-teal-200 text-teal-800 hover:bg-teal-100'}
+                      ? 'bg-teal-500 border-teal-500 text-white shadow-sm'
+                      : 'bg-white/60 border-teal-300 text-teal-800 hover:bg-teal-100'}
                   `}
                 >
-                  Tech ({technicianCount})
+                  <span className="font-bold">{technicianCount}</span>
+                  <span className="opacity-80">Tech</span>
                 </button>
               </div>
             )}
