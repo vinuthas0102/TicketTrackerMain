@@ -163,6 +163,8 @@ export const mockTickets: Ticket[] = [
     updatedAt: new Date('2024-12-28T09:30:00Z'),
     dueDate: new Date('2024-12-30T17:00:00Z'),
     department: 'IT',
+    propertyId: 'PROP-001',
+    propertyLocation: 'Block A, Floor 2',
     workflow: [
       {
         id: '30000000-0000-4000-8000-000000000001',
@@ -239,6 +241,8 @@ export const mockTickets: Ticket[] = [
     updatedAt: new Date('2024-12-28T08:30:00Z'),
     dueDate: new Date('2025-01-02T17:00:00Z'),
     department: 'HR',
+    propertyId: 'PROP-002',
+    propertyLocation: 'Block B, Floor 1',
     workflow: [],
     attachments: [],
     auditTrail: [
@@ -276,6 +280,8 @@ export const mockTickets: Ticket[] = [
     createdAt: new Date('2024-12-26T14:00:00Z'),
     updatedAt: new Date('2024-12-27T16:00:00Z'),
     department: 'IT',
+    propertyId: 'PROP-003',
+    propertyLocation: 'Block C, Floor 3',
     workflow: [
       {
         id: '30000000-0000-4000-8000-000000000003',
@@ -362,6 +368,8 @@ export const mockTickets: Ticket[] = [
     updatedAt: new Date('2024-12-28T11:00:00Z'),
     dueDate: new Date('2025-01-15T17:00:00Z'),
     department: 'IT',
+    propertyId: 'PROP-004',
+    propertyLocation: 'Block A, Floor 1',
     workflow: [],
     attachments: [],
     auditTrail: [
@@ -389,6 +397,8 @@ export const mockTickets: Ticket[] = [
     createdAt: new Date('2024-12-25T09:00:00Z'),
     updatedAt: new Date('2024-12-26T10:00:00Z'),
     department: 'IT',
+    propertyId: 'PROP-005',
+    propertyLocation: 'Block D, Floor 2',
     workflow: [],
     attachments: [],
     auditTrail: [
@@ -448,6 +458,8 @@ export const mockTickets: Ticket[] = [
     updatedAt: new Date('2024-12-28T14:00:00Z'),
     dueDate: new Date('2024-12-31T17:00:00Z'),
     department: 'IT',
+    propertyId: 'PROP-006',
+    propertyLocation: 'Block B, Floor 3',
     workflow: [],
     attachments: [],
     auditTrail: [
@@ -486,6 +498,8 @@ export const mockTickets: Ticket[] = [
     updatedAt: new Date('2024-12-28T16:00:00Z'),
     dueDate: new Date('2025-01-03T17:00:00Z'),
     department: 'HR',
+    propertyId: 'PROP-007',
+    propertyLocation: 'Block E, Floor 1',
     workflow: [],
     attachments: [],
     auditTrail: [
@@ -534,6 +548,8 @@ export const mockTickets: Ticket[] = [
     updatedAt: new Date('2024-12-28T16:30:00Z'),
     dueDate: new Date('2025-01-05T17:00:00Z'),
     department: 'ADMINISTRATION',
+    propertyId: 'PROP-008',
+    propertyLocation: 'Main Office, Floor 5',
     workflow: [],
     attachments: [],
     auditTrail: [

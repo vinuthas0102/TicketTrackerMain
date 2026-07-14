@@ -272,32 +272,24 @@ const TicketTable: React.FC<TicketTableProps> = ({
 
                 {/* Row 2: label-data metadata strip */}
                 <div className="flex flex-wrap items-center gap-y-0.5 text-xs leading-5">
-                  {ticket.propertyId && (
-                    <>
-                      <MetaItem label="Property ID:" value={ticket.propertyId} />
-                      <Sep />
-                    </>
-                  )}
-                  {ticket.propertyLocation && (
-                    <>
-                      <MetaItem
-                        label="Location:"
-                        value={
-                          <span className="flex items-center gap-0.5">
-                            <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                            {ticket.propertyLocation}
-                          </span>
-                        }
-                      />
-                      <Sep />
-                    </>
-                  )}
+                  <MetaItem label="Property ID:" value={ticket.propertyId || '—'} />
+                  <Sep />
+                  <MetaItem
+                    label="Location:"
+                    value={
+                      <span className="flex items-center gap-0.5">
+                        <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                        {ticket.propertyLocation || '—'}
+                      </span>
+                    }
+                  />
+                  <Sep />
                   <MetaItem
                     label="Requestor:"
                     value={
                       <span className="flex items-center gap-0.5">
                         <User className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                        {createdByUser?.name || 'Unknown'}
+                        {createdByUser?.name || '—'}
                       </span>
                     }
                   />
