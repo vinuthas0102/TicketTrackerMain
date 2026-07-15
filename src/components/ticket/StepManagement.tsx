@@ -475,6 +475,12 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     const isDependencyLocked = step?.is_dependency_locked || false;
 
     React.useEffect(() => {
+      if (isSubTask && !step && ticket.department && !formData.department) {
+        setFormData(prev => ({ ...prev, department: ticket.department }));
+      }
+    }, [isSubTask, step, ticket.department, formData.department]);
+
+    React.useEffect(() => {
       if (!step && !formData.isParallel && isEO) {
         const available = DependencyService.getAvailableDependencySteps(null, ticket.workflow);
         setAvailableDependencySteps(available);
@@ -626,6 +632,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
             <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
             <select
               value={formData.department}
+              disabled={isSubTask}
               onChange={(e) => {
                 const newDept = e.target.value;
                 const assignedUser = users.find(u => u.id === formData.assignedTo);
@@ -635,7 +642,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                   assignedTo: (assignedUser && newDept && assignedUser.department !== newDept) ? '' : formData.assignedTo
                 });
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isSubTask ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <option value="">All Departments</option>
               {uniqueDepartments.map(dept => (
