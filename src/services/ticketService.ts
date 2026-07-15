@@ -1175,8 +1175,35 @@ export class TicketService {
     }
   }
 
-  static async addStepComment(stepId: string, content: string, userId: string): Promise<void> {
+  static async addStepComment(
+    stepId: string,
+    content: string,
+    userId: string,
+    options?: { attachmentFile?: File; channel?: string }
+  ): Promise<void> {
     try {
+      let attachmentPath: string | null = null;
+      let attachmentName: string | null = null;
+      let attachmentType: string | null = null;
+
+      if (options?.attachmentFile) {
+        const file = options.attachmentFile;
+        const timestamp = Date.now();
+        const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const storagePath = `${stepId}/${timestamp}_${sanitizedFileName}`;
+
+        const { error: uploadError } = await supabase!
+          .storage
+          .from('chat-attachments')
+          .upload(storagePath, file, { cacheControl: '3600', upsert: false });
+
+        if (uploadError) throw uploadError;
+
+        attachmentPath = storagePath;
+        attachmentName = file.name;
+        attachmentType = file.type;
+      }
+
       const { error } = await supabase
         .from('workflow_comments')
         .insert([
@@ -1184,6 +1211,10 @@ export class TicketService {
             step_id: stepId,
             content: content.trim(),
             created_by: userId,
+            attachment_path: attachmentPath,
+            attachment_name: attachmentName,
+            attachment_type: attachmentType,
+            channel: options?.channel || 'in-app',
           },
         ]);
 
@@ -1215,6 +1246,11 @@ export class TicketService {
         createdAt: new Date(comment.created_at),
         createdByName: comment.created_by_user?.name || 'Unknown User',
         createdByRole: comment.created_by_user?.role || 'EMPLOYEE',
+        updatedAt: comment.updated_at ? new Date(comment.updated_at) : undefined,
+        attachmentPath: comment.attachment_path || undefined,
+        attachmentName: comment.attachment_name || undefined,
+        attachmentType: comment.attachment_type || undefined,
+        channel: comment.channel || 'in-app',
       }));
     } catch (error) {
       console.error('Error fetching step comments:', error);
@@ -1226,7 +1262,7 @@ export class TicketService {
     try {
       const { error } = await supabase
         .from('workflow_comments')
-        .update({ content: content.trim() })
+        .update({ content: content.trim(), updated_at: new Date().toISOString() })
         .eq('id', commentId)
         .eq('created_by', userId);
 
@@ -1248,6 +1284,23 @@ export class TicketService {
       if (error) throw error;
     } catch (error) {
       console.error('Error deleting step comment:', error);
+      throw error;
+    }
+  }
+
+  static async getChatAttachmentUrl(attachmentPath: string, expiresIn: number = 3600): Promise<string> {
+    try {
+      const { data, error } = await supabase!
+        .storage
+        .from('chat-attachments')
+        .createSignedUrl(attachmentPath, expiresIn);
+
+      if (error) throw error;
+      if (!data?.signedUrl) throw new Error('Failed to generate signed URL');
+
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Error generating chat attachment URL:', error);
       throw error;
     }
   }

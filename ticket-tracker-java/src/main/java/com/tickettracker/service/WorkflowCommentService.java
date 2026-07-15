@@ -29,7 +29,8 @@ public class WorkflowCommentService {
         this.userDAO = new UserDAO();
     }
 
-    public WorkflowComment createComment(byte[] stepId, String content, byte[] userId)
+    public WorkflowComment createComment(byte[] stepId, String content, byte[] userId,
+            String attachmentPath, String attachmentName, String attachmentType, String channel)
             throws TicketTrackerException {
         try {
             if (content == null || content.trim().isEmpty()) {
@@ -45,6 +46,10 @@ public class WorkflowCommentService {
             comment.setStepId(stepId);
             comment.setContent(content.trim());
             comment.setCreatedBy(userId);
+            comment.setAttachmentPath(attachmentPath);
+            comment.setAttachmentName(attachmentName);
+            comment.setAttachmentType(attachmentType);
+            comment.setChannel(channel != null ? channel : "in-app");
 
             WorkflowComment createdComment = commentDAO.create(comment);
 
@@ -56,6 +61,11 @@ public class WorkflowCommentService {
             logger.error("Error creating workflow comment", e);
             throw new DatabaseException("Failed to create workflow comment", e);
         }
+    }
+
+    public WorkflowComment createComment(byte[] stepId, String content, byte[] userId)
+            throws TicketTrackerException {
+        return createComment(stepId, content, userId, null, null, null, null);
     }
 
     public WorkflowComment updateComment(byte[] commentId, String content, byte[] userId)

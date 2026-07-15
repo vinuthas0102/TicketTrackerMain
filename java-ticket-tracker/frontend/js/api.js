@@ -227,8 +227,27 @@ const API = {
         return this.get(`/workflow-comments?stepId=${stepId}`);
     },
 
-    async addStepComment(stepId, content) {
-        return this.post('/workflow-comments', { stepId, content });
+    async addStepComment(stepId, content, attachmentFile, channel) {
+        if (attachmentFile) {
+            const formData = new FormData();
+            formData.append('stepId', stepId);
+            formData.append('content', content);
+            formData.append('channel', channel || 'in-app');
+            formData.append('file', attachmentFile);
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${this.baseURL}/workflow-comments`, {
+                method: 'POST',
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                credentials: 'include',
+                body: formData
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.message || `HTTP error ${response.status}`);
+            }
+            return response.json();
+        }
+        return this.post('/workflow-comments', { stepId, content, channel: channel || 'in-app' });
     },
 
     async updateStepComment(commentId, content) {

@@ -17,6 +17,11 @@ public class WorkflowComment {
     private String createdByName;
     private String createdByRole;
 
+    private String attachmentPath;
+    private String attachmentName;
+    private String attachmentType;
+    private String channel;
+
     public WorkflowComment() {
     }
 
@@ -115,5 +120,37 @@ public class WorkflowComment {
 
     public void setCreatedByRole(String createdByRole) {
         this.createdByRole = createdByRole;
+    }
+
+    public String getAttachmentPath() {
+        return attachmentPath;
+    }
+
+    public void setAttachmentPath(String attachmentPath) {
+        this.attachmentPath = attachmentPath;
+    }
+
+    public String getAttachmentName() {
+        return attachmentName;
+    }
+
+    public void setAttachmentName(String attachmentName) {
+        this.attachmentName = attachmentName;
+    }
+
+    public String getAttachmentType() {
+        return attachmentType;
+    }
+
+    public void setAttachmentType(String attachmentType) {
+        this.attachmentType = attachmentType;
+    }
+
+    public String getChannel() {
+        return channel;
+    }
+
+    public void setChannel(String channel) {
+        this.channel = channel;
     }
 }

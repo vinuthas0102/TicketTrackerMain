@@ -156,11 +156,11 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
 
   if (viewingChat) {
     return (
-      <div className="space-y-2 flex flex-col" style={{ minHeight: '400px' }}>
-        <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+      <div className="flex flex-col" style={{ minHeight: '400px', height: '100%' }}>
+        <div className="flex items-center justify-between pb-2 border-b border-gray-200 flex-shrink-0">
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-2">
-              <MessageSquare className="w-4 h-4 text-blue-600 shrink-0" />
+              <MessageSquare className="w-4 h-4 text-green-600 shrink-0" />
               <h3 className="text-sm font-semibold text-gray-900 truncate">Task Chat</h3>
             </div>
             <p className="text-xs text-gray-500 mt-0.5 truncate">{viewingChat.title}</p>
@@ -173,8 +173,12 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          <WorkflowStepComments stepId={viewingChat.id} />
+        <div className="flex-1 overflow-hidden">
+          <WorkflowStepComments
+            stepId={viewingChat.id}
+            step={viewingChat}
+            ticketAssignedTo={ticket.assignedTo || undefined}
+          />
         </div>
       </div>
     );

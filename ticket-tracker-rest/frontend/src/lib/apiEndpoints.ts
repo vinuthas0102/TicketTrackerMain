@@ -115,5 +115,6 @@ export const API_ENDPOINTS = {
     CREATE: '/workflow-comments',
     UPDATE: (commentId: string) => `/workflow-comments/${commentId}`,
     DELETE: (commentId: string) => `/workflow-comments/${commentId}`,
+    DOWNLOAD_ATTACHMENT: (commentId: string) => `/workflow-comments/${commentId}/attachment`,
   },
 };

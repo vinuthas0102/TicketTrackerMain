@@ -245,6 +245,11 @@ export interface Database {
           content: string
           created_by: string
           created_at: string
+          updated_at: string | null
+          attachment_path: string | null
+          attachment_name: string | null
+          attachment_type: string | null
+          channel: string
         }
         Insert: {
           id?: string
@@ -252,6 +257,11 @@ export interface Database {
           content: string
           created_by: string
           created_at?: string
+          updated_at?: string | null
+          attachment_path?: string | null
+          attachment_name?: string | null
+          attachment_type?: string | null
+          channel?: string
         }
         Update: {
           id?: string
@@ -259,6 +269,11 @@ export interface Database {
           content?: string
           created_by?: string
           created_at?: string
+          updated_at?: string | null
+          attachment_path?: string | null
+          attachment_name?: string | null
+          attachment_type?: string | null
+          channel?: string
         }
       }
       documents: {

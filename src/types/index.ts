@@ -105,6 +105,11 @@ export interface WorkflowComment {
   createdAt: Date;
   createdByName?: string;
   createdByRole?: string;
+  updatedAt?: Date;
+  attachmentPath?: string;
+  attachmentName?: string;
+  attachmentType?: string;
+  channel?: string;
 }
 
 export interface FileAttachment {

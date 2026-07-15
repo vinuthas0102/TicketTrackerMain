@@ -12,15 +12,27 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 
 @WebServlet("/api/workflow-comments/*")
+@MultipartConfig(
+    fileSizeThreshold = 1024 * 1024,
+    maxFileSize = 5 * 1024 * 1024,
+    maxRequestSize = 10 * 1024 * 1024
+)
 public class WorkflowCommentServlet extends HttpServlet {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkflowCommentServlet.class);
@@ -72,11 +84,48 @@ public class WorkflowCommentServlet extends HttpServlet {
                 return;
             }
 
-            String body = getRequestBody(request);
-            Map<String, Object> requestData = objectMapper.readValue(body, Map.class);
+            String contentType = request.getContentType();
+            String stepIdStr;
+            String content;
+            String channel;
+            String attachmentPath = null;
+            String attachmentName = null;
+            String attachmentType = null;
 
-            String stepIdStr = (String) requestData.get("stepId");
-            String content = (String) requestData.get("content");
+            if (contentType != null && contentType.startsWith("multipart/form-data")) {
+                stepIdStr = request.getParameter("stepId");
+                content = request.getParameter("content");
+                channel = request.getParameter("channel");
+
+                Part filePart = request.getPart("file");
+                if (filePart != null && filePart.getSize() > 0) {
+                    attachmentName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
+                    attachmentType = filePart.getContentType();
+
+                    String uploadDir = getServletContext().getRealPath("/WEB-INF/uploads/chat-attachments");
+                    Path dirPath = Paths.get(uploadDir);
+                    Files.createDirectories(dirPath);
+
+                    String timestamp = String.valueOf(System.currentTimeMillis());
+                    String sanitizedFileName = attachmentName.replaceAll("[^a-zA-Z0-9.-]", "_");
+                    String fileName = timestamp + "_" + sanitizedFileName;
+                    Path filePath = dirPath.resolve(fileName);
+
+                    try (InputStream is = filePart.getInputStream()) {
+                        Files.copy(is, filePath, StandardCopyOption.REPLACE_EXISTING);
+                    }
+
+                    attachmentPath = "chat-attachments/" + fileName;
+                    logger.info("Saved chat attachment: {}", filePath);
+                }
+            } else {
+                String body = getRequestBody(request);
+                Map<String, Object> requestData = objectMapper.readValue(body, Map.class);
+
+                stepIdStr = (String) requestData.get("stepId");
+                content = (String) requestData.get("content");
+                channel = (String) requestData.get("channel");
+            }
 
             if (stepIdStr == null || stepIdStr.isEmpty()) {
                 sendError(response, 400, "stepId is required");
@@ -89,7 +138,9 @@ public class WorkflowCommentServlet extends HttpServlet {
             }
 
             byte[] stepId = UuidUtil.uuidStringToBytes(stepIdStr);
-            WorkflowComment createdComment = commentService.createComment(stepId, content, currentUser.getId());
+            WorkflowComment createdComment = commentService.createComment(
+                    stepId, content, currentUser.getId(),
+                    attachmentPath, attachmentName, attachmentType, channel);
 
             response.setStatus(HttpServletResponse.SC_CREATED);
             sendJsonResponse(response, createdComment);

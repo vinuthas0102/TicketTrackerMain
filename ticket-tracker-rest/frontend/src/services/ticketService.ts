@@ -1,5 +1,6 @@
 import { apiClient } from '../lib/apiClient';
-import { API_ENDPOINTS } from '../lib/apiEndpoints';
+import { API_ENDPOINTS, API_BASE_URL } from '../lib/apiEndpoints';
+import { getAuthToken } from '../lib/authToken';
 import {
   transformTicketFromBackend,
   transformWorkflowStepFromBackend,
@@ -510,6 +511,10 @@ export class TicketService {
         updatedAt: safeParseDate(comment.updatedAt || comment.updated_at),
         createdByName: comment.createdByName || comment.created_by_name,
         createdByRole: comment.createdByRole || comment.created_by_role,
+        attachmentPath: comment.attachmentPath || comment.attachment_path,
+        attachmentName: comment.attachmentName || comment.attachment_name,
+        attachmentType: comment.attachmentType || comment.attachment_type,
+        channel: comment.channel || 'in-app',
       }));
     } catch (error) {
       console.error('Error fetching step comments:', error);
@@ -517,13 +522,28 @@ export class TicketService {
     }
   }
 
-  static async addStepComment(stepId: string, content: string, userId: string): Promise<void> {
+  static async addStepComment(
+    stepId: string,
+    content: string,
+    userId: string,
+    options?: { attachmentFile?: File; channel?: string }
+  ): Promise<void> {
     try {
-      await apiClient.post(API_ENDPOINTS.WORKFLOW_COMMENTS.CREATE, {
-        stepId,
-        content: content.trim(),
-        userId,
-      });
+      if (options?.attachmentFile) {
+        await apiClient.uploadFile(API_ENDPOINTS.WORKFLOW_COMMENTS.CREATE, options.attachmentFile, {
+          stepId,
+          content: content.trim(),
+          userId,
+          channel: options.channel || 'in-app',
+        });
+      } else {
+        await apiClient.post(API_ENDPOINTS.WORKFLOW_COMMENTS.CREATE, {
+          stepId,
+          content: content.trim(),
+          userId,
+          channel: options?.channel || 'in-app',
+        });
+      }
     } catch (error) {
       console.error('Error adding step comment:', error);
       throw error;
@@ -549,6 +569,11 @@ export class TicketService {
       console.error('Error deleting step comment:', error);
       throw error;
     }
+  }
+
+  static async getChatAttachmentUrl(commentId: string): Promise<string> {
+    const token = getAuthToken();
+    return `${API_BASE_URL}${API_ENDPOINTS.WORKFLOW_COMMENTS.DOWNLOAD_ATTACHMENT(commentId)}?token=${encodeURIComponent(token || '')}`;
   }
 
   static async createAuditLog(params: {

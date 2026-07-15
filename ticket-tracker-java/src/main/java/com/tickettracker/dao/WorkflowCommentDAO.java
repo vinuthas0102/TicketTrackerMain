@@ -9,8 +9,9 @@ import java.util.List;
 public class WorkflowCommentDAO extends BaseDAO {
 
     public WorkflowComment create(WorkflowComment comment) throws SQLException {
-        String sql = "INSERT INTO workflow_comments (id, step_id, content, created_by, created_at, updated_at) " +
-                "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        String sql = "INSERT INTO workflow_comments (id, step_id, content, created_by, created_at, updated_at, " +
+                "attachment_path, attachment_name, attachment_type, channel) " +
+                "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?)";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -29,6 +30,10 @@ public class WorkflowCommentDAO extends BaseDAO {
             stmt.setBytes(2, comment.getStepId());
             stmt.setString(3, comment.getContent());
             stmt.setBytes(4, comment.getCreatedBy());
+            stmt.setString(5, comment.getAttachmentPath());
+            stmt.setString(6, comment.getAttachmentName());
+            stmt.setString(7, comment.getAttachmentType());
+            stmt.setString(8, comment.getChannel() != null ? comment.getChannel() : "in-app");
 
             int rowsAffected = stmt.executeUpdate();
             logger.info("Created workflow comment for step (rows affected: {})", rowsAffected);
@@ -175,6 +180,15 @@ public class WorkflowCommentDAO extends BaseDAO {
 
         comment.setCreatedByName(rs.getString("created_by_name"));
         comment.setCreatedByRole(rs.getString("created_by_role"));
+
+        try {
+            comment.setAttachmentPath(rs.getString("attachment_path"));
+            comment.setAttachmentName(rs.getString("attachment_name"));
+            comment.setAttachmentType(rs.getString("attachment_type"));
+            comment.setChannel(rs.getString("channel"));
+        } catch (SQLException e) {
+            // Columns may not exist in older schema; default to null
+        }
 
         return comment;
     }
