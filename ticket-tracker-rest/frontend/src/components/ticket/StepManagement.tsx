@@ -444,6 +444,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       description: step?.description || '',
       status: step?.status || 'NOT_STARTED',
       assignedTo: step?.assignedTo || '',
+      department: '',
       dueDate: safeDateToISOString(step?.dueDate),
       startDate: safeDateToISOString(step?.startDate),
       isParallel: step?.is_parallel !== false,
@@ -457,6 +458,8 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       fileReferenceTemplateId: '',
       selectedFileReferences: [] as SelectedFileReference[]
     });
+    const uniqueDepartments = Array.from(new Set(users.map(u => u.department).filter(Boolean)));
+    const filteredUsers = formData.department ? users.filter(u => u.department === formData.department) : users;
     const [availableDependencySteps, setAvailableDependencySteps] = useState<WorkflowStep[]>([]);
     const [fileReferenceTemplates, setFileReferenceTemplates] = useState<FileReferenceTemplate[]>([]);
     const [completionFile, setCompletionFile] = useState<File | null>(null);
@@ -610,6 +613,28 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+            <select
+              value={formData.department}
+              onChange={(e) => {
+                const newDept = e.target.value;
+                const assignedUser = users.find(u => u.id === formData.assignedTo);
+                setFormData({
+                  ...formData,
+                  department: newDept,
+                  assignedTo: (assignedUser && newDept && assignedUser.department !== newDept) ? '' : formData.assignedTo
+                });
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Departments</option>
+              {uniqueDepartments.map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
             <select
               value={formData.assignedTo}
@@ -617,7 +642,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Unassigned</option>
-              {users.map(user => (
+              {filteredUsers.map(user => (
                 <option key={user.id} value={user.id}>{user.name}</option>
               ))}
             </select>

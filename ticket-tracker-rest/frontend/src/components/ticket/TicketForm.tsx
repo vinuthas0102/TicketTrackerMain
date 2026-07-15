@@ -664,7 +664,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
               >
                 Cancel
               </button>
-              {!isEditing && (
+              {(!isEditing || (isEditing && ticket?.status === 'DRAFT')) && (
                 <button
                   type="button"
                   onClick={() => { setPendingStatus('DRAFT'); handleSubmit('DRAFT'); }}
@@ -672,7 +672,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-green-700 bg-green-50 border border-green-300 rounded-md hover:bg-green-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  {loading && pendingStatus === 'DRAFT' ? 'Saving...' : 'Save Draft'}
+                  {loading && pendingStatus === 'DRAFT' ? 'Saving...' : isEditing ? 'Save' : 'Save Draft'}
                 </button>
               )}
               <button
@@ -681,7 +681,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                 disabled={loading}
                 className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading && pendingStatus === 'SUBMITTED' ? 'Submitting...' : isEditing ? 'Update Ticket' : 'Submit Ticket'}
+                {loading && pendingStatus === 'SUBMITTED' ? 'Submitting...' : isEditing ? (ticket?.status === 'DRAFT' ? 'Submit Ticket' : 'Update Ticket') : 'Submit Ticket'}
               </button>
             </div>
           </form>

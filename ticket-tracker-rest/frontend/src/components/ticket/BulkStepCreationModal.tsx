@@ -27,6 +27,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
   const { user } = useAuth();
   const isEO = user?.role === 'EO';
   const [rows, setRows] = useState<BulkStepRow[]>([]);
+  const uniqueDepartments = Array.from(new Set(users.map(u => u.department).filter(Boolean)));
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [fileReferenceTemplates, setFileReferenceTemplates] = useState<FileReferenceTemplate[]>([]);
   const [showFileRefModal, setShowFileRefModal] = useState<string | null>(null);
@@ -43,6 +44,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
       description: '',
       status: 'NOT_STARTED' as const,
       assignedTo: '',
+      department: '',
       startDate: undefined,
       dueDate: undefined,
       is_parallel: true,
@@ -103,6 +105,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
       description: '',
       status: 'NOT_STARTED' as const,
       assignedTo: '',
+      department: '',
       startDate: undefined,
       dueDate: undefined,
       is_parallel: true,
@@ -130,6 +133,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
       description: '',
       status: 'NOT_STARTED' as const,
       assignedTo: '',
+      department: '',
       startDate: undefined,
       dueDate: undefined,
       is_parallel: true,
@@ -359,6 +363,29 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Department
+                    </label>
+                    <select
+                      value={row.department || ''}
+                      onChange={(e) => {
+                        const newDept = e.target.value;
+                        const assignedUser = users.find(u => u.id === row.assignedTo);
+                        updateRow(row.rowId, 'department', newDept);
+                        if (assignedUser && newDept && assignedUser.department !== newDept) {
+                          updateRow(row.rowId, 'assignedTo', '');
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">All Departments</option>
+                      {uniqueDepartments.map(dept => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Assigned To
                     </label>
                     <select
@@ -367,7 +394,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Unassigned</option>
-                      {users.map(user => (
+                      {(row.department ? users.filter(u => u.department === row.department) : users).map(user => (
                         <option key={user.id} value={user.id}>
                           {user.name}
                         </option>

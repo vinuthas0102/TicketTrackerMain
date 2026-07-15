@@ -172,6 +172,7 @@ export interface BulkStepInput {
   description?: string;
   status: WorkflowStepStatus;
   assignedTo?: string;
+  department?: string;
   startDate?: Date;
   dueDate?: Date;
   is_parallel?: boolean;
