@@ -444,7 +444,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       description: step?.description || '',
       status: step?.status || 'NOT_STARTED',
       assignedTo: step?.assignedTo || '',
-      department: step?.title ? (users.find(u => u.id === step.assignedTo)?.department || '') : (parentStep ? (ticket.department || '') : ''),
+      department: step?.title ? (users.find(u => u.id === step.assignedTo)?.department || '') : (parentStep ? (users.find(u => u.id === parentStep.assignedTo)?.department || '') : ''),
       dueDate: safeDateToISOString(step?.dueDate),
       startDate: safeDateToISOString(step?.startDate),
       isParallel: step?.is_parallel !== false,
@@ -478,10 +478,13 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     const isDependencyLocked = step?.is_dependency_locked || false;
 
     React.useEffect(() => {
-      if (isSubTask && !step && ticket.department && !formData.department) {
-        setFormData(prev => ({ ...prev, department: ticket.department }));
+      if (isSubTask && !step && parentStep) {
+        const parentDept = users.find(u => u.id === parentStep.assignedTo)?.department || '';
+        if (parentDept && !formData.department) {
+          setFormData(prev => ({ ...prev, department: parentDept }));
+        }
       }
-    }, [isSubTask, step, ticket.department, formData.department]);
+    }, [isSubTask, step, parentStep, users, formData.department]);
 
     React.useEffect(() => {
       if (!step && !formData.isParallel && isEO) {

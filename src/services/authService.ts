@@ -33,6 +33,8 @@ export class AuthService {
         (usernameOrEmail === 'do.electrical' && password === 'do.electrical') ||
         (usernameOrEmail === 'civil.manager@tickettracker.com' && password === 'civil123') ||
         (usernameOrEmail === 'electrical.manager@tickettracker.com' && password === 'electrical123') ||
+        (usernameOrEmail === 'civil.technician@tickettracker.com' && password === 'technician123') ||
+        (usernameOrEmail === 'electrical.technician@tickettracker.com' && password === 'technician123') ||
         (usernameOrEmail === 'finance.officer' && password === 'finance123') ||
         (usernameOrEmail === 'abc.construction' && password === 'vendor123') ||
         (usernameOrEmail === 'xyz.suppliers' && password === 'vendor123') ||
@@ -50,6 +52,8 @@ export class AuthService {
         (usernameOrEmail === 'do.civil@company.com' && password === 'do.civil') ||
         (usernameOrEmail === 'do.electrical@company.com' && password === 'do.electrical') ||
         (usernameOrEmail === 'finance.officer@company.com' && password === 'finance123') ||
+        (usernameOrEmail === 'civil.technician@company.com' && password === 'technician123') ||
+        (usernameOrEmail === 'electrical.technician@company.com' && password === 'technician123') ||
         (usernameOrEmail === 'abc.construction@vendor.com' && password === 'vendor123') ||
         (usernameOrEmail === 'xyz.suppliers@vendor.com' && password === 'vendor123') ||
         (usernameOrEmail === 'global.services@vendor.com' && password === 'vendor123')
@@ -253,6 +257,8 @@ export class AuthService {
       (usernameOrEmail === 'do.electrical' && password === 'do.electrical') ||
       (usernameOrEmail === 'civil.manager@tickettracker.com' && password === 'civil123') ||
       (usernameOrEmail === 'electrical.manager@tickettracker.com' && password === 'electrical123') ||
+      (usernameOrEmail === 'civil.technician@tickettracker.com' && password === 'technician123') ||
+      (usernameOrEmail === 'electrical.technician@tickettracker.com' && password === 'technician123') ||
       (usernameOrEmail === 'abc.construction' && password === 'vendor123') ||
       (usernameOrEmail === 'xyz.suppliers' && password === 'vendor123') ||
       (usernameOrEmail === 'global.services' && password === 'vendor123') ||
@@ -268,6 +274,8 @@ export class AuthService {
       (usernameOrEmail === 'do.maintenance@company.com' && password === 'do.maintenance') ||
       (usernameOrEmail === 'do.civil@company.com' && password === 'do.civil') ||
       (usernameOrEmail === 'do.electrical@company.com' && password === 'do.electrical') ||
+      (usernameOrEmail === 'civil.technician@company.com' && password === 'technician123') ||
+      (usernameOrEmail === 'electrical.technician@company.com' && password === 'technician123') ||
       (usernameOrEmail === 'abc.construction@vendor.com' && password === 'vendor123') ||
       (usernameOrEmail === 'xyz.suppliers@vendor.com' && password === 'vendor123') ||
       (usernameOrEmail === 'global.services@vendor.com' && password === 'vendor123')

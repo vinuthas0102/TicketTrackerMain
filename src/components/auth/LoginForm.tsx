@@ -39,6 +39,8 @@ const LoginForm: React.FC = () => {
     { role: 'Civil Manager', email: 'civil.manager@tickettracker.com', password: 'civil123', category: 'do' },
     { role: 'Electrical Manager', email: 'electrical.manager@tickettracker.com', password: 'electrical123', category: 'do' },
     { role: 'Finance Officer', email: 'finance.officer', password: 'finance123', category: 'finance' },
+    { role: 'Technician - Civil', email: 'civil.technician@tickettracker.com', password: 'technician123', category: 'technician' },
+    { role: 'Technician - Electrical', email: 'electrical.technician@tickettracker.com', password: 'technician123', category: 'technician' },
     { role: 'Employee - IT', email: 'user', password: 'user', category: 'employee' },
     { role: 'Employee - HR', email: 'jane.doe', password: 'password', category: 'employee' }
   ];
@@ -147,6 +149,18 @@ const LoginForm: React.FC = () => {
                   <span className="font-mono">{cred.email} / {cred.password}</span>
                 </div>
               ))}
+            </div>
+
+            <div>
+              <div className="text-xs font-semibold text-teal-700 mb-2">Technicians:</div>
+              <div className="space-y-1">
+                {sampleCredentials.filter(c => c.category === 'technician').map((cred, index) => (
+                  <div key={index} className="flex justify-between items-center text-xs text-gray-600 bg-teal-50 bg-opacity-80 p-2 rounded-lg shadow-sm border border-teal-200">
+                    <span className="font-medium">{cred.role}:</span>
+                    <span className="font-mono">{cred.email} / {cred.password}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div>
