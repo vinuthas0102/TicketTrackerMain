@@ -1,18 +1,21 @@
 import React, { useState, useMemo } from 'react';
-import { User, Clock, Search, X, Download, FileText, Image as ImageIcon, Filter, Shield, UserCog, Paperclip, Eye, ChevronDown, ChevronUp } from 'lucide-react';
-import { Ticket, AuditActionCategory } from '../../types';
+import { User, Clock, Search, X, Download, FileText, Image as ImageIcon, Filter, Shield, UserCog, Paperclip, Eye, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
+import { Ticket, AuditActionCategory, WorkflowStep } from '../../types';
 import { useTickets } from '../../context/TicketContext';
 import { useAuth } from '../../context/AuthContext';
 import { DocumentMetadata, FileService } from '../../services/fileService';
+import WorkflowStepComments from './WorkflowStepComments';
 
 interface AuditTrailProps {
   ticket: Ticket;
   viewingDocument?: { document: DocumentMetadata; workflowTitle: string } | null;
   onCloseDocument?: () => void;
   onViewProgressDocument?: (document: DocumentMetadata, workflowTitle: string) => void;
+  viewingChat?: WorkflowStep | null;
+  onCloseChat?: () => void;
 }
 
-const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onCloseDocument, onViewProgressDocument }) => {
+const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onCloseDocument, onViewProgressDocument, viewingChat, onCloseChat }) => {
   const { users } = useTickets();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -136,6 +139,32 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
     link.click();
     document.body.removeChild(link);
   };
+
+  if (viewingChat) {
+    return (
+      <div className="space-y-2 flex flex-col" style={{ minHeight: '400px' }}>
+        <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center space-x-2">
+              <MessageSquare className="w-4 h-4 text-blue-600 shrink-0" />
+              <h3 className="text-sm font-semibold text-gray-900 truncate">Task Chat</h3>
+            </div>
+            <p className="text-xs text-gray-500 mt-0.5 truncate">{viewingChat.title}</p>
+          </div>
+          <button
+            onClick={onCloseChat}
+            className="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition-colors ml-2 shrink-0"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <WorkflowStepComments stepId={viewingChat.id} />
+        </div>
+      </div>
+    );
+  }
 
   if (viewingDocument) {
     return (

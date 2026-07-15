@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, CheckCircle, Clock, Users, Trash2, CreditCard as Edit, X, ChevronDown, ChevronRight, FileText, Upload, Layers, Search, Filter, XCircle, Workflow, ArrowRight, History, ExternalLink, AlertCircle, Calendar, ChevronUp, Lock } from 'lucide-react';
+import { Plus, CheckCircle, Clock, Users, Trash2, CreditCard as Edit, X, ChevronDown, ChevronRight, FileText, Upload, Layers, Search, Filter, XCircle, Workflow, ArrowRight, History, ExternalLink, AlertCircle, Calendar, ChevronUp, Lock, MessageSquare } from 'lucide-react';
 import { Ticket, WorkflowStep, WorkflowStepStatus, ActionIconDefinition, FileReferenceTemplate } from '../../types';
 import { FileReferenceService } from '../../services/fileReferenceService';
 import FileReferenceUpload from './FileReferenceUpload';
@@ -24,6 +24,7 @@ interface WorkflowManagementProps {
   ticket: Ticket;
   canManage: boolean;
   onViewDocument?: (document: DocumentMetadata, step: WorkflowStep) => void;
+  onOpenChat?: (step: WorkflowStep) => void;
 }
 
 const FileReferenceInfoDisplay: React.FC<{ stepId: string; ticketId: string; showFullInterface?: boolean; onViewDocument?: (document: DocumentMetadata) => void }> = ({ stepId, ticketId, showFullInterface = false, onViewDocument }) => {
@@ -291,7 +292,7 @@ const FileReferenceInfoDisplay: React.FC<{ stepId: string; ticketId: string; sho
   );
 };
 
-const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canManage, onViewDocument }) => {
+const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canManage, onViewDocument, onOpenChat }) => {
   const { selectedModule, user, displayPreferences } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingStep, setEditingStep] = useState<WorkflowStep | null>(null);
@@ -1399,6 +1400,14 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                     loading={!displayPreferences && !!user}
                   />
                 </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onOpenChat?.(step); }}
+                  className="flex items-center space-x-1 px-2 py-1 text-xs font-medium rounded-md border transition-colors bg-gray-50 text-gray-600 border-gray-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
+                  title="Chat"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Chat</span>
+                </button>
                 <div className={`transition-transform duration-200 ${isViewing ? 'rotate-180' : ''}`}>
                   <ChevronDown className="w-4 h-4 text-gray-400" />
                 </div>
@@ -1545,6 +1554,13 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                       >
                         <Upload className="w-3.5 h-3.5" />
                         <span>{showDocUpload.has(step.id) ? 'Hide Documents' : 'View Documents'}</span>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onOpenChat?.(step); }}
+                        className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors bg-gray-50 text-gray-600 border-gray-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Chat</span>
                       </button>
                     </div>
                   </div>

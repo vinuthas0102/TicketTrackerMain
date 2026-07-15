@@ -221,6 +221,24 @@ const API = {
         return this.post(`/finance/reject/${ticketId}`, { reason });
     },
 
+    // ========== Workflow Comment (Chat) APIs ==========
+
+    async getStepComments(stepId) {
+        return this.get(`/workflow-comments?stepId=${stepId}`);
+    },
+
+    async addStepComment(stepId, content) {
+        return this.post('/workflow-comments', { stepId, content });
+    },
+
+    async updateStepComment(commentId, content) {
+        return this.put(`/workflow-comments/${commentId}`, { content });
+    },
+
+    async deleteStepComment(commentId) {
+        return this.delete(`/workflow-comments/${commentId}`);
+    },
+
     // ========== Export APIs ==========
 
     async exportTicketHtml(ticketId) {
