@@ -42,7 +42,7 @@ const Dashboard: React.FC = () => {
   const [showEditForm, setShowEditForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | null>(null);
   const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'compact'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'compact'>('list');
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [showUserPreferences, setShowUserPreferences] = useState(false);
@@ -50,6 +50,7 @@ const Dashboard: React.FC = () => {
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showCreateSubmenu, setShowCreateSubmenu] = useState(false);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
+  const eoFilterAppliedRef = useRef(false);
   
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
     search: '',
@@ -66,6 +67,14 @@ const Dashboard: React.FC = () => {
       status: statusFilter || ''
     }));
   }, [statusFilter]);
+
+  // EO auto-lands on ACTIVE filter on first login
+  useEffect(() => {
+    if (user?.role === 'EO' && !eoFilterAppliedRef.current) {
+      setStatusFilter('ACTIVE');
+      eoFilterAppliedRef.current = true;
+    }
+  }, [user]);
 
   // Update selectedTicket when tickets array changes to reflect workflow updates
   useEffect(() => {
