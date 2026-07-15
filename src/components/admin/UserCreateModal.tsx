@@ -15,7 +15,7 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'employee' as 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance',
+    role: 'employee' as 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance' | 'technician',
     department: '',
     iconDisplayType: 'dropdown_menu' as IconDisplayType,
     iconSize: 'medium' as IconSize,
@@ -252,6 +252,7 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
               <option value="eo">Executive Officer</option>
               <option value="vendor">Vendor</option>
               <option value="finance">Finance Officer</option>
+              <option value="technician">Technician</option>
             </select>
           </div>
 

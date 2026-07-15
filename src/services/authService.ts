@@ -147,7 +147,7 @@ export class AuthService {
         username: data.email.split('@')[0],
         name: data.name,
         email: data.email,
-        role: data.role === 'dept_officer' ? 'DO' : data.role === 'eo' ? 'EO' : data.role === 'employee' ? 'EMPLOYEE' : data.role === 'vendor' ? 'VENDOR' : data.role === 'finance' ? 'FINANCE' : data.role,
+        role: data.role === 'dept_officer' ? 'DO' : data.role === 'eo' ? 'EO' : data.role === 'employee' ? 'EMPLOYEE' : data.role === 'vendor' ? 'VENDOR' : data.role === 'finance' ? 'FINANCE' : data.role === 'technician' ? 'TECHNICIAN' : data.role,
         department: data.department,
         lastLogin: data.last_login ? new Date(data.last_login) : undefined
       };
@@ -178,7 +178,7 @@ export class AuthService {
         username: data.email.split('@')[0],
         name: data.name,
         email: data.email,
-        role: data.role === 'dept_officer' ? 'DO' : data.role === 'eo' ? 'EO' : data.role === 'employee' ? 'EMPLOYEE' : data.role === 'vendor' ? 'VENDOR' : data.role === 'finance' ? 'FINANCE' : data.role,
+        role: data.role === 'dept_officer' ? 'DO' : data.role === 'eo' ? 'EO' : data.role === 'employee' ? 'EMPLOYEE' : data.role === 'vendor' ? 'VENDOR' : data.role === 'finance' ? 'FINANCE' : data.role === 'technician' ? 'TECHNICIAN' : data.role,
         department: data.department,
         lastLogin: data.last_login ? new Date(data.last_login) : undefined
       };
@@ -211,7 +211,8 @@ export class AuthService {
           'EO': 'eo',
           'EMPLOYEE': 'employee',
           'VENDOR': 'vendor',
-          'FINANCE': 'finance'
+          'FINANCE': 'finance',
+          'TECHNICIAN': 'technician'
         };
 
         const dbRole = roleMapping[mockUser.role] || mockUser.role.toLowerCase();
@@ -316,7 +317,7 @@ export class AuthService {
         username: user.email.split('@')[0],
         name: user.name,
         email: user.email,
-        role: user.role === 'dept_officer' ? 'DO' : user.role === 'eo' ? 'EO' : user.role === 'employee' ? 'EMPLOYEE' : user.role === 'vendor' ? 'VENDOR' : user.role === 'finance' ? 'FINANCE' : user.role,
+        role: user.role === 'dept_officer' ? 'DO' : user.role === 'eo' ? 'EO' : user.role === 'employee' ? 'EMPLOYEE' : user.role === 'vendor' ? 'VENDOR' : user.role === 'finance' ? 'FINANCE' : user.role === 'technician' ? 'TECHNICIAN' : user.role,
         department: user.department,
         lastLogin: user.last_login ? new Date(user.last_login) : undefined
       }))

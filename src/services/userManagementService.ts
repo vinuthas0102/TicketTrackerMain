@@ -4,7 +4,7 @@ import { User } from '../types';
 export interface CreateUserRequest {
   name: string;
   email: string;
-  role: 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance';
+  role: 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance' | 'technician';
   department: string;
   avatar?: string;
   createdBy: string;
@@ -14,7 +14,7 @@ export interface UpdateUserRequest {
   id: string;
   name?: string;
   email?: string;
-  role?: 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance';
+  role?: 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance' | 'technician';
   department?: string;
   avatar?: string;
   updatedBy: string;
@@ -597,24 +597,26 @@ export class UserManagementService {
     }
   }
 
-  private static mapDatabaseRoleToAppRole(dbRole: string): 'EMPLOYEE' | 'DO' | 'EO' | 'VENDOR' | 'FINANCE' {
-    const roleMap: Record<string, 'EMPLOYEE' | 'DO' | 'EO' | 'VENDOR' | 'FINANCE'> = {
+  private static mapDatabaseRoleToAppRole(dbRole: string): 'EMPLOYEE' | 'DO' | 'EO' | 'VENDOR' | 'FINANCE' | 'TECHNICIAN' {
+    const roleMap: Record<string, 'EMPLOYEE' | 'DO' | 'EO' | 'VENDOR' | 'FINANCE' | 'TECHNICIAN'> = {
       'employee': 'EMPLOYEE',
       'dept_officer': 'DO',
       'eo': 'EO',
       'vendor': 'VENDOR',
-      'finance': 'FINANCE'
+      'finance': 'FINANCE',
+      'technician': 'TECHNICIAN'
     };
     return roleMap[dbRole] || 'EMPLOYEE';
   }
 
-  static mapAppRoleToDatabase(appRole: 'EMPLOYEE' | 'DO' | 'EO' | 'VENDOR' | 'FINANCE'): 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance' {
-    const roleMap: Record<string, 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance'> = {
+  static mapAppRoleToDatabase(appRole: 'EMPLOYEE' | 'DO' | 'EO' | 'VENDOR' | 'FINANCE' | 'TECHNICIAN'): 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance' | 'technician' {
+    const roleMap: Record<string, 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance' | 'technician'> = {
       'EMPLOYEE': 'employee',
       'DO': 'dept_officer',
       'EO': 'eo',
       'VENDOR': 'vendor',
-      'FINANCE': 'finance'
+      'FINANCE': 'finance',
+      'TECHNICIAN': 'technician'
     };
     return roleMap[appRole] || 'employee';
   }

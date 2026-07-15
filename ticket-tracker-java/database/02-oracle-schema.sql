@@ -65,7 +65,7 @@ CREATE TABLE users (
   name VARCHAR2(500) NOT NULL,
   username VARCHAR2(100) UNIQUE,
   email VARCHAR2(500) NOT NULL UNIQUE,
-  role VARCHAR2(50) NOT NULL CHECK (role IN ('employee', 'eo', 'dept_officer', 'vendor', 'finance')),
+  role VARCHAR2(50) NOT NULL CHECK (role IN ('employee', 'eo', 'dept_officer', 'vendor', 'finance', 'technician')),
   department VARCHAR2(500) NOT NULL,
   password_hash VARCHAR2(500),
   password_salt VARCHAR2(500),

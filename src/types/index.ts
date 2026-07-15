@@ -3,7 +3,7 @@ export interface User {
   username: string;
   name: string;
   email: string;
-  role: 'EMPLOYEE' | 'DO' | 'EO' | 'VENDOR' | 'FINANCE';
+  role: 'EMPLOYEE' | 'DO' | 'EO' | 'VENDOR' | 'FINANCE' | 'TECHNICIAN';
   department: string;
   lastLogin?: Date;
 }
@@ -274,6 +274,7 @@ export interface RoleVisibility {
   EMPLOYEE: boolean;
   VENDOR?: boolean;
   FINANCE?: boolean;
+  TECHNICIAN?: boolean;
 }
 
 export interface ConditionalVisibility {

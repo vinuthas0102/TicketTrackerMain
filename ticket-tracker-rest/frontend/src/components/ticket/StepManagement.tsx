@@ -444,7 +444,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       description: step?.description || '',
       status: step?.status || 'NOT_STARTED',
       assignedTo: step?.assignedTo || '',
-      department: '',
+      department: step?.title ? (users.find(u => u.id === step.assignedTo)?.department || '') : (parentStep ? (ticket.department || '') : ''),
       dueDate: safeDateToISOString(step?.dueDate),
       startDate: safeDateToISOString(step?.startDate),
       isParallel: step?.is_parallel !== false,
@@ -459,7 +459,10 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       selectedFileReferences: [] as SelectedFileReference[]
     });
     const uniqueDepartments = Array.from(new Set(users.map(u => u.department).filter(Boolean)));
-    const filteredUsers = formData.department ? users.filter(u => u.department === formData.department) : users;
+    const isSubTask = !!parentStep;
+    const filteredUsers = formData.department
+      ? users.filter(u => u.department === formData.department && (!isSubTask || u.role === 'TECHNICIAN' || u.role === 'DO'))
+      : users;
     const [availableDependencySteps, setAvailableDependencySteps] = useState<WorkflowStep[]>([]);
     const [fileReferenceTemplates, setFileReferenceTemplates] = useState<FileReferenceTemplate[]>([]);
     const [completionFile, setCompletionFile] = useState<File | null>(null);
