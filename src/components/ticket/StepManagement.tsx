@@ -1346,11 +1346,10 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); onOpenChat?.(step); }}
-                    className="flex items-center space-x-1 px-2 py-1 text-xs font-medium rounded-md border transition-colors bg-gray-50 text-gray-600 border-gray-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
+                    className="p-1.5 text-gray-500 rounded-md border border-gray-300 bg-gray-50 hover:bg-green-50 hover:text-green-600 hover:border-green-300 transition-colors"
                     title="Chat"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
-                    <span>Chat</span>
                   </button>
                   <div className={`transition-transform duration-200 ${isViewing ? 'rotate-180' : ''}`}>
                     <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -1501,10 +1500,10 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); onOpenChat?.(step); }}
-                        className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors bg-gray-50 text-gray-600 border-gray-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
+                        className="p-1.5 text-gray-500 rounded-md border border-gray-300 bg-gray-50 hover:bg-green-50 hover:text-green-600 hover:border-green-300 transition-colors"
+                        title="Chat"
                       >
                         <MessageSquare className="w-3.5 h-3.5" />
-                        <span>Chat</span>
                       </button>
                     </div>
                   </div>

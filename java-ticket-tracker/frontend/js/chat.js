@@ -1,7 +1,7 @@
 /**
  * Chat component for workflow step comments.
- * Redesigned with bubble-style messages, channel tabs, attachment support,
- * and role-based access control.
+ * Redesigned with bubble-style messages, channel tabs at bottom,
+ * attachment support, and role-based access control.
  */
 const ChatPanel = (function () {
   var activeStepId = null;
@@ -9,6 +9,7 @@ const ChatPanel = (function () {
   var stepLevel = 1;
   var ticketAssignedTo = null;
   var stepAssignedTo = null;
+  var recipientName = null;
   var comments = [];
   var loading = false;
   var submitting = false;
@@ -45,10 +46,10 @@ const ChatPanel = (function () {
     var now = new Date();
     var diffSec = Math.floor((now.getTime() - date.getTime()) / 1000);
     if (diffSec < 60) return 'Just now';
-    if (diffSec < 3600) return Math.floor(diffSec / 60) + ' min ago';
-    if (diffSec < 86400) return Math.floor(diffSec / 3600) + ' hr ago';
-    if (diffSec < 604800) return Math.floor(diffSec / 86400) + ' days ago';
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    if (diffSec < 3600) return Math.floor(diffSec / 60) + 'm ago';
+    if (diffSec < 86400) return Math.floor(diffSec / 3600) + 'h ago';
+    if (diffSec < 604800) return Math.floor(diffSec / 86400) + 'd ago';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
   function getRoleBadgeClass(role) {
@@ -88,7 +89,7 @@ const ChatPanel = (function () {
 
   function escapeHtml(text) {
     if (!text) return '';
-    return text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&/g, '&amp;');
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   function formatFileSize(bytes) {
@@ -133,7 +134,7 @@ const ChatPanel = (function () {
     if (!content) return;
 
     if (selectedChannel !== 'in-app') {
-      channelInfo = 'Message queued for ' + selectedChannel + ' channel. Configure your webhook in Settings to enable delivery.';
+      channelInfo = 'Message queued for ' + selectedChannel + '. Configure your webhook in Settings to enable delivery.';
     }
 
     submitting = true;
@@ -147,7 +148,7 @@ const ChatPanel = (function () {
       if (fileInput) fileInput.value = '';
       await loadComments();
     } catch (err) {
-      error = 'Failed to add comment. Please try again.';
+      error = 'Failed to send message. Please try again.';
       console.error('Failed to add comment:', err);
       render();
     } finally {
@@ -167,19 +168,19 @@ const ChatPanel = (function () {
       editingCommentId = null;
       await loadComments();
     } catch (err) {
-      error = 'Failed to update comment. Please try again.';
+      error = 'Failed to update message. Please try again.';
       console.error('Failed to update comment:', err);
       render();
     }
   }
 
   async function handleDeleteComment(commentId) {
-    if (!confirm('Are you sure you want to delete this comment?')) return;
+    if (!confirm('Delete this message?')) return;
     try {
       await API.deleteStepComment(commentId);
       await loadComments();
     } catch (err) {
-      error = 'Failed to delete comment. Please try again.';
+      error = 'Failed to delete message. Please try again.';
       console.error('Failed to delete comment:', err);
       render();
     }
@@ -204,13 +205,13 @@ const ChatPanel = (function () {
     attachmentError = null;
 
     if (file.size > MAX_FILE_SIZE) {
-      attachmentError = 'File size exceeds 5MB limit. Your file is ' + (file.size / 1048576).toFixed(2) + 'MB';
+      attachmentError = 'File exceeds 5 MB limit (' + (file.size / 1048576).toFixed(1) + ' MB)';
       render();
       return;
     }
 
     if (ALLOWED_FILE_TYPES.indexOf(file.type) === -1) {
-      attachmentError = 'File type not supported. Allowed: PDF, Images, Word, Excel, ZIP';
+      attachmentError = 'Unsupported file type. Allowed: PDF, images, Word, Excel, ZIP';
       render();
       return;
     }
@@ -246,25 +247,6 @@ const ChatPanel = (function () {
 
     var user = getCurrentUser();
     var html = '';
-
-    // Channel Selector Bar
-    html += '<div class="chat-channel-bar">';
-    html += '  <span class="chat-channel-label">via</span>';
-    CHANNELS.forEach(function (ch) {
-      var isActive = selectedChannel === ch.id;
-      html += '<button class="chat-channel-pill' + (isActive ? ' chat-channel-active' : '') + '" onclick="ChatPanel._selectChannel(\'' + ch.id + '\')" title="' + ch.label + '">';
-      html += '<span>' + ch.label + '</span>';
-      html += '</button>';
-    });
-    html += '</div>';
-
-    // Channel Info Banner
-    if (channelInfo) {
-      html += '<div class="chat-channel-info">';
-      html += '<span>' + escapeHtml(channelInfo) + '</span>';
-      html += '<button onclick="ChatPanel._dismissChannelInfo()" class="chat-channel-info-close">&times;</button>';
-      html += '</div>';
-    }
 
     // Error Banner
     if (error) {
@@ -311,7 +293,7 @@ const ChatPanel = (function () {
 
         if (editingCommentId === comment.id) {
           html += '    <div class="chat-edit-form">';
-          html += '      <textarea id="chat-edit-input-' + comment.id + '" class="chat-edit-textarea" rows="3" placeholder="Edit your comment...">' + escapeHtml(comment.content || '') + '</textarea>';
+          html += '      <textarea id="chat-edit-input-' + comment.id + '" class="chat-edit-textarea" rows="3" placeholder="Edit your message...">' + escapeHtml(comment.content || '') + '</textarea>';
           html += '      <div class="chat-edit-actions">';
           html += '        <button onclick="ChatPanel._saveEdit(\'' + comment.id + '\')" class="chat-btn chat-btn-primary">Save</button>';
           html += '        <button onclick="ChatPanel._cancelEdit()" class="chat-btn chat-btn-secondary">Cancel</button>';
@@ -325,7 +307,7 @@ const ChatPanel = (function () {
             html += '      <div class="chat-attachment-card' + (isOwn ? ' chat-attachment-own' : '') + '">';
             html += '        <span class="chat-attachment-icon">' + getFileIcon(comment.attachmentType) + '</span>';
             html += '        <span class="chat-attachment-name">' + escapeHtml(comment.attachmentName) + '</span>';
-            html += '        <button onclick="ChatPanel._downloadAttachment(\'' + comment.id + '\', \'' + escapeHtml(comment.attachmentName) + '\')" class="chat-attachment-download" title="Download">';
+            html += '        <button onclick="ChatPanel._downloadAttachment(\'' + comment.id + '\', \'' + escapeHtml(comment.attachmentName).replace(/'/g, '&#39;') + '\')" class="chat-attachment-download" title="Download">';
             html += '          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
             html += '        </button>';
             html += '      </div>';
@@ -352,8 +334,16 @@ const ChatPanel = (function () {
     }
     html += '</div>'; // messages-list
 
-    // Input Toolbar
+    // Bottom input section
     if (canParticipate()) {
+      // Channel Info Banner
+      if (channelInfo) {
+        html += '<div class="chat-channel-info">';
+        html += '<span>' + escapeHtml(channelInfo) + '</span>';
+        html += '<button onclick="ChatPanel._dismissChannelInfo()" class="chat-channel-info-close">&times;</button>';
+        html += '</div>';
+      }
+
       // Attachment preview
       if (attachmentFile) {
         html += '<div class="chat-attachment-preview">';
@@ -372,13 +362,24 @@ const ChatPanel = (function () {
         html += '</div>';
       }
 
+      // Channel selector — just above the input row
+      html += '<div class="chat-channel-bar">';
+      html += '  <span class="chat-channel-label">via</span>';
+      CHANNELS.forEach(function (ch) {
+        var isActive = selectedChannel === ch.id;
+        html += '<button class="chat-channel-pill' + (isActive ? ' chat-channel-active' : '') + '" onclick="ChatPanel._selectChannel(\'' + ch.id + '\')" title="' + ch.label + '">';
+        html += '<span>' + ch.label + '</span>';
+        html += '</button>';
+      });
+      html += '</div>';
+
       // Input row
       html += '<div class="chat-input-bar">';
       html += '  <button onclick="document.getElementById(\'chat-file-input\').click()" class="chat-paperclip-btn" title="Attach file"' + (submitting ? ' disabled' : '') + '>';
       html += '    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
       html += '  </button>';
       html += '  <input type="file" id="chat-file-input" class="chat-file-input" onchange="ChatPanel._handleFileSelect(event)" accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx,.zip" />';
-      html += '  <textarea id="chat-new-comment-input" class="chat-input-textarea" rows="1" placeholder="Type a message... (Enter to send, Shift+Enter for new line)" onkeydown="ChatPanel._handleKeyDown(event)"' + (submitting ? ' disabled' : '') + '></textarea>';
+      html += '  <textarea id="chat-new-comment-input" class="chat-input-textarea" rows="1" placeholder="Type a message\u2026  (Enter to send)" onkeydown="ChatPanel._handleKeyDown(event)"' + (submitting ? ' disabled' : '') + '></textarea>';
       html += '  <button onclick="ChatPanel._submitComment()" class="chat-send-btn"' + (submitting ? ' disabled' : '') + ' title="Send">';
       if (submitting) {
         html += '    <div class="chat-send-spinner"></div>';
@@ -388,7 +389,7 @@ const ChatPanel = (function () {
       html += '  </button>';
       html += '</div>';
     } else {
-      html += '<div class="chat-no-access"><p>You are not part of this conversation.</p></div>';
+      html += '<div class="chat-no-access"><p>You are not a participant in this conversation.</p></div>';
     }
 
     container.innerHTML = html;
@@ -396,12 +397,13 @@ const ChatPanel = (function () {
   }
 
   return {
-    open: function (stepId, stepTitle, level, tAssignedTo, sAssignedTo) {
+    open: function (stepId, stepTitle, level, tAssignedTo, sAssignedTo, rName) {
       activeStepId = stepId;
       activeStepTitle = stepTitle || '';
       stepLevel = level || 1;
       ticketAssignedTo = tAssignedTo || null;
       stepAssignedTo = sAssignedTo || null;
+      recipientName = rName || null;
       editingCommentId = null;
       error = null;
       selectedChannel = 'in-app';
@@ -425,7 +427,7 @@ const ChatPanel = (function () {
         var header = document.createElement('div');
         header.className = 'chat-header';
         header.innerHTML = '<div class="chat-header-info">' +
-          '<div class="chat-header-title"><svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Task Chat</span></div>' +
+          '<div class="chat-header-title"><svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span id="chat-header-title-text"></span></div>' +
           '<p class="chat-header-subtitle" id="chat-header-subtitle"></p></div>' +
           '<button class="chat-close-btn" onclick="ChatPanel.close()" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
         panel.appendChild(header);
@@ -437,8 +439,15 @@ const ChatPanel = (function () {
         document.body.appendChild(panel);
       }
 
+      var titleEl = document.getElementById('chat-header-title-text');
+      if (titleEl) titleEl.textContent = activeStepTitle;
+
       var subtitle = document.getElementById('chat-header-subtitle');
-      if (subtitle) subtitle.textContent = activeStepTitle;
+      if (subtitle) {
+        subtitle.innerHTML = recipientName
+          ? 'Assigned to: <span class="chat-recipient-name">' + escapeHtml(recipientName) + '</span>'
+          : '';
+      }
 
       overlay.style.display = 'block';
       panel.style.display = 'flex';
@@ -451,6 +460,7 @@ const ChatPanel = (function () {
       editingCommentId = null;
       error = null;
       attachmentFile = null;
+      recipientName = null;
       var container = document.getElementById('chat-panel-container');
       if (container) container.innerHTML = '';
       var overlay = document.getElementById('chat-overlay');

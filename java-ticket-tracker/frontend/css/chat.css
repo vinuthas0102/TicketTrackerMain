@@ -70,6 +70,11 @@
   white-space: nowrap;
 }
 
+.chat-recipient-name {
+  font-weight: 500;
+  color: #374151;
+}
+
 .chat-close-btn {
   padding: 6px;
   border: none;
@@ -85,14 +90,14 @@
 .chat-close-btn:hover { background: #f3f4f6; color: #374151; }
 .chat-close-btn svg { width: 18px; height: 18px; }
 
-/* Channel Selector Bar */
+/* Channel Selector Bar — bottom, just above input */
 .chat-channel-bar {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 8px 16px;
+  background: #ffffff;
+  border-top: 1px solid #f3f4f6;
   flex-shrink: 0;
 }
 
@@ -130,14 +135,14 @@
   box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
 }
 
-/* Channel Info Banner */
+/* Channel Info Banner — above channel bar */
 .chat-channel-info {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 12px;
+  padding: 6px 16px;
   background: #eff6ff;
-  border-bottom: 1px solid #dbeafe;
+  border-top: 1px solid #dbeafe;
   font-size: 11px;
   color: #1e40af;
   flex-shrink: 0;
@@ -626,16 +631,14 @@
   color: #6b7280;
 }
 
-/* Chat button on workflow steps */
+/* Chat button on workflow steps — icon only */
 .chat-step-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  border-radius: 6px;
+  justify-content: center;
+  padding: 6px;
   border: 1px solid #d1d5db;
+  border-radius: 6px;
   background: #f9fafb;
   color: #6b7280;
   cursor: pointer;

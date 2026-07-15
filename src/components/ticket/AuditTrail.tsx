@@ -154,20 +154,27 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
     document.body.removeChild(link);
   };
 
+  const chatRecipientId = viewingChat?.assignedTo || ticket.assignedTo;
+  const chatRecipientName = users.find(u => u.id === chatRecipientId)?.name;
+
   if (viewingChat) {
     return (
       <div className="flex flex-col" style={{ minHeight: '400px', height: '100%' }}>
-        <div className="flex items-center justify-between pb-2 border-b border-gray-200 flex-shrink-0">
+        <div className="flex items-center justify-between px-1 pb-2 border-b border-gray-200 flex-shrink-0">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-green-600 shrink-0" />
-              <h3 className="text-sm font-semibold text-gray-900 truncate">Task Chat</h3>
+              <h3 className="text-sm font-semibold text-gray-900 truncate">{viewingChat.title}</h3>
             </div>
-            <p className="text-xs text-gray-500 mt-0.5 truncate">{viewingChat.title}</p>
+            {chatRecipientName && (
+              <p className="text-xs text-gray-500 mt-0.5 truncate">
+                Assigned to: <span className="font-medium text-gray-700">{chatRecipientName}</span>
+              </p>
+            )}
           </div>
           <button
             onClick={onCloseChat}
-            className="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition-colors ml-2 shrink-0"
+            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-2 shrink-0"
             title="Close"
           >
             <X className="w-4 h-4" />
@@ -178,6 +185,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
             stepId={viewingChat.id}
             step={viewingChat}
             ticketAssignedTo={ticket.assignedTo || undefined}
+            recipientName={chatRecipientName}
           />
         </div>
       </div>
