@@ -14,6 +14,7 @@ import java.sql.Timestamp;
  * - dept_officer: Department Officer (Manager)
  * - vendor: External vendor
  * - finance: Finance officer
+ * - technician: Technician (sub-task assignee within a department)
  */
 public class User {
 

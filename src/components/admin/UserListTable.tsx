@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Edit, Trash2, Eye, Power, PowerOff, Key } from 'lucide-react';
+import { CreditCard as Edit, Trash2, Eye, Power, PowerOff, Key } from 'lucide-react';
 import { User, ActionIconDefinition } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import IconDisplayWrapper from '../iconDisplay/IconDisplayWrapper';
@@ -78,6 +78,8 @@ const UserListTable: React.FC<UserListTableProps> = ({
         return 'bg-green-100 text-green-800';
       case 'VENDOR':
         return 'bg-yellow-100 text-yellow-800';
+      case 'TECHNICIAN':
+        return 'bg-teal-100 text-teal-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -93,6 +95,8 @@ const UserListTable: React.FC<UserListTableProps> = ({
         return 'Employee';
       case 'VENDOR':
         return 'Vendor';
+      case 'TECHNICIAN':
+        return 'Technician';
       default:
         return role;
     }

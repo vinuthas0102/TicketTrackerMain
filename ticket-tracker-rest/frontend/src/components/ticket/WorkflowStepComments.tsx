@@ -8,6 +8,7 @@ interface WorkflowStepCommentsProps {
   stepId: string;
   step?: WorkflowStep;
   ticketAssignedTo?: string;
+  parentStepAssignedTo?: string;
   recipientName?: string;
   onRefresh?: () => void;
   onChannelInvoke?: (channel: string, message: string) => void;
@@ -40,6 +41,7 @@ const WorkflowStepComments: React.FC<WorkflowStepCommentsProps> = ({
   stepId,
   step,
   ticketAssignedTo,
+  parentStepAssignedTo,
   recipientName,
   onRefresh,
   onChannelInvoke,
@@ -67,10 +69,10 @@ const WorkflowStepComments: React.FC<WorkflowStepCommentsProps> = ({
   const canParticipate = React.useMemo(() => {
     if (!user) return false;
     if (stepLevel === 1) {
-      return user.role === 'EO' || user.id === ticketAssignedTo;
+      return user.role === 'EO' || user.id === ticketAssignedTo || user.id === stepAssignedTo;
     }
-    return user.id === ticketAssignedTo || user.id === stepAssignedTo;
-  }, [user, stepLevel, ticketAssignedTo, stepAssignedTo]);
+    return user.id === ticketAssignedTo || user.id === stepAssignedTo || user.id === parentStepAssignedTo;
+  }, [user, stepLevel, ticketAssignedTo, stepAssignedTo, parentStepAssignedTo]);
 
   const loadComments = async () => {
     try {

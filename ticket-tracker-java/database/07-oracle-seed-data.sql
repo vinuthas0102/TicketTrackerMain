@@ -231,6 +231,32 @@ VALUES (
   1
 );
 
+-- Civil Technician (for C&E Inspections sub-tasks)
+INSERT INTO users (id, name, email, role, department, password_hash, password_salt, active)
+VALUES (
+  HEXTORAW(REPLACE('a1b2c3d4-e5f6-7890-abcd-ef1234567001', '-', '')),
+  'Civil Technician',
+  'civil.technician@tickettracker.com',
+  'technician',
+  'Civil Manager',
+  'changeme',
+  'salt',
+  1
+);
+
+-- Electrical Technician (for C&E Inspections sub-tasks)
+INSERT INTO users (id, name, email, role, department, password_hash, password_salt, active)
+VALUES (
+  HEXTORAW(REPLACE('a1b2c3d4-e5f6-7890-abcd-ef1234567002', '-', '')),
+  'Electrical Technician',
+  'electrical.technician@tickettracker.com',
+  'technician',
+  'Electrical Manager',
+  'changeme',
+  'salt',
+  1
+);
+
 COMMIT;
 
 -- ==================================================================================

@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
-import { Calendar, User, AlertTriangle, Clock, CheckCircle, XCircle, FileText, Users, CreditCard as Edit, Check, X, RotateCcw, Eye, Play, IndianRupee, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Calendar, User, AlertTriangle, Clock, CheckCircle, XCircle, FileText, Users, CreditCard as Edit, Check, X, RotateCcw, Eye, Play, IndianRupee, ChevronDown, ChevronUp, Download, Paperclip } from 'lucide-react';
 import { Ticket, User as UserType, ActionIconDefinition } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTickets } from '../../context/TicketContext';
 import { getHierarchyLevel } from '../../lib/hierarchyColors';
 import IconDisplayWrapper from '../iconDisplay/IconDisplayWrapper';
+import { FileService, DocumentMetadata } from '../../services/fileService';
 
 interface ListFieldProps {
   label: string;
@@ -163,6 +164,27 @@ const TicketCard: React.FC<TicketCardProps> = ({
   const isOverdue = ticket.dueDate && new Date() > ticket.dueDate && ticket.status !== 'COMPLETED' && ticket.status !== 'CANCELLED';
   const completedWorkflows = ticket.workflow.filter(step => step.status === 'COMPLETED').length;
   const totalWorkflows = ticket.workflow.length;
+
+  const [ticketAttachments, setTicketAttachments] = useState<DocumentMetadata[]>([]);
+  const [loadingAttachments, setLoadingAttachments] = useState(false);
+
+  useEffect(() => {
+    if (!isExpanded) return;
+    let cancelled = false;
+    const fetchAttachments = async () => {
+      setLoadingAttachments(true);
+      try {
+        const attachments = await FileService.getTicketAttachments(ticket.id);
+        if (!cancelled) setTicketAttachments(attachments);
+      } catch (error) {
+        console.error('Error fetching ticket attachments:', error);
+      } finally {
+        if (!cancelled) setLoadingAttachments(false);
+      }
+    };
+    fetchAttachments();
+    return () => { cancelled = true; };
+  }, [isExpanded, ticket.id]);
 
   const myAssignedTasks = user?.role === 'DO'
     ? ticket.workflow.filter(step => step.assignedTo === user.id).length
@@ -387,6 +409,17 @@ const TicketCard: React.FC<TicketCardProps> = ({
               {getStatusIcon(ticket.status)}
               <span>{ticket.status.replace(/_/g, ' ')}</span>
             </span>
+            {totalWorkflows > 0 && (
+              <span className="inline-flex items-center gap-1.5" title={`${completedWorkflows}/${totalWorkflows} workflow steps completed`}>
+                <span className="relative w-16 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                  <span
+                    className="absolute top-0 left-0 h-1.5 rounded-full bg-blue-500 transition-all duration-500"
+                    style={{ width: `${(completedWorkflows / totalWorkflows) * 100}%` }}
+                  />
+                </span>
+                <span className="text-[10px] font-semibold text-gray-500">{completedWorkflows}/{totalWorkflows}</span>
+              </span>
+            )}
             <button
               className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
               title={isExpanded ? 'Collapse' : 'Expand'}
@@ -446,6 +479,43 @@ const TicketCard: React.FC<TicketCardProps> = ({
                 </div>
               </div>
             )}
+            <div>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <Paperclip className="w-3 h-3" />
+                Attachments
+              </p>
+              {loadingAttachments ? (
+                <p className="text-xs text-gray-400 italic">Loading attachments...</p>
+              ) : ticketAttachments.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {ticketAttachments.map((att) => (
+                    <li key={att.id} className="flex items-center gap-2 text-sm">
+                      <FileText className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span className="text-gray-700 truncate flex-1">{att.name}</span>
+                      <span className="text-xs text-gray-400 shrink-0">{FileService.formatFileSize(att.size)}</span>
+                      <a
+                        href="#"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          try {
+                            const url = await FileService.getFileUrl(att.storagePath);
+                            if (url) window.open(url, '_blank');
+                          } catch (err) {
+                            console.error('Error getting file URL:', err);
+                          }
+                        }}
+                        className="text-blue-600 hover:text-blue-800 shrink-0"
+                        title="Download"
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-gray-400 italic">No documents attached</p>
+              )}
+            </div>
           </div>
         )}
 

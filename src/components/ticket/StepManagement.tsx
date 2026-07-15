@@ -441,7 +441,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       description: step?.description || '',
       status: step?.status || 'NOT_STARTED',
       assignedTo: step?.assignedTo || '',
-      department: '',
+      department: step?.title ? (users.find(u => u.id === step.assignedTo)?.department || '') : (parentStep ? (users.find(u => u.id === parentStep.assignedTo)?.department || '') : ''),
       dueDate: step?.dueDate ? new Date(step.dueDate).toISOString().split('T')[0] : '',
       startDate: step?.startDate ? new Date(step.startDate).toISOString().split('T')[0] : '',
       isParallel: step?.is_parallel !== false,
@@ -456,7 +456,10 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       selectedFileReferences: [] as SelectedFileReference[]
     });
     const uniqueDepartments = Array.from(new Set(users.map(u => u.department).filter(Boolean)));
-    const filteredUsers = formData.department ? users.filter(u => u.department === formData.department) : users;
+    const isSubTask = !!parentStep;
+    const filteredUsers = formData.department
+      ? users.filter(u => u.department === formData.department && (!isSubTask || u.role === 'TECHNICIAN' || u.role === 'DO'))
+      : users;
     const [availableDependencySteps, setAvailableDependencySteps] = useState<WorkflowStep[]>([]);
     const [fileReferenceTemplates, setFileReferenceTemplates] = useState<FileReferenceTemplate[]>([]);
     const [completionFile, setCompletionFile] = useState<File | null>(null);
@@ -470,6 +473,15 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     const requiresFileUpload = isCompletingStep && user?.role === 'DO';
     const isEO = user?.role === 'EO';
     const isDependencyLocked = step?.is_dependency_locked || false;
+
+    React.useEffect(() => {
+      if (isSubTask && !step && parentStep) {
+        const parentDept = users.find(u => u.id === parentStep.assignedTo)?.department || '';
+        if (parentDept && !formData.department) {
+          setFormData(prev => ({ ...prev, department: parentDept }));
+        }
+      }
+    }, [isSubTask, step, parentStep, users, formData.department]);
 
     React.useEffect(() => {
       if (!step && !formData.isParallel && isEO) {
@@ -597,22 +609,33 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+          <input
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
             <select
               value={formData.department}
+              disabled={isSubTask}
               onChange={(e) => {
                 const newDept = e.target.value;
                 const assignedUser = users.find(u => u.id === formData.assignedTo);
@@ -622,7 +645,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                   assignedTo: (assignedUser && newDept && assignedUser.department !== newDept) ? '' : formData.assignedTo
                 });
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isSubTask ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <option value="">All Departments</option>
               {uniqueDepartments.map(dept => (
@@ -644,16 +667,6 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
               ))}
             </select>
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-          <textarea
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

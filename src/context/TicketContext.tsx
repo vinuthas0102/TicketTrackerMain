@@ -116,7 +116,11 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
         throw new Error('No module selected');
       }
 
-      const ticketId = await TicketService.createTicket(ticketData, copiedFromTicketId);
+      const effectiveTicketData = user?.role === 'EO' && ticketData.status === 'SUBMITTED'
+        ? { ...ticketData, status: 'ACTIVE' as const }
+        : ticketData;
+
+      const ticketId = await TicketService.createTicket(effectiveTicketData, copiedFromTicketId);
 
       // Reload tickets to get the updated list
       if (user) {
@@ -146,8 +150,12 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
 
       setBulkOperationInProgress(true);
 
+      const effectiveTicketsData = user.role === 'EO'
+        ? ticketsData.map(t => t.status === 'SUBMITTED' ? { ...t, status: 'ACTIVE' as const } : t)
+        : ticketsData;
+
       const result = await TicketService.createTicketsBulk(
-        ticketsData,
+        effectiveTicketsData,
         selectedModule.id,
         user.id
       );
@@ -175,7 +183,11 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
       if (!user) throw new Error('User not authenticated');
       if (!selectedModule) throw new Error('No module selected');
       
-      await TicketService.updateTicket(id, updates, user.id);
+      const effectiveUpdates = user.role === 'EO' && updates.status === 'SUBMITTED'
+        ? { ...updates, status: 'ACTIVE' as const }
+        : updates;
+
+      await TicketService.updateTicket(id, effectiveUpdates, user.id);
 
       // Reload tickets to get the updated list
       const updatedTickets = await TicketService.getTicketsByModule(

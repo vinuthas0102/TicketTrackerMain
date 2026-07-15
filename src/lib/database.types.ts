@@ -40,7 +40,7 @@ export interface Database {
           id: string
           name: string
           email: string
-          role: 'employee' | 'eo' | 'dept_officer'
+          role: 'employee' | 'eo' | 'dept_officer' | 'vendor' | 'finance' | 'technician'
           department: string
           avatar: string | null
           active: boolean | null
@@ -51,7 +51,7 @@ export interface Database {
           id?: string
           name: string
           email: string
-          role: 'employee' | 'eo' | 'dept_officer'
+          role: 'employee' | 'eo' | 'dept_officer' | 'vendor' | 'finance' | 'technician'
           department: string
           avatar?: string | null
           active?: boolean | null
@@ -62,7 +62,7 @@ export interface Database {
           id?: string
           name?: string
           email?: string
-          role?: 'employee' | 'eo' | 'dept_officer'
+          role?: 'employee' | 'eo' | 'dept_officer' | 'vendor' | 'finance' | 'technician'
           department?: string
           avatar?: string | null
           active?: boolean | null

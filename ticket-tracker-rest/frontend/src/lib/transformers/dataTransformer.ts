@@ -36,6 +36,7 @@ export const roleToBackend = (frontendRole: string): string => {
     'EMPLOYEE': 'employee',
     'VENDOR': 'vendor',
     'FINANCE': 'finance',
+    'TECHNICIAN': 'technician',
     'ADMIN': 'admin',
   };
   return mapping[frontendRole] || frontendRole.toLowerCase();
@@ -48,6 +49,7 @@ export const roleToFrontend = (backendRole: string): string => {
     'employee': 'EMPLOYEE',
     'vendor': 'VENDOR',
     'finance': 'FINANCE',
+    'technician': 'TECHNICIAN',
     'admin': 'ADMIN',
   };
   return mapping[backendRole] || backendRole.toUpperCase();

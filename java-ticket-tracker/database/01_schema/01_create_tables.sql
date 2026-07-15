@@ -26,7 +26,7 @@ CREATE TABLE users (
     name VARCHAR2(200) NOT NULL,
     username VARCHAR2(200) UNIQUE,
     email VARCHAR2(200) UNIQUE NOT NULL,
-    role VARCHAR2(50) NOT NULL CHECK (role IN ('employee', 'eo', 'dept_officer', 'vendor', 'finance_officer', 'admin')),
+    role VARCHAR2(50) NOT NULL CHECK (role IN ('employee', 'eo', 'dept_officer', 'vendor', 'finance_officer', 'admin', 'technician')),
     department VARCHAR2(200) NOT NULL,
     password_hash VARCHAR2(255),
     avatar VARCHAR2(500),

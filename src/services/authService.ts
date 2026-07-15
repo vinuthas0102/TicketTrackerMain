@@ -33,6 +33,8 @@ export class AuthService {
         (usernameOrEmail === 'do.electrical' && password === 'do.electrical') ||
         (usernameOrEmail === 'civil.manager@tickettracker.com' && password === 'civil123') ||
         (usernameOrEmail === 'electrical.manager@tickettracker.com' && password === 'electrical123') ||
+        (usernameOrEmail === 'civil.technician@tickettracker.com' && password === 'technician123') ||
+        (usernameOrEmail === 'electrical.technician@tickettracker.com' && password === 'technician123') ||
         (usernameOrEmail === 'finance.officer' && password === 'finance123') ||
         (usernameOrEmail === 'abc.construction' && password === 'vendor123') ||
         (usernameOrEmail === 'xyz.suppliers' && password === 'vendor123') ||
@@ -50,6 +52,8 @@ export class AuthService {
         (usernameOrEmail === 'do.civil@company.com' && password === 'do.civil') ||
         (usernameOrEmail === 'do.electrical@company.com' && password === 'do.electrical') ||
         (usernameOrEmail === 'finance.officer@company.com' && password === 'finance123') ||
+        (usernameOrEmail === 'civil.technician@company.com' && password === 'technician123') ||
+        (usernameOrEmail === 'electrical.technician@company.com' && password === 'technician123') ||
         (usernameOrEmail === 'abc.construction@vendor.com' && password === 'vendor123') ||
         (usernameOrEmail === 'xyz.suppliers@vendor.com' && password === 'vendor123') ||
         (usernameOrEmail === 'global.services@vendor.com' && password === 'vendor123')
@@ -147,7 +151,7 @@ export class AuthService {
         username: data.email.split('@')[0],
         name: data.name,
         email: data.email,
-        role: data.role === 'dept_officer' ? 'DO' : data.role === 'eo' ? 'EO' : data.role === 'employee' ? 'EMPLOYEE' : data.role === 'vendor' ? 'VENDOR' : data.role === 'finance' ? 'FINANCE' : data.role,
+        role: data.role === 'dept_officer' ? 'DO' : data.role === 'eo' ? 'EO' : data.role === 'employee' ? 'EMPLOYEE' : data.role === 'vendor' ? 'VENDOR' : data.role === 'finance' ? 'FINANCE' : data.role === 'technician' ? 'TECHNICIAN' : data.role,
         department: data.department,
         lastLogin: data.last_login ? new Date(data.last_login) : undefined
       };
@@ -178,7 +182,7 @@ export class AuthService {
         username: data.email.split('@')[0],
         name: data.name,
         email: data.email,
-        role: data.role === 'dept_officer' ? 'DO' : data.role === 'eo' ? 'EO' : data.role === 'employee' ? 'EMPLOYEE' : data.role === 'vendor' ? 'VENDOR' : data.role === 'finance' ? 'FINANCE' : data.role,
+        role: data.role === 'dept_officer' ? 'DO' : data.role === 'eo' ? 'EO' : data.role === 'employee' ? 'EMPLOYEE' : data.role === 'vendor' ? 'VENDOR' : data.role === 'finance' ? 'FINANCE' : data.role === 'technician' ? 'TECHNICIAN' : data.role,
         department: data.department,
         lastLogin: data.last_login ? new Date(data.last_login) : undefined
       };
@@ -211,7 +215,8 @@ export class AuthService {
           'EO': 'eo',
           'EMPLOYEE': 'employee',
           'VENDOR': 'vendor',
-          'FINANCE': 'finance'
+          'FINANCE': 'finance',
+          'TECHNICIAN': 'technician'
         };
 
         const dbRole = roleMapping[mockUser.role] || mockUser.role.toLowerCase();
@@ -252,6 +257,8 @@ export class AuthService {
       (usernameOrEmail === 'do.electrical' && password === 'do.electrical') ||
       (usernameOrEmail === 'civil.manager@tickettracker.com' && password === 'civil123') ||
       (usernameOrEmail === 'electrical.manager@tickettracker.com' && password === 'electrical123') ||
+      (usernameOrEmail === 'civil.technician@tickettracker.com' && password === 'technician123') ||
+      (usernameOrEmail === 'electrical.technician@tickettracker.com' && password === 'technician123') ||
       (usernameOrEmail === 'abc.construction' && password === 'vendor123') ||
       (usernameOrEmail === 'xyz.suppliers' && password === 'vendor123') ||
       (usernameOrEmail === 'global.services' && password === 'vendor123') ||
@@ -267,6 +274,8 @@ export class AuthService {
       (usernameOrEmail === 'do.maintenance@company.com' && password === 'do.maintenance') ||
       (usernameOrEmail === 'do.civil@company.com' && password === 'do.civil') ||
       (usernameOrEmail === 'do.electrical@company.com' && password === 'do.electrical') ||
+      (usernameOrEmail === 'civil.technician@company.com' && password === 'technician123') ||
+      (usernameOrEmail === 'electrical.technician@company.com' && password === 'technician123') ||
       (usernameOrEmail === 'abc.construction@vendor.com' && password === 'vendor123') ||
       (usernameOrEmail === 'xyz.suppliers@vendor.com' && password === 'vendor123') ||
       (usernameOrEmail === 'global.services@vendor.com' && password === 'vendor123')
@@ -316,7 +325,7 @@ export class AuthService {
         username: user.email.split('@')[0],
         name: user.name,
         email: user.email,
-        role: user.role === 'dept_officer' ? 'DO' : user.role === 'eo' ? 'EO' : user.role === 'employee' ? 'EMPLOYEE' : user.role === 'vendor' ? 'VENDOR' : user.role === 'finance' ? 'FINANCE' : user.role,
+        role: user.role === 'dept_officer' ? 'DO' : user.role === 'eo' ? 'EO' : user.role === 'employee' ? 'EMPLOYEE' : user.role === 'vendor' ? 'VENDOR' : user.role === 'finance' ? 'FINANCE' : user.role === 'technician' ? 'TECHNICIAN' : user.role,
         department: user.department,
         lastLogin: user.last_login ? new Date(user.last_login) : undefined
       }))

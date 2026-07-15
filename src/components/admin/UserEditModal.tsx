@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Edit } from 'lucide-react';
+import { X, Save, CreditCard as Edit } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { User, IconDisplayType, IconSize } from '../../types';
 import { UserManagementService, UpdateUserRequest } from '../../services/userManagementService';
@@ -170,6 +170,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ user, onClose, onUserUpda
               <option value="eo">Executive Officer</option>
               <option value="vendor">Vendor</option>
               <option value="finance">Finance Officer</option>
+              <option value="technician">Technician</option>
             </select>
           </div>
 
