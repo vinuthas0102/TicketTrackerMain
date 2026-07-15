@@ -156,8 +156,8 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
 
   const chatRecipientId = viewingChat?.assignedTo || ticket.assignedTo;
   const chatRecipientName = users.find(u => u.id === chatRecipientId)?.name;
-  const rootStep = ticket.workflow.find(s => !s.parentStepId);
-  const parentStepAssignedTo = rootStep?.assignedTo;
+  const directParentStep = viewingChat ? ticket.workflow.find(s => s.id === viewingChat.parentStepId) : undefined;
+  const parentStepAssignedTo = directParentStep?.assignedTo;
 
   if (viewingChat) {
     return (

@@ -69,7 +69,7 @@ const WorkflowStepComments: React.FC<WorkflowStepCommentsProps> = ({
   const canParticipate = React.useMemo(() => {
     if (!user) return false;
     if (stepLevel === 1) {
-      return user.role === 'EO' || user.id === ticketAssignedTo;
+      return user.role === 'EO' || user.id === ticketAssignedTo || user.id === stepAssignedTo;
     }
     return user.id === ticketAssignedTo || user.id === stepAssignedTo || user.id === parentStepAssignedTo;
   }, [user, stepLevel, ticketAssignedTo, stepAssignedTo, parentStepAssignedTo]);
