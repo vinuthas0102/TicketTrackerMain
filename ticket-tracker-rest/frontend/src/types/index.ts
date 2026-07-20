@@ -5,6 +5,7 @@ export interface User {
   email: string;
   role: 'EMPLOYEE' | 'DO' | 'EO' | 'VENDOR' | 'FINANCE' | 'TECHNICIAN';
   department: string;
+  sapId?: string;
   lastLogin?: Date;
 }
 

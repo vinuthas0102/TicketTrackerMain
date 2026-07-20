@@ -6,6 +6,7 @@ export interface CreateUserRequest {
   email: string;
   role: 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance' | 'technician';
   department: string;
+  sapId?: string;
   avatar?: string;
   createdBy: string;
 }
@@ -16,6 +17,7 @@ export interface UpdateUserRequest {
   email?: string;
   role?: 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance' | 'technician';
   department?: string;
+  sapId?: string;
   avatar?: string;
   updatedBy: string;
 }
@@ -113,6 +115,7 @@ export class UserManagementService {
           email: request.email,
           role: request.role,
           department: request.department,
+          sap_id: request.sapId || null,
           avatar: request.avatar,
           active: true,
           temp_password: tempPassword,
@@ -138,7 +141,8 @@ export class UserManagementService {
           name: request.name,
           email: request.email,
           role: request.role,
-          department: request.department
+          department: request.department,
+          sap_id: request.sapId || null
         }
       });
 
@@ -149,6 +153,7 @@ export class UserManagementService {
         email: newUser.email,
         role: this.mapDatabaseRoleToAppRole(newUser.role),
         department: newUser.department,
+        sapId: newUser.sap_id || undefined,
         lastLogin: newUser.last_login ? new Date(newUser.last_login) : undefined
       };
 
@@ -198,6 +203,7 @@ export class UserManagementService {
       if (request.email !== undefined) updateData.email = request.email;
       if (request.role !== undefined) updateData.role = request.role;
       if (request.department !== undefined) updateData.department = request.department;
+      if (request.sapId !== undefined) updateData.sap_id = request.sapId || null;
       if (request.avatar !== undefined) updateData.avatar = request.avatar;
 
       const { data: updatedUser, error: updateError } = await supabase
@@ -233,6 +239,10 @@ export class UserManagementService {
         oldValues.department = existingUser.department;
         newValues.department = request.department;
       }
+      if (request.sapId !== undefined && request.sapId !== (existingUser.sap_id || '')) {
+        oldValues.sap_id = existingUser.sap_id;
+        newValues.sap_id = request.sapId || null;
+      }
 
       if (Object.keys(newValues).length > 0) {
         await supabase.rpc('log_user_management_action', {
@@ -251,6 +261,7 @@ export class UserManagementService {
         email: updatedUser.email,
         role: this.mapDatabaseRoleToAppRole(updatedUser.role),
         department: updatedUser.department,
+        sapId: updatedUser.sap_id || undefined,
         lastLogin: updatedUser.last_login ? new Date(updatedUser.last_login) : undefined
       };
 
@@ -431,6 +442,7 @@ export class UserManagementService {
         email: user.email,
         role: this.mapDatabaseRoleToAppRole(user.role),
         department: user.department,
+        sapId: user.sap_id || undefined,
         lastLogin: user.last_login ? new Date(user.last_login) : undefined
       })) || [];
     } catch (error) {
@@ -462,6 +474,7 @@ export class UserManagementService {
         email: user.email,
         role: this.mapDatabaseRoleToAppRole(user.role),
         department: user.department,
+        sapId: user.sap_id || undefined,
         lastLogin: user.last_login ? new Date(user.last_login) : undefined
       };
     } catch (error) {

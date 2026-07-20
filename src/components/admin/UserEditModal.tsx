@@ -18,6 +18,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ user, onClose, onUserUpda
     email: user.email,
     role: user.role === 'DO' ? 'dept_officer' : user.role === 'EO' ? 'eo' : user.role === 'EMPLOYEE' ? 'employee' : user.role === 'VENDOR' ? 'vendor' : 'finance',
     department: user.department,
+    sapId: user.sapId || '',
     iconDisplayType: 'dropdown_menu' as IconDisplayType,
     iconSize: 'medium' as IconSize,
     showLabels: true,
@@ -75,6 +76,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ user, onClose, onUserUpda
         email: formData.email,
         role: formData.role as 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance',
         department: formData.department,
+        sapId: formData.sapId.trim() || undefined,
         updatedBy: currentUser.id
       };
 
@@ -185,6 +187,19 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ user, onClose, onUserUpda
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="e.g., IT, HR, Finance"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              SAP ID
+            </label>
+            <input
+              type="text"
+              value={formData.sapId}
+              onChange={(e) => setFormData({ ...formData, sapId: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter SAP ID"
             />
           </div>
 

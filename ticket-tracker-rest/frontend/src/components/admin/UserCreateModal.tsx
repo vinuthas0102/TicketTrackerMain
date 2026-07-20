@@ -17,6 +17,7 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
     email: '',
     role: 'employee' as 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance' | 'technician',
     department: '',
+    sapId: '',
     iconDisplayType: 'dropdown_menu' as IconDisplayType,
     iconSize: 'medium' as IconSize,
     showLabels: true,
@@ -51,6 +52,7 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
         email: formData.email,
         role: formData.role,
         department: formData.department,
+        sapId: formData.sapId.trim() || undefined,
         createdBy: currentUser.id
       };
 
@@ -169,6 +171,10 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
                   <dt className="text-blue-700">Department:</dt>
                   <dd className="text-blue-900 font-medium">{formData.department}</dd>
                 </div>
+                <div className="flex justify-between">
+                  <dt className="text-blue-700">SAP ID:</dt>
+                  <dd className="text-blue-900 font-medium">{formData.sapId || 'N/A'}</dd>
+                </div>
               </dl>
             </div>
 
@@ -267,6 +273,19 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="e.g., IT, HR, Finance"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              SAP ID
+            </label>
+            <input
+              type="text"
+              value={formData.sapId}
+              onChange={(e) => setFormData({ ...formData, sapId: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter SAP ID"
             />
           </div>
 

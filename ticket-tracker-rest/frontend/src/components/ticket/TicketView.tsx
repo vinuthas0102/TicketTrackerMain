@@ -413,6 +413,11 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
                       <span className="text-sm text-gray-900">{ticket.category}</span>
                     </div>
 
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-0.5">SAP ID</label>
+                      <span className="text-sm text-gray-900">{createdByUser?.sapId || 'N/A'}</span>
+                    </div>
+
                     {ticket.requestType && (
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-0.5">Request Type</label>
