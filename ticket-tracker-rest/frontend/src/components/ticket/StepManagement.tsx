@@ -1068,6 +1068,23 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       }
 
       try {
+        console.log('[StepManagement] Validating sub-task completion...');
+        const incompleteSubTasks = getChildren(editingStep.id).filter(
+          s => s.status !== 'COMPLETED' && s.status !== 'CLOSED'
+        );
+        if (incompleteSubTasks.length > 0) {
+          const subTaskList = incompleteSubTasks.map(s => `- ${s.title} (Status: ${s.status})`).join('\n');
+          alert(`Cannot complete this task until all sub-tasks are completed.\n\nIncomplete sub-tasks:\n${subTaskList}`);
+          return;
+        }
+        console.log('[StepManagement] Sub-task validation passed');
+      } catch (error) {
+        console.error('[StepManagement] Error validating sub-tasks:', error);
+        alert('Error validating sub-tasks: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        return;
+      }
+
+      try {
         console.log('[StepManagement] Validating dependencies...');
         const validationResult = await DependencyService.validateStepCompletion(editingStep, ticket.workflow);
         console.log('[StepManagement] Dependency validation result:', validationResult);

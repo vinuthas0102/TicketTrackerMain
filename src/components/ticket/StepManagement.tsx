@@ -1052,6 +1052,15 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
         return;
       }
 
+      const incompleteSubTasks = getChildren(editingStep.id).filter(
+        s => s.status !== 'COMPLETED' && s.status !== 'CLOSED'
+      );
+      if (incompleteSubTasks.length > 0) {
+        const subTaskList = incompleteSubTasks.map(s => `- ${s.title} (Status: ${s.status})`).join('\n');
+        alert(`Cannot complete this task until all sub-tasks are completed.\n\nIncomplete sub-tasks:\n${subTaskList}`);
+        return;
+      }
+
       const validationResult = await DependencyService.validateStepCompletion(editingStep, ticket.workflow);
       if (!validationResult.canComplete) {
         const incompleteTitles = validationResult.incompleteDependencies

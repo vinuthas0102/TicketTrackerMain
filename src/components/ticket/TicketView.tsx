@@ -235,9 +235,15 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
 
     let availableTransitions = transitions[ticket.status] || [];
 
+    const workflowCompleted = areAllWorkflowTasksCompleted();
+
+    // Block resolving/closing the ticket until all tasks and sub-tasks are completed
+    if (!workflowCompleted) {
+      availableTransitions = availableTransitions.filter(s => s !== 'COMPLETED' && s !== 'CLOSED');
+    }
+
     // Add SENT_TO_FINANCE option for ACTIVE and REJECTED_BY_FINANCE status
     // Only if all workflow tasks are completed and finance approval is required
-    const workflowCompleted = areAllWorkflowTasksCompleted();
     console.log('[TicketView] Finance option check:', {
       ticketId: ticket.id,
       status: ticket.status,
