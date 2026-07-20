@@ -17,7 +17,7 @@ interface TicketFormProps {
 const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copiedTicket, copiedAttachmentIds = [] }) => {
   const { user } = useAuth();
   const { selectedModule } = useAuth();
-  const { createTicket, updateTicket, users, tickets } = useTickets();
+  const { createTicket, updateTicket, tickets } = useTickets();
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState<FileList | null>(null);
   const [copyingAttachments, setCopyingAttachments] = useState(false);
@@ -69,7 +69,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
     category: sourceTicket?.category || 'General',
     assignedTo: ticket?.assignedTo || '',
     estCompletionDate: safeDateToISOString(ticket?.dueDate),
-    department: sourceTicket?.department || user?.department || '',
+    department: user?.department || '',
     propertyId: sourceTicket?.propertyId || 'PROP001',
     propertyLocation: sourceTicket?.propertyLocation || 'Location01',
     requestType: sourceTicket?.requestType || (user?.role === 'EMPLOYEE' ? 'General Maintenance' : '')
@@ -97,7 +97,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
         category: copiedTicket.category || 'General',
         assignedTo: '',
         estCompletionDate: '',
-        department: copiedTicket.department || user?.department || '',
+        department: user?.department || '',
         propertyId: copiedTicket.propertyId || 'PROP001',
         propertyLocation: copiedTicket.propertyLocation || 'Location01',
         requestType: copiedTicket.requestType || (user?.role === 'EMPLOYEE' ? 'General Maintenance' : '')
@@ -123,9 +123,6 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
       if (user?.role === 'EMPLOYEE') {
         if (!formData.propertyId) { setValidationError('Property ID is required to submit.'); return false; }
         if (!formData.propertyLocation) { setValidationError('Property Location is required to submit.'); return false; }
-      }
-      if (user?.role === 'EO' && !formData.department) {
-        setValidationError('Department is required to submit.'); return false;
       }
       if (availableRequestTypes.length > 0 && !formData.requestType) {
         setValidationError('Request Type is required to submit.'); return false;
@@ -313,13 +310,6 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
     }
   };
 
-  const availableUsers = users.filter(u => {
-    if (user?.role === 'EO') return true;
-    if (user?.role === 'DO') return u.department === user.department;
-    return u.id === user?.id;
-  });
-
-  const availableDepartments = [...new Set(users.map(u => u.department))];
   const availableCategories = selectedModule?.config?.categories || ['General'];
   const availableRequestTypes = selectedModule?.config?.requestTypes || [];
   const selectedRequestType = availableRequestTypes.find(rt => rt.value === formData.requestType);
@@ -573,43 +563,6 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                       </p>
                     </div>
                   )}
-                </div>
-              )}
-
-              {/* Department and Assigned To */}
-              {/* Department and Assigned To - Only show for EO */}
-              {user?.role === 'EO' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Department *
-                    </label>
-                    <select
-                      value={formData.department}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      {availableDepartments.map(dept => (
-                        <option key={dept} value={dept}>{dept}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Assigned To
-                    </label>
-                    <select
-                      value={formData.assignedTo}
-                      onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Unassigned</option>
-                      {availableUsers.map(user => (
-                        <option key={user.id} value={user.id}>{user.name}</option>
-                      ))}
-                    </select>
-                  </div>
                 </div>
               )}
 

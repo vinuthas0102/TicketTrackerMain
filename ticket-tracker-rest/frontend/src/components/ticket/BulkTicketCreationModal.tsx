@@ -14,7 +14,7 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { users, createTicketsBulk, bulkOperationInProgress } = useTickets();
+  const { createTicketsBulk, bulkOperationInProgress } = useTickets();
   const { user, selectedModule } = useAuth();
   const [rows, setRows] = useState<BulkTicketRow[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -47,10 +47,6 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
 
     if (!row.title || row.title.trim() === '') {
       errors.title = 'Title is required';
-    }
-
-    if (!row.department || row.department.trim() === '') {
-      errors.department = 'Department is required';
     }
 
     if (!row.propertyId || row.propertyId.trim() === '') {
@@ -355,23 +351,6 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
 
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Assigned To
-                      </label>
-                      <select
-                        value={row.assignedTo}
-                        onChange={(e) => updateRow(row.rowId, 'assignedTo', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        disabled={bulkOperationInProgress}
-                      >
-                        <option value="">Unassigned</option>
-                        {users.map(u => (
-                          <option key={u.id} value={u.id}>{u.name}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
                         Est Completion Date
                       </label>
                       <input
@@ -382,25 +361,6 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
                         min={getCurrentDateISOString()}
                         disabled={bulkOperationInProgress}
                       />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Department <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={row.department}
-                        onChange={(e) => updateRow(row.rowId, 'department', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-md text-sm ${
-                          row.errors?.department ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        placeholder="Department name"
-                        disabled={bulkOperationInProgress}
-                      />
-                      {row.errors?.department && (
-                        <p className="text-xs text-red-600 mt-1">{row.errors.department}</p>
-                      )}
                     </div>
 
                     <div>
