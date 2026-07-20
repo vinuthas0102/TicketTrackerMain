@@ -403,7 +403,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
   };
 
   const canAddSubWorkflow = (step: WorkflowStep) => {
-    return (step.level_2 === 0 && step.level_3 === 0) || (step.level_2 !== 0 && step.level_3 === 0);
+    return step.level_2 === 0 && step.level_3 === 0;
   };
 
   const handleAddSubWorkflow = (parentStep: WorkflowStep) => {
