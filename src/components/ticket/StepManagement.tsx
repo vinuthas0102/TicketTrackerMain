@@ -442,8 +442,8 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       status: step?.status || 'NOT_STARTED',
       assignedTo: step?.assignedTo || '',
       department: step?.title ? (users.find(u => u.id === step.assignedTo)?.department || '') : (parentStep ? (users.find(u => u.id === parentStep.assignedTo)?.department || '') : ''),
-      dueDate: step?.dueDate ? new Date(step.dueDate).toISOString().split('T')[0] : '',
-      startDate: step?.startDate ? new Date(step.startDate).toISOString().split('T')[0] : '',
+      dueDate: step?.dueDate ? new Date(step.dueDate).toISOString().split('T')[0] : (parentStep?.dueDate ? new Date(parentStep.dueDate).toISOString().split('T')[0] : ''),
+      startDate: step?.startDate ? new Date(step.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       isParallel: step?.is_parallel !== false,
       dependencyMode: step?.dependency_mode || 'all',
       dependentOnStepIds: [] as string[],
@@ -479,9 +479,12 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     React.useEffect(() => {
       if (isSubTask && !step && parentStep) {
         const parentDept = users.find(u => u.id === parentStep.assignedTo)?.department || '';
-        if (parentDept && !formData.department) {
-          setFormData(prev => ({ ...prev, department: parentDept }));
-        }
+        const parentDueDate = parentStep.dueDate ? new Date(parentStep.dueDate).toISOString().split('T')[0] : '';
+        setFormData(prev => ({
+          ...prev,
+          department: (parentDept && !prev.department) ? parentDept : prev.department,
+          dueDate: parentDueDate || prev.dueDate
+        }));
       }
     }, [isSubTask, step, parentStep, users, formData.department]);
 
@@ -732,9 +735,9 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
               type="date"
               value={formData.dueDate}
               onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${(isSubTask || !isEO) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               min={formData.startDate || new Date().toISOString().split('T')[0]}
-              disabled={!isEO}
+              disabled={isSubTask || !isEO}
             />
           </div>
         </div>
