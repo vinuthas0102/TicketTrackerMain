@@ -471,7 +471,8 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     const progressFileInputRef = React.useRef<HTMLInputElement>(null);
 
     const isCompletingStep = formData.status === 'COMPLETED' && step && step.status !== 'COMPLETED';
-    const requiresFileUpload = isCompletingStep && user?.role === 'DO';
+    const isProgressComplete = step && formData.progress === 100 && step.status !== 'COMPLETED';
+    const requiresFileUpload = (isCompletingStep || isProgressComplete) && !!step;
     const isEO = user?.role === 'EO';
     const isDependencyLocked = step?.is_dependency_locked || false;
 
@@ -563,7 +564,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       if (requiresFileUpload && !completionFile) {
         const hasExistingCert = await checkCompletionCertificate(step!.id);
         if (!hasExistingCert) {
-          alert('Completion certificate is mandatory for Manager role. Please upload evidence/completion certificate before marking this workflow as completed.');
+          alert('Completion certificate is mandatory to complete this task. Please upload evidence/completion certificate before submitting.');
           return;
         }
       }
@@ -698,6 +699,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
             <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
               value={formData.status}
+              disabled={isProgressComplete}
               onChange={(e) => {
                 const newStatus = e.target.value;
                 const updates: any = { status: newStatus };
@@ -706,7 +708,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                 }
                 setFormData({ ...formData, ...updates });
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isProgressComplete ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <option value="NOT_STARTED">Not Started</option>
               <option value="WIP">WIP (Active)</option>
@@ -807,7 +809,16 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                 min="0"
                 max="100"
                 value={formData.progress}
-                onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value) })}
+                onChange={(e) => {
+                const newProgress = parseInt(e.target.value);
+                const updates: any = { progress: newProgress };
+                if (newProgress === 100 && step && step.status !== 'COMPLETED') {
+                  updates.status = 'COMPLETED';
+                } else if (newProgress < 100 && formData.status === 'COMPLETED' && step && step.status !== 'COMPLETED') {
+                  updates.status = 'WIP';
+                }
+                setFormData({ ...formData, ...updates });
+              }}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
               <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -908,7 +919,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
               <div className="flex-1">
                 <p className="text-sm font-medium text-red-800">Mandatory: Completion Certificate Required</p>
                 <p className="text-xs text-red-700 mt-1">
-                  As a Manager, you must upload evidence or a completion certificate before marking this workflow as completed. This is mandatory and cannot be skipped.
+                  You must upload evidence or a completion certificate before marking this task as completed. This is mandatory and cannot be skipped.
                 </p>
               </div>
             </div>
@@ -981,9 +992,9 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
+              className={`px-4 py-2 text-white rounded-md transition-colors duration-200 ${isProgressComplete ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
             >
-              {step ? 'Update Task' : 'Add Task'}
+              {isProgressComplete ? 'Complete Task' : step ? 'Update Task' : 'Add Task'}
             </button>
           </div>
         </div>
