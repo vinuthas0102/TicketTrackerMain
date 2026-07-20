@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, CheckCircle, Clock, Users, Trash2, CreditCard as Edit, X, ChevronDown, ChevronRight, FileText, Upload, Layers, Search, Filter, XCircle, Workflow, ArrowRight, History, ExternalLink, AlertCircle, Calendar, ChevronUp, Lock, MessageSquare } from 'lucide-react';
+import { Plus, CheckCircle, Clock, Users, Trash2, CreditCard as Edit, Eye, X, ChevronDown, ChevronRight, FileText, Upload, Layers, Search, Filter, XCircle, Workflow, ArrowRight, History, ExternalLink, AlertCircle, Calendar, ChevronUp, Lock, MessageSquare } from 'lucide-react';
 import { Ticket, WorkflowStep, WorkflowStepStatus, ActionIconDefinition, FileReferenceTemplate } from '../../types';
 import { FileReferenceService } from '../../services/fileReferenceService';
 import FileReferenceUpload from './FileReferenceUpload';
@@ -1325,7 +1325,13 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           <>
             <div
               className={`${hierarchyColors.background} ${borderStyle} ${isViewing ? hierarchyColors.border + ' shadow-md ring-2 ring-offset-1 ring-blue-300' : hierarchyColors.border} rounded-lg p-3 transition-all duration-200 ${hierarchyColors.backgroundHover} ${hierarchyColors.borderHover} hover:shadow-md cursor-pointer`}
-              onClick={() => setViewingStep(isViewing ? null : step)}
+              onClick={() => {
+                if (hasChildren) {
+                  toggleExpanded(step.id);
+                } else {
+                  setViewingStep(isViewing ? null : step);
+                }
+              }}
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
@@ -1438,9 +1444,13 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
                   </button>
-                  <div className={`transition-transform duration-200 ${isViewing ? 'rotate-180' : ''}`}>
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setViewingStep(isViewing ? null : step); }}
+                    className={`p-1.5 rounded-md border transition-colors ${isViewing ? 'text-blue-600 bg-blue-50 border-blue-300' : 'text-gray-500 border-gray-300 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300'}`}
+                    title="View task details"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -1461,10 +1471,10 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                           setViewingStep(null);
                           setAddingSubTaskForStepId(null);
                         }}
-                        className="flex items-center space-x-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                        className="p-1.5 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                        title="Edit task"
                       >
                         <Edit className="w-3.5 h-3.5" />
-                        <span>Edit</span>
                       </button>
                     )}
                     <button
