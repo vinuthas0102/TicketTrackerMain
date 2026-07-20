@@ -190,6 +190,8 @@ export class TicketService {
               assignedTo: step.assigned_to,
               createdBy: step.created_by || ticket.created_by,
               stepType: step.step_type || null,
+              remarks: step.remarks || '',
+              actualCompletedAt: step.actual_completed_at ? new Date(step.actual_completed_at) : undefined,
               createdAt: step.created_at ? new Date(step.created_at) : new Date(),
               completedAt: step.completed_at ? new Date(step.completed_at) : undefined,
               dueDate: step.due_date ? new Date(step.due_date) : undefined,
@@ -776,6 +778,7 @@ export class TicketService {
             due_date: stepData.dueDate,
             start_date: stepData.startDate,
             step_type: stepData.stepType || null,
+            remarks: stepData.remarks || null,
           },
         ])
         .select()
@@ -866,6 +869,7 @@ export class TicketService {
         actionDescription = `Workflow status changed to ${updates.status}`;
         if (updates.status === 'COMPLETED') {
           updateData.completed_at = new Date().toISOString();
+          updateData.actual_completed_at = new Date().toISOString();
           updateData.progress = 100;
         }
         if (updates.status === 'WIP' && !updates.startDate) {
@@ -890,6 +894,7 @@ export class TicketService {
       if (updates.mandatory_documents !== undefined) updateData.mandatory_documents = updates.mandatory_documents;
       if (updates.optional_documents !== undefined) updateData.optional_documents = updates.optional_documents;
       if (updates.completionCertificateRequired !== undefined) updateData.completion_certificate_required = updates.completionCertificateRequired;
+      if (updates.remarks !== undefined) updateData.remarks = updates.remarks;
 
       const { error } = await supabase
         .from('workflow_steps')
@@ -1101,6 +1106,7 @@ export class TicketService {
           progress: stepData.progress !== undefined ? stepData.progress : 0,
           mandatory_documents: stepData.mandatory_documents || [],
           optional_documents: stepData.optional_documents || [],
+          remarks: stepData.remarks || null,
         });
       }
 

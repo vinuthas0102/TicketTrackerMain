@@ -348,6 +348,7 @@ export class TicketService {
         mandatory_documents: stepData.mandatory_documents || [],
         optional_documents: stepData.optional_documents || [],
         completion_certificate_required: stepData.completionCertificateRequired || false,
+        remarks: stepData.remarks,
         dueDate: stepData.dueDate,
         startDate: stepData.startDate,
         dependentOnStepIds: stepData.dependentOnStepIds || [],
@@ -391,6 +392,7 @@ export class TicketService {
       if (updates.mandatory_documents !== undefined) payload.mandatoryDocuments = updates.mandatory_documents;
       if (updates.optional_documents !== undefined) payload.optionalDocuments = updates.optional_documents;
       if (updates.completionCertificateRequired !== undefined) payload.completionCertificateRequired = updates.completionCertificateRequired;
+      if (updates.remarks !== undefined) payload.remarks = updates.remarks;
       if (stepId!== undefined) payload.id = stepId;
       if (stepId!== undefined) payload.stepId = stepId;
       if (updates.stepNumber !== undefined) payload.stepNumber = updates.stepNumber;

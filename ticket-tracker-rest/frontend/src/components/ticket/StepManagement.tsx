@@ -440,8 +440,8 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     onCancel
   }) => {
     const [formData, setFormData] = useState({
-      title: step?.title || '',
-      description: step?.description || '',
+      title: step?.title || (!step ? ticket.title : ''),
+      description: step?.description || (!step ? ticket.description : ''),
       status: step?.status || 'NOT_STARTED',
       assignedTo: step?.assignedTo || '',
       department: step?.title ? (users.find(u => u.id === step.assignedTo)?.department || '') : (parentStep ? (users.find(u => u.id === parentStep.assignedTo)?.department || '') : ''),
@@ -456,7 +456,8 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       mandatoryDocuments: step?.mandatory_documents || [],
       optionalDocuments: step?.optional_documents || [],
       fileReferenceTemplateId: '',
-      selectedFileReferences: [] as SelectedFileReference[]
+      selectedFileReferences: [] as SelectedFileReference[],
+      remarks: step?.remarks || ''
     });
     const uniqueDepartments = Array.from(new Set(users.map(u => u.department).filter(Boolean)));
     const isSubTask = !!parentStep;
@@ -632,6 +633,29 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+
+        {isSubTask && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Remarks {(user?.role !== 'EO' && user?.role !== 'DO') && <span className="text-xs text-gray-500">(EO/Manager only)</span>}
+            </label>
+            <textarea
+              value={formData.remarks}
+              onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+              rows={2}
+              disabled={user?.role !== 'EO' && user?.role !== 'DO'}
+              placeholder="Remarks visible to Manager and EO"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${user?.role !== 'EO' && user?.role !== 'DO' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            />
+          </div>
+        )}
+
+        {step?.actualCompletedAt && (
+          <div className="bg-green-50 border border-green-200 rounded-md px-3 py-2">
+            <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">Actual Completed Date: </span>
+            <span className="text-sm text-green-800">{new Date(step.actualCompletedAt).toLocaleString()}</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -990,7 +1014,8 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
         mandatory_documents: data.mandatoryDocuments,
         optional_documents: data.optionalDocuments,
         fileReferenceTemplateId: data.fileReferenceTemplateId,
-        selectedFileReferences: data.selectedFileReferences
+        selectedFileReferences: data.selectedFileReferences,
+        remarks: data.remarks
       };
 
       await addStep(ticket.id, stepData);
@@ -1118,6 +1143,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
         dependencies: data.dependencies,
         mandatory_documents: data.mandatoryDocuments,
         optional_documents: data.optionalDocuments,
+        remarks: data.remarks,
         stepId : editingStep.id,
         stepNumber : editingStep.stepNumber
       };

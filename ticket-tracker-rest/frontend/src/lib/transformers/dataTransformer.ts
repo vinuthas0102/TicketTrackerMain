@@ -183,6 +183,8 @@ export const transformWorkflowStepFromBackend = (step: any): any => {
     optional_documents: step.optionalDocuments || [],
     completionCertificateRequired: step.completion_certificate_required || step.completionCertificateRequired || false,
     stepType: step.stepType || step.step_type,
+    remarks: step.remarks || '',
+    actualCompletedAt: safeParseDate(step.actualCompletedAt || step.actual_completed_at),
     comments: [],
     attachments: [],
   };
@@ -211,5 +213,7 @@ export const transformWorkflowStepToBackend = (step: any): any => {
     optional_documents: step.optional_documents || [],
     completion_certificate_required: step.completionCertificateRequired || false,
     step_type: step.stepType || step.step_type,
+    remarks: step.remarks,
+    actual_completed_at: step.actualCompletedAt ? new Date(step.actualCompletedAt).toISOString() : undefined,
   };
 };

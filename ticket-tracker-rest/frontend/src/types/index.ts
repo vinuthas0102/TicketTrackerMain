@@ -94,6 +94,8 @@ export interface WorkflowStep {
   completionCertificateRequired?: boolean;
   certificateUploaded?: boolean;
   stepType?: string;
+  remarks?: string;
+  actualCompletedAt?: Date;
   comments: WorkflowComment[];
   attachments: FileAttachment[];
 }
