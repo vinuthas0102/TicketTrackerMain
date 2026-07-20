@@ -71,7 +71,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
     department: sourceTicket?.department || user?.department || '',
     propertyId: sourceTicket?.propertyId || 'PROP001',
     propertyLocation: sourceTicket?.propertyLocation || 'Location01',
-    requestType: sourceTicket?.requestType || ''
+    requestType: sourceTicket?.requestType || (user?.role === 'EMPLOYEE' ? 'General Maintenance' : '')
   });
 
   // Update ticket number when component mounts or tickets change
@@ -99,7 +99,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
         department: copiedTicket.department || user?.department || '',
         propertyId: copiedTicket.propertyId || 'PROP001',
         propertyLocation: copiedTicket.propertyLocation || 'Location01',
-        requestType: copiedTicket.requestType || ''
+        requestType: copiedTicket.requestType || (user?.role === 'EMPLOYEE' ? 'General Maintenance' : '')
       });
     }
   }, [copiedTicket]);
@@ -262,7 +262,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
         department: user?.department || '',
         propertyId: 'PROP001',
         propertyLocation: 'Location01',
-        requestType: ''
+        requestType: user?.role === 'EMPLOYEE' ? 'General Maintenance' : ''
       });
       setFiles(null);
     } catch (error) {
@@ -518,7 +518,8 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                   <select
                     value={formData.requestType}
                     onChange={(e) => setFormData({ ...formData, requestType: e.target.value })}
-                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={user?.role === 'EMPLOYEE'}
+                    className={`w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${user?.role === 'EMPLOYEE' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   >
                     <option value="">Select a request type...</option>
                     {availableRequestTypes.map(rt => (
