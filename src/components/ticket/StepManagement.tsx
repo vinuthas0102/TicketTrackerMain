@@ -798,7 +798,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           onSelectedDependenciesChange={(deps) => setFormData({ ...formData, dependentOnStepIds: deps })}
         />
 
-        {formData.status === 'WIP' && (
+        {(formData.status === 'WIP' || isProgressComplete) && (
           <div className="space-y-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
