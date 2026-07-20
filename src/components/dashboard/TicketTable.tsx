@@ -213,6 +213,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
                 <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />Requestor</span>
               </th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">SAP ID</th>
               <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
@@ -278,6 +279,9 @@ const TicketTable: React.FC<TicketTableProps> = ({
                       <User className="w-3.5 h-3.5 text-gray-400" />
                       {createdByUser?.name || '—'}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-xs text-gray-600 font-mono">{createdByUser?.sapId || '—'}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-right">
                     <RowActions

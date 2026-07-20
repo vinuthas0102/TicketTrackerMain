@@ -425,6 +425,11 @@ const TicketCard: React.FC<TicketCardProps> = ({
                 <span className="font-medium truncate max-w-24" title={createdByUser?.name}>
                   {createdByUser?.name?.split(' ')[0] || 'Unknown'}
                 </span>
+                {createdByUser?.sapId && (
+                  <span className="text-[10px] text-gray-400 font-mono" title="SAP ID">
+                    ({createdByUser.sapId})
+                  </span>
+                )}
               </div>
               {assignedToUser && (
                 <div className="flex items-center gap-1">

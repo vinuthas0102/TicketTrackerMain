@@ -440,6 +440,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
             <ListField label="DEPT" value={ticket.department} />
             <ListField label="PRIORITY" value={ticket.priority} />
             <ListField label="RAISED BY" value={createdByUser?.name || '—'} />
+            <ListField label="SAP ID" value={createdByUser?.sapId || '—'} />
             <ListField label="RAISED ON" value={formatDate(ticket.createdAt)} />
             {user?.role !== 'EMPLOYEE' && (
               <ListField
