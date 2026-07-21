@@ -1,6 +1,6 @@
 import React from 'react';
 import { FileText, Play, CheckCircle, XCircle, Send, Eye, Users, Wrench } from 'lucide-react';
-import { TicketStatus } from '../../types';
+import { TicketStatus, User } from '../../types';
 import { useTickets } from '../../context/TicketContext';
 
 type ActiveSubFilter = 'HOD' | 'TECHNICIAN' | null;
@@ -10,12 +10,15 @@ interface StatusCardsProps {
   activeFilter: TicketStatus | null;
   activeSubFilter: ActiveSubFilter;
   onSubFilter: (sub: ActiveSubFilter) => void;
+  userRole?: User['role'];
 }
 
 const TECHNICIAN_DEPARTMENTS = ['Civil Manager', 'Electrical Manager'];
 
-const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter, activeSubFilter, onSubFilter }) => {
+const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter, activeSubFilter, onSubFilter, userRole }) => {
   const { tickets, users } = useTickets();
+
+  const submittedLabel = userRole === 'EMPLOYEE' ? 'Requests Submitted' : 'Requests Received';
 
   const statusConfig = [
     {
@@ -27,7 +30,7 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
     },
     {
       status: 'SUBMITTED' as TicketStatus,
-      label: 'Requests Submitted',
+      label: submittedLabel,
       icon: Send,
       color: 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-800 border-blue-300',
       hoverColor: 'hover:from-blue-200 hover:to-blue-300 hover:shadow-lg'

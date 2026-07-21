@@ -510,6 +510,7 @@ const Dashboard: React.FC = () => {
           activeFilter={statusFilter}
           activeSubFilter={activeSubFilter}
           onSubFilter={setActiveSubFilter}
+          userRole={user?.role}
         />
 
         <SearchPanel 
