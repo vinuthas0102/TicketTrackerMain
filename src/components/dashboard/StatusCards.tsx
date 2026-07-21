@@ -54,13 +54,6 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
       hoverColor: 'hover:from-green-200 hover:to-green-300 hover:shadow-lg'
     },
     {
-      status: 'CLOSED' as TicketStatus,
-      label: 'Closed',
-      icon: XCircle,
-      color: 'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-800 border-gray-300',
-      hoverColor: 'hover:from-gray-200 hover:to-gray-300 hover:shadow-lg'
-    },
-    {
       status: 'CANCELLED' as TicketStatus,
       label: 'Cancelled',
       icon: XCircle,
@@ -99,7 +92,7 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
 
   return (
     <div className="flex flex-col gap-2 mb-2">
-      <div className="grid grid-cols-4 md:grid-cols-7 gap-1">
+      <div className="grid grid-cols-4 md:grid-cols-6 gap-1">
         {statusConfig.map((config) => {
           const count = getStatusCount(config.status);
           const isActive = activeFilter === config.status;
