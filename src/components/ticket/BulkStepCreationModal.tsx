@@ -11,6 +11,8 @@ interface BulkStepCreationModalProps {
   ticketId: string;
   parentStep?: WorkflowStep;
   existingSteps: WorkflowStep[];
+  ticketTitle: string;
+  ticketDescription?: string;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -19,6 +21,8 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
   ticketId,
   parentStep,
   existingSteps,
+  ticketTitle,
+  ticketDescription = '',
   onClose,
   onSuccess,
 }) => {
@@ -39,8 +43,8 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
   useEffect(() => {
     const initialRows: BulkStepRow[] = Array.from({ length: 5 }, (_, i) => ({
       rowId: `row-${Date.now()}-${i}`,
-      title: '',
-      description: '',
+      title: ticketTitle,
+      description: ticketDescription,
       status: 'NOT_STARTED' as const,
       assignedTo: '',
       department: '',
@@ -53,6 +57,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
       optional_documents: [],
       fileReferenceTemplateId: '',
       selectedFileReferences: [],
+      remarks: '',
       errors: {},
     }));
     setRows(initialRows);
@@ -100,8 +105,8 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
   const addMoreRows = (count: number = 1) => {
     const newRows: BulkStepRow[] = Array.from({ length: count }, (_, i) => ({
       rowId: `row-${Date.now()}-${i}`,
-      title: '',
-      description: '',
+      title: ticketTitle,
+      description: ticketDescription,
       status: 'NOT_STARTED' as const,
       assignedTo: '',
       department: '',
@@ -114,6 +119,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
       optional_documents: [],
       fileReferenceTemplateId: '',
       selectedFileReferences: [],
+      remarks: '',
       errors: {},
     }));
     setRows(prev => [...prev, ...newRows]);
@@ -128,8 +134,8 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
   const clearAllRows = () => {
     const clearedRows = rows.map(row => ({
       ...row,
-      title: '',
-      description: '',
+      title: ticketTitle,
+      description: ticketDescription,
       status: 'NOT_STARTED' as const,
       assignedTo: '',
       department: '',
@@ -142,6 +148,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
       optional_documents: [],
       fileReferenceTemplateId: '',
       selectedFileReferences: [],
+      remarks: '',
       errors: {},
     }));
     setRows(clearedRows);
@@ -199,6 +206,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
       dependentOnStepIds: row.dependentOnStepIds,
       mandatory_documents: row.mandatory_documents,
       optional_documents: row.optional_documents,
+      remarks: row.remarks?.trim(),
     }));
 
     try {
@@ -321,10 +329,8 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
                     <input
                       type="text"
                       value={row.title}
-                      onChange={(e) => updateRow(row.rowId, 'title', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        row.errors?.title ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
                       placeholder="Enter workflow title"
                     />
                     {row.errors?.title && (
@@ -338,10 +344,24 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
                     </label>
                     <textarea
                       value={row.description}
-                      onChange={(e) => updateRow(row.rowId, 'description', e.target.value)}
+                      readOnly
                       rows={2}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
                       placeholder="Enter workflow description (optional)"
+                    />
+                  </div>
+
+                  <div className="md:col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Remarks {!isEO && <span className="text-xs text-gray-500">(EO only)</span>}
+                    </label>
+                    <textarea
+                      value={row.remarks || ''}
+                      onChange={(e) => updateRow(row.rowId, 'remarks', e.target.value)}
+                      rows={2}
+                      disabled={!isEO}
+                      placeholder="Remarks visible to Manager and EO"
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEO ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     />
                   </div>
 

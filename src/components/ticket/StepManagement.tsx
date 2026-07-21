@@ -619,8 +619,8 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           <input
             type="text"
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            readOnly
+            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
             required
           />
         </div>
@@ -629,11 +629,27 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            readOnly
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
           />
         </div>
+
+        {!isSubTask && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Remarks {user?.role !== 'EO' && <span className="text-xs text-gray-500">(EO only)</span>}
+            </label>
+            <textarea
+              value={formData.remarks}
+              onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+              rows={2}
+              disabled={user?.role !== 'EO'}
+              placeholder="Remarks visible to Manager and EO"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${user?.role !== 'EO' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            />
+          </div>
+        )}
 
         {isSubTask && (
           <div>
@@ -1505,6 +1521,12 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                         <p className="text-sm text-gray-700 leading-relaxed">{step.description}</p>
                       </div>
                     )}
+                    {step.remarks && (
+                      <div className="sm:col-span-2">
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Remarks</p>
+                        <p className="text-sm text-gray-700 leading-relaxed bg-amber-50 border border-amber-200 rounded-md p-2">{step.remarks}</p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Assigned To</p>
                       {assignedUser ? (
@@ -1891,6 +1913,8 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           ticketId={ticket.id}
           parentStep={bulkParentStep || undefined}
           existingSteps={ticket.workflow}
+          ticketTitle={ticket.title}
+          ticketDescription={ticket.description}
           onClose={() => {
             setShowBulkModal(false);
             setBulkParentStep(null);

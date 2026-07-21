@@ -185,6 +185,7 @@ export interface BulkStepInput {
   optional_documents?: string[];
   fileReferenceTemplateId?: string;
   selectedFileReferences?: Array<{ referenceName: string; isMandatory: boolean }>;
+  remarks?: string;
 }
 
 export interface BulkStepRow extends BulkStepInput {
