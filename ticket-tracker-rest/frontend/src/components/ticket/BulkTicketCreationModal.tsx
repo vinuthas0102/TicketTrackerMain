@@ -31,7 +31,7 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
       description: '',
       status: 'DRAFT' as TicketStatus,
       priority: 'MEDIUM' as const,
-      category: 'General',
+      category: 'Civil Maintenance',
       assignedTo: '',
       department: user?.department || '',
       propertyId: 'PROP001',
@@ -83,7 +83,7 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
       description: '',
       status: 'DRAFT' as TicketStatus,
       priority: 'MEDIUM' as const,
-      category: 'General',
+      category: 'Civil Maintenance',
       assignedTo: '',
       department: user?.department || '',
       propertyId: 'PROP001',
@@ -107,7 +107,7 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
       description: '',
       status: 'DRAFT' as TicketStatus,
       priority: 'MEDIUM' as const,
-      category: 'General',
+      category: 'Civil Maintenance',
       assignedTo: '',
       department: user?.department || '',
       propertyId: 'PROP001',
@@ -185,6 +185,21 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
   };
 
   const validRowsCount = getValidRows().length;
+
+  const availableCategories = selectedModule?.config?.categories || [
+    'Civil Maintenance',
+    'Electrical Maintenance',
+    'Plumbing & Sanitary',
+    'Carpentry',
+    'HVAC / Air Conditioning',
+    'Water Supply',
+    'Sewage & Drainage',
+    'Road & External Area',
+    'Housekeeping, Fire & Safety',
+    'Security Systems',
+    'Street Lighting',
+    'Utility Services',
+  ];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -322,14 +337,16 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
                       <label className="block text-xs font-medium text-gray-700 mb-1">
                         Category
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={row.category}
                         onChange={(e) => updateRow(row.rowId, 'category', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        placeholder="General"
                         disabled={bulkOperationInProgress}
-                      />
+                      >
+                        {availableCategories.map(category => (
+                          <option key={category} value={category}>{category}</option>
+                        ))}
+                      </select>
                     </div>
 
                     <div>

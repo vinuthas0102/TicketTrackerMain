@@ -66,7 +66,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
     description: sourceTicket?.description || '',
     status: ticket?.status || 'DRAFT',
     priority: sourceTicket?.priority || 'MEDIUM',
-    category: sourceTicket?.category || 'General',
+    category: sourceTicket?.category || 'Civil Maintenance',
     assignedTo: ticket?.assignedTo || '',
     estCompletionDate: safeDateToISOString(ticket?.dueDate),
     department: user?.department || '',
@@ -94,7 +94,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
         description: copiedTicket.description || '',
         status: 'DRAFT',
         priority: copiedTicket.priority || 'MEDIUM',
-        category: copiedTicket.category || 'General',
+        category: copiedTicket.category || 'Civil Maintenance',
         assignedTo: '',
         estCompletionDate: '',
         department: user?.department || '',
@@ -276,7 +276,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
           description: '',
           status: 'DRAFT',
           priority: 'MEDIUM',
-          category: 'General',
+          category: 'Civil Maintenance',
           assignedTo: '',
           estCompletionDate: '',
           department: user?.department || '',
@@ -310,7 +310,20 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
     }
   };
 
-  const availableCategories = selectedModule?.config?.categories || ['General'];
+  const availableCategories = selectedModule?.config?.categories || [
+    'Civil Maintenance',
+    'Electrical Maintenance',
+    'Plumbing & Sanitary',
+    'Carpentry',
+    'HVAC / Air Conditioning',
+    'Water Supply',
+    'Sewage & Drainage',
+    'Road & External Area',
+    'Housekeeping, Fire & Safety',
+    'Security Systems',
+    'Street Lighting',
+    'Utility Services',
+  ];
   const availableRequestTypes = selectedModule?.config?.requestTypes || [];
   const selectedRequestType = availableRequestTypes.find(rt => rt.value === formData.requestType);
   const showCEInspectionNotice = selectedRequestType?.requiresCEInspection === true;
