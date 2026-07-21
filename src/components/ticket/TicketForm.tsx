@@ -104,6 +104,27 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
     }
   }, [copiedTicket]);
 
+  // Sync form data when editing an existing ticket (the ticket prop arrives
+  // after first mount, so the useState initializer alone doesn't populate it)
+  React.useEffect(() => {
+    if (ticket) {
+      setFormData({
+        ticketNumber: ticket.ticketNumber || '',
+        title: ticket.title || '',
+        description: ticket.description || '',
+        status: ticket.status || 'DRAFT',
+        priority: ticket.priority || 'MEDIUM',
+        category: ticket.category || 'Civil Maintenance',
+        assignedTo: ticket.assignedTo || '',
+        estCompletionDate: ticket.dueDate ? ticket.dueDate.toISOString().split('T')[0] : '',
+        department: ticket.department || user?.department || '',
+        propertyId: ticket.propertyId || 'PROP001',
+        propertyLocation: ticket.propertyLocation || 'Location01',
+        requestType: ticket.requestType || (user?.role === 'EMPLOYEE' ? 'General Maintenance' : '')
+      });
+    }
+  }, [ticket]);
+
   const isEditing = !!ticket;
 
   if (!isOpen) return null;
