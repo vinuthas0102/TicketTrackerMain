@@ -401,32 +401,34 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
               </div>
             )}
             <div className="space-y-6">
-              {/* Ticket Number and Status */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Ticket #
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ticketNumber}
-                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md bg-gray-50 text-gray-600"
-                    disabled
-                  />
+              {/* Ticket Number and Status - only shown when editing an existing ticket */}
+              {isEditing && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Ticket #
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.ticketNumber}
+                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                      disabled
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <input
+                      type="text"
+                      value={isEditing ? formData.status : pendingStatus}
+                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                      disabled
+                    />
+                  </div>
                 </div>
-                
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <input
-                    type="text"
-                    value={isEditing ? formData.status : pendingStatus}
-                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md bg-gray-50 text-gray-600"
-                    disabled
-                  />
-                </div>
-              </div>
+              )}
 
               {/* Title */}
               <div>
@@ -538,8 +540,8 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                 </div>
               </div>
 
-              {/* Request Type */}
-              {availableRequestTypes.length > 0 && (
+              {/* Request Type - hidden from EMPLOYEE role */}
+              {availableRequestTypes.length > 0 && user?.role !== 'EMPLOYEE' && (
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     Request Type *
@@ -547,8 +549,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                   <select
                     value={formData.requestType}
                     onChange={(e) => setFormData({ ...formData, requestType: e.target.value })}
-                    disabled={user?.role === 'EMPLOYEE'}
-                    className={`w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${user?.role === 'EMPLOYEE' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select a request type...</option>
                     {availableRequestTypes.map(rt => (

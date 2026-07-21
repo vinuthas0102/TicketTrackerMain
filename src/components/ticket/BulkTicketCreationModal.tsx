@@ -302,23 +302,6 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
 
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Status
-                      </label>
-                      <select
-                        value={row.status}
-                        onChange={(e) => updateRow(row.rowId, 'status', e.target.value as TicketStatus)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        disabled={bulkOperationInProgress}
-                      >
-                        <option value="DRAFT">Draft</option>
-                        <option value="CREATED">Created</option>
-                        <option value="APPROVED">Approved</option>
-                        <option value="ACTIVE">Active</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
                         Priority
                       </label>
                       <select
