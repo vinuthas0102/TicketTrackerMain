@@ -27,7 +27,7 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
     },
     {
       status: 'SUBMITTED' as TicketStatus,
-      label: 'Requests Received',
+      label: 'Requests Submitted',
       icon: Send,
       color: 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-800 border-blue-300',
       hoverColor: 'hover:from-blue-200 hover:to-blue-300 hover:shadow-lg'
