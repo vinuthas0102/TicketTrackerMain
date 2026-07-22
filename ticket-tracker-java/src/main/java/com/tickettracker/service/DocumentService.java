@@ -5,6 +5,7 @@ import com.tickettracker.dao.TicketDAO;
 import com.tickettracker.dao.WorkflowStepDAO;
 import com.tickettracker.exception.*;
 import com.tickettracker.model.Document;
+import com.tickettracker.model.WorkflowStep;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,8 +86,12 @@ public class DocumentService {
             }
 
             if (document.getStepId() != null) {
-                if (workflowStepDAO.findById(document.getStepId()) == null) {
+                WorkflowStep step = workflowStepDAO.findById(document.getStepId());
+                if (step == null) {
                     throw new ResourceNotFoundException("Workflow Step", bytesToHex(document.getStepId()));
+                }
+                if ("COMPLETED".equals(step.getStatus())) {
+                    throw new ForbiddenException("Cannot add files to a completed workflow step");
                 }
             }
 
@@ -127,6 +132,13 @@ public class DocumentService {
             throws TicketTrackerException {
         try {
             Document document = getDocumentById(documentId);
+
+            if (document.getStepId() != null) {
+                WorkflowStep step = workflowStepDAO.findById(document.getStepId());
+                if (step != null && "COMPLETED".equals(step.getStatus())) {
+                    throw new ForbiddenException("Cannot delete files from a completed workflow step");
+                }
+            }
 
             boolean deleted = documentDAO.delete(documentId);
             if (!deleted) {

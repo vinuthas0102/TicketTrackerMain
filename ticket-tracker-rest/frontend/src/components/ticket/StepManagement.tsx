@@ -1241,7 +1241,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     const actions: ActionIconDefinition[] = [];
 
     // EO: add single/bulk sub-workflows at any eligible depth
-    if (canManageWorkflows && canAddSubWorkflow(step)) {
+    if (canManageWorkflows && canAddSubWorkflow(step) && step.status !== 'COMPLETED') {
       actions.push({
         id: 'addSingle',
         icon: Plus,
@@ -1263,7 +1263,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     }
 
     // DO: add single/bulk sub-tasks (Level 2 only) on assigned Level 1 steps
-    if (canAddSubTaskAsManager(step)) {
+    if (canAddSubTaskAsManager(step) && step.status !== 'COMPLETED') {
       actions.push({
         id: 'addSingle',
         icon: Plus,
@@ -1283,7 +1283,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     }
 
     // Edit workflow
-    if (canManageWorkflow(step)) {
+    if (canManageWorkflow(step) && step.status !== 'COMPLETED') {
       actions.push({
         id: 'edit',
         icon: Edit,
@@ -1478,7 +1478,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                     <span className={`${hierarchyColors.badge} text-xs px-2 py-0.5 rounded`}>{getHierarchicalWorkflowNumber(step)}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {canManageWorkflow(step) && (
+                    {canManageWorkflow(step) && step.status !== 'COMPLETED' && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -1647,6 +1647,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                           ticketId={ticket.id}
                           onUploadComplete={() => window.location.reload()}
                           onViewDocument={(doc) => onViewDocument?.(doc, step)}
+                          readOnly={step.status === 'COMPLETED'}
                         />
                       </div>
                       <div>
@@ -1658,6 +1659,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                           step={step}
                           ticketId={ticket.id}
                           onViewDocument={(doc) => onViewDocument?.(doc, step)}
+                          readOnly={step.status === 'COMPLETED'}
                         />
                       </div>
                       <div>

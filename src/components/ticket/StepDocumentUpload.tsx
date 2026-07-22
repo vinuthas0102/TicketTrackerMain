@@ -9,6 +9,7 @@ interface WorkflowDocumentUploadProps {
   ticketId: string;
   onDocumentChange?: () => void;
   onViewDocument?: (document: DocumentMetadata) => void;
+  readOnly?: boolean;
 }
 
 const WorkflowDocumentUpload: React.FC<WorkflowDocumentUploadProps> = ({
@@ -16,6 +17,7 @@ const WorkflowDocumentUpload: React.FC<WorkflowDocumentUploadProps> = ({
   ticketId,
   onDocumentChange,
   onViewDocument,
+  readOnly = false
 }) => {
   const { user } = useAuth();
   const isDORole = user?.role === 'DO';
@@ -239,17 +241,18 @@ const WorkflowDocumentUpload: React.FC<WorkflowDocumentUploadProps> = ({
         </div>
       )}
 
-      <div
-        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-          dragActive
-            ? 'border-blue-500 bg-blue-50'
-            : 'border-gray-300 hover:border-gray-400'
-        } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
+      {!readOnly && (
+        <div
+          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+            dragActive
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-300 hover:border-gray-400'
+          } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+        >
         <input
           ref={fileInputRef}
           type="file"
@@ -305,6 +308,7 @@ const WorkflowDocumentUpload: React.FC<WorkflowDocumentUploadProps> = ({
           </div>
         )}
       </div>
+      )}
 
       {documents.length > 0 && (
         <div className="space-y-2">
@@ -358,7 +362,7 @@ const WorkflowDocumentUpload: React.FC<WorkflowDocumentUploadProps> = ({
                   >
                     <Download className="w-4 h-4" />
                   </button>
-                  {user && (doc.uploadedBy === user.id || user.role === 'EO') && (
+                  {user && (doc.uploadedBy === user.id || user.role === 'EO') && !readOnly && (
                     <button
                       onClick={() => handleDelete(doc.id)}
                       className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"

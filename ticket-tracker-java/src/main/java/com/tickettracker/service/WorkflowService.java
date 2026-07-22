@@ -178,6 +178,10 @@ public class WorkflowService {
             WorkflowStep existingStep = getWorkflowStepById(updateRequest.getId());
             BigDecimal oldProgress = existingStep.getProgress();
 
+            if ("COMPLETED".equals(existingStep.getStatus())) {
+                throw new ForbiddenException("Cannot update a completed workflow step");
+            }
+
             if (updateRequest.getStatus() != null && "completed".equals(updateRequest.getStatus())) {
                 boolean allMandatoryFilesComplete = checkMandatoryFileReferencesComplete(updateRequest.getId());
                 if (!allMandatoryFilesComplete) {
@@ -229,6 +233,10 @@ public class WorkflowService {
             WorkflowStep step = getWorkflowStepById(stepId);
             BigDecimal oldProgress = step.getProgress();
 
+            if ("COMPLETED".equals(step.getStatus())) {
+                throw new ForbiddenException("Cannot update progress of a completed workflow step");
+            }
+
             boolean updated = workflowStepDAO.updateProgress(stepId, new BigDecimal(progress));
             if (!updated) {
                 throw new DatabaseException("Failed to update progress");
@@ -253,6 +261,10 @@ public class WorkflowService {
         try {
             WorkflowStep step = getWorkflowStepById(stepId);
             String oldStatus = step.getStatus();
+
+            if ("COMPLETED".equals(oldStatus)) {
+                throw new ForbiddenException("Cannot change status of a completed workflow step");
+            }
 
             WorkflowStepUpdateRequest updateRequest = new WorkflowStepUpdateRequest();
             updateRequest.setId(stepId);
@@ -282,6 +294,10 @@ public class WorkflowService {
     public void deleteWorkflowStep(byte[] stepId, byte[] currentUserId) throws TicketTrackerException {
         try {
             WorkflowStep step = getWorkflowStepById(stepId);
+
+            if ("COMPLETED".equals(step.getStatus())) {
+                throw new ForbiddenException("Cannot delete a completed workflow step");
+            }
 
             if ("civil_inspection".equals(step.getStepType()) || "electrical_inspection".equals(step.getStepType())) {
                 throw new ForbiddenException("Auto-generated inspection steps cannot be deleted");

@@ -90,6 +90,7 @@ const ProgressDocuments: React.FC<ProgressDocumentsProps> = ({ step, ticketId, r
 
   const canDelete = (document: ProgressDocumentMetadata): boolean => {
     if (!user) return false;
+    if (step.status === 'COMPLETED') return false;
     if (user.role === 'EO' || user.role === 'DO') return true;
     return document.uploadedBy === user.id;
   };

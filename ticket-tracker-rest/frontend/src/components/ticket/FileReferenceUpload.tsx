@@ -10,13 +10,15 @@ interface FileReferenceUploadProps {
   ticketId: string;
   onUploadComplete?: () => void;
   onViewDocument?: (document: DocumentMetadata) => void;
+  readOnly?: boolean;
 }
 
 export const FileReferenceUpload: React.FC<FileReferenceUploadProps> = ({
   stepId,
   ticketId,
   onUploadComplete,
-  onViewDocument
+  onViewDocument,
+  readOnly = false
 }) => {
   const { user } = useAuth();
   const [fileReferences, setFileReferences] = useState<FileReferenceWithStatus[]>([]);
@@ -238,6 +240,8 @@ export const FileReferenceUpload: React.FC<FileReferenceUploadProps> = ({
                       <ExternalLink className="w-3.5 h-3.5" />
                       <span>View</span>
                     </button>
+                  ) : readOnly ? (
+                    <span className="text-xs text-gray-400 italic">Upload disabled (step completed)</span>
                   ) : (
                     <>
                       <input

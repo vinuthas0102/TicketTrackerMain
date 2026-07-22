@@ -184,6 +184,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
 
   const canEdit = () => {
     if (!user) return false;
+    if (ticket.status === 'COMPLETED') return false;
     if (user.role === 'EO') return true;
     if (user.role === 'DO') return ticket.department === user.department;
     if (user.role === 'VENDOR') return false; // Vendors cannot edit tickets directly
@@ -192,6 +193,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
 
   const canDelete = () => {
     if (!user) return false;
+    if (ticket.status === 'COMPLETED') return false;
     if (user.role === 'EO') return true;
     if (user.role === 'VENDOR') return false;
     return ticket.createdBy === user.id;

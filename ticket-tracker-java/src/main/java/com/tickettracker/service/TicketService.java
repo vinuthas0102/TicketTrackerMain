@@ -299,6 +299,10 @@ public class TicketService {
         try {
             Ticket existingTicket = getTicket(ticket.getId());
 
+            if ("COMPLETED".equals(existingTicket.getStatus())) {
+                throw new ForbiddenException("Cannot update a completed ticket");
+            }
+
             validateTicket(ticket);
 
             Ticket updatedTicket = ticketDAO.update(ticket);
@@ -369,6 +373,10 @@ public class TicketService {
     public void deleteTicket(byte[] ticketId, byte[] currentUserId) throws TicketTrackerException {
         try {
             Ticket ticket = getTicket(ticketId);
+
+            if ("COMPLETED".equals(ticket.getStatus())) {
+                throw new ForbiddenException("Cannot delete a completed ticket");
+            }
 
             createAuditLog(ticketId, null, currentUserId, "Ticket deleted",
                     null, "Ticket deleted", "ticket_action");
