@@ -132,4 +132,12 @@ export const API_ENDPOINTS = {
     DELETE: (commentId: string) => `/workflow-comments/${commentId}`,
     DOWNLOAD_ATTACHMENT: (commentId: string) => `/workflow-comments/${commentId}/attachment`,
   },
+
+  MASTER_DATA: {
+    CATEGORIES: '/master-data/categories',
+    DEPARTMENTS: '/master-data/departments',
+    LOCATIONS: '/master-data/locations',
+    CONFIG: '/master-data/config',
+    MODULE_CODES: '/master-data/module-codes',
+  },
 };

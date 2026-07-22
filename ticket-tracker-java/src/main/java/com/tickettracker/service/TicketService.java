@@ -18,12 +18,14 @@ public class TicketService {
     private final WorkflowStepDAO workflowStepDAO;
     private final AuditLogDAO auditLogDAO;
     private final UserDAO userDAO;
+    private final MasterDataService masterDataService;
 
     public TicketService() {
         this.ticketDAO = new TicketDAO();
         this.workflowStepDAO = new WorkflowStepDAO();
         this.auditLogDAO = new AuditLogDAO();
         this.userDAO = new UserDAO();
+        this.masterDataService = new MasterDataService();
     }
 
     public Ticket createTicket(Ticket ticket, byte[] currentUserId) throws TicketTrackerException {
@@ -38,16 +40,17 @@ public class TicketService {
                 ticket.setStatus(ticket.getStatus().toLowerCase());
             }
 
-            if (ticket.getTicketNumber() == null || ticket.getTicketNumber().isEmpty()) {
-                ticket.setTicketNumber(generateTicketNumber());
-            }
-
             if (ticket.getPropertyId() == null || ticket.getPropertyId().trim().isEmpty()) {
                 ticket.setPropertyId("PROP001");
             }
 
             if (ticket.getPropertyLocation() == null || ticket.getPropertyLocation().trim().isEmpty()) {
                 ticket.setPropertyLocation("Location01");
+            }
+
+            if (ticket.getTicketNumber() == null || ticket.getTicketNumber().isEmpty()) {
+                String moduleCode = masterDataService.getModuleCode(ticket.getModuleId());
+                ticket.setTicketNumber(masterDataService.generateTicketNumber(ticket.getPropertyLocation(), moduleCode));
             }
 
             Ticket createdTicket = ticketDAO.create(ticket);
@@ -165,16 +168,17 @@ public class TicketService {
                     ticket.setStatus(ticket.getStatus().toLowerCase());
                 }
 
-                if (ticket.getTicketNumber() == null || ticket.getTicketNumber().isEmpty()) {
-                    ticket.setTicketNumber(generateTicketNumber());
-                }
-
                 if (ticket.getPropertyId() == null || ticket.getPropertyId().trim().isEmpty()) {
                     ticket.setPropertyId("PROP001");
                 }
 
                 if (ticket.getPropertyLocation() == null || ticket.getPropertyLocation().trim().isEmpty()) {
                     ticket.setPropertyLocation("Location01");
+                }
+
+                if (ticket.getTicketNumber() == null || ticket.getTicketNumber().isEmpty()) {
+                    String moduleCode = masterDataService.getModuleCode(ticket.getModuleId());
+                    ticket.setTicketNumber(masterDataService.generateTicketNumber(ticket.getPropertyLocation(), moduleCode));
                 }
 
                 Ticket createdTicket = ticketDAO.create(ticket);
@@ -567,10 +571,6 @@ public class TicketService {
         }
 
         return changes.length() > 0 ? changes.toString() : "Minor updates";
-    }
-
-    private String generateTicketNumber() throws SQLException {
-        return "TKT-" + System.currentTimeMillis();
     }
 
     private String bytesToHex(byte[] bytes) {

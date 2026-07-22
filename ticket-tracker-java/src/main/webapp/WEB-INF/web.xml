@@ -95,6 +95,7 @@
          - FileReferenceServlet: /api/file-references/*
          - UserPreferencesServlet: /api/user-preferences/*
          - AuditServlet: /api/audit-logs/*
+         - MasterDataServlet: /api/master-data/*
     -->
 
     <!-- Filter Registration Examples -->

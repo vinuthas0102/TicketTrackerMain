@@ -3,6 +3,7 @@ import { X, Plus, Trash2, Save, AlertCircle, CheckCircle, Layers, Upload, Paperc
 import { BulkTicketRow, BulkTicketInput, TicketStatus } from '../../types';
 import { useTickets } from '../../context/TicketContext';
 import { useAuth } from '../../context/AuthContext';
+import { MasterDataService } from '../../services/masterDataService';
 import { safeDateToISOString, getCurrentDateISOString } from '../../lib/transformers/dataTransformer';
 
 interface BulkTicketCreationModalProps {
@@ -23,6 +24,13 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
     message: string;
     errors?: Array<{ index: number; title: string; error: string }>;
   } | null>(null);
+  const [masterCategories, setMasterCategories] = useState<string[]>([]);
+  const [masterLocations, setMasterLocations] = useState<string[]>([]);
+
+  useEffect(() => {
+    MasterDataService.getActive('categories').then(setMasterCategories).catch(() => setMasterCategories([]));
+    MasterDataService.getActive('locations').then(setMasterLocations).catch(() => setMasterLocations([]));
+  }, []);
 
   useEffect(() => {
     const initialRows: BulkTicketRow[] = Array.from({ length: 5 }, (_, i) => ({
@@ -186,20 +194,22 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
 
   const validRowsCount = getValidRows().length;
 
-  const availableCategories = selectedModule?.config?.categories || [
-    'Civil Maintenance',
-    'Electrical Maintenance',
-    'Plumbing & Sanitary',
-    'Carpentry',
-    'HVAC / Air Conditioning',
-    'Water Supply',
-    'Sewage & Drainage',
-    'Road & External Area',
-    'Housekeeping, Fire & Safety',
-    'Security Systems',
-    'Street Lighting',
-    'Utility Services',
-  ];
+  const availableCategories = masterCategories.length > 0
+    ? masterCategories
+    : (selectedModule?.config?.categories || [
+        'Civil Maintenance',
+        'Electrical Maintenance',
+        'Plumbing & Sanitary',
+        'Carpentry',
+        'HVAC / Air Conditioning',
+        'Water Supply',
+        'Sewage & Drainage',
+        'Road & External Area',
+        'Housekeeping, Fire & Safety',
+        'Security Systems',
+        'Street Lighting',
+        'Utility Services',
+      ]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -386,16 +396,18 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
                       <label className="block text-xs font-medium text-gray-700 mb-1">
                         Property Location <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={row.propertyLocation}
                         onChange={(e) => updateRow(row.rowId, 'propertyLocation', e.target.value)}
                         className={`w-full px-3 py-2 border rounded-md text-sm ${
                           row.errors?.propertyLocation ? 'border-red-500' : 'border-gray-300'
                         }`}
-                        placeholder="Location01"
                         disabled={bulkOperationInProgress}
-                      />
+                      >
+                        {(masterLocations.length > 0 ? masterLocations : ['Location01', 'Location02']).map(loc => (
+                          <option key={loc} value={loc}>{loc}</option>
+                        ))}
+                      </select>
                       {row.errors?.propertyLocation && (
                         <p className="text-xs text-red-600 mt-1">{row.errors.propertyLocation}</p>
                       )}

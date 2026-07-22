@@ -2,6 +2,7 @@ import { supabase, isSupabaseAvailable } from '../lib/supabase';
 import { Ticket, StatusTransitionRequest, WorkflowStep, WorkflowStepStatus, BulkStepInput, BulkOperationResult, BulkTicketInput, BulkTicketOperationResult, AuditActionCategory } from '../types';
 import { FileService } from './fileService';
 import { DependencyService } from './dependencyService';
+import { MasterDataService } from './masterDataService';
 import { mockTickets } from '../data/mockData';
 
 export class TicketService {
@@ -278,7 +279,8 @@ export class TicketService {
     }
 
     try {
-      const ticketNumber = `TKT-${Date.now()}`;
+      const moduleCode = await MasterDataService.getModuleCode(ticketData.moduleId);
+      const ticketNumber = await MasterDataService.generateTicketNumber(ticketData.propertyLocation || 'Location01', moduleCode);
 
       const { data, error } = await supabase
         .from('tickets')
@@ -351,7 +353,8 @@ export class TicketService {
       const ticketInput = ticketsData[i];
 
       try {
-        const ticketNumber = `TKT-${Date.now()}-${i}`;
+        const moduleCode = await MasterDataService.getModuleCode(moduleId);
+        const ticketNumber = await MasterDataService.generateTicketNumber(ticketInput.propertyLocation || 'Location01', moduleCode);
 
         const { data, error } = await supabase
           .from('tickets')

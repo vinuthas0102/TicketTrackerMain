@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Plus, Settings, MoreVertical, Ticket as TicketIcon, Layers, ChevronRight, Users, FileJson } from 'lucide-react';
+import { Plus, Settings, MoreVertical, Ticket as TicketIcon, Layers, ChevronRight, Users, FileJson, Database } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { TicketProvider, useTickets } from './context/TicketContext';
 import LoginForm from './components/auth/LoginForm';
@@ -18,6 +18,7 @@ import FieldConfigurationManager from './components/admin/FieldConfigurationMana
 import UserManagementPage from './components/admin/UserManagementPage';
 import UserPreferencesPage from './components/admin/UserPreferencesPage';
 import FileReferenceTemplateManager from './components/admin/FileReferenceTemplateManager';
+import MasterDataManagementPage from './components/admin/MasterDataManagementPage';
 import { Ticket, TicketStatus } from './types';
 
 interface SearchFilters {
@@ -49,6 +50,7 @@ const Dashboard: React.FC = () => {
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [showUserPreferences, setShowUserPreferences] = useState(false);
   const [showFileReferenceManager, setShowFileReferenceManager] = useState(false);
+  const [showMasterData, setShowMasterData] = useState(false);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showCreateSubmenu, setShowCreateSubmenu] = useState(false);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
@@ -259,6 +261,27 @@ const Dashboard: React.FC = () => {
             </button>
           </div>
           <FileReferenceTemplateManager user={user} />
+        </main>
+      </div>
+    );
+  }
+
+  // Show master data management
+  if (showMasterData && user?.role === 'EO') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <Header />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="mb-4">
+            <button
+              onClick={() => setShowMasterData(false)}
+              className="text-sm text-gray-600 hover:text-gray-900 flex items-center space-x-1"
+            >
+              <span>←</span>
+              <span>Back to Dashboard</span>
+            </button>
+          </div>
+          <MasterDataManagementPage />
         </main>
       </div>
     );
@@ -495,6 +518,22 @@ const Dashboard: React.FC = () => {
                         <div>
                           <div className="font-medium text-sm">File References</div>
                           <div className="text-xs text-gray-500">Manage file reference templates</div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowMasterData(true);
+                          setShowActionsMenu(false);
+                          setShowCreateSubmenu(false);
+                        }}
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center space-x-3 text-gray-700 hover:text-gray-900"
+                      >
+                        <div className="bg-gradient-to-r from-teal-600 to-cyan-700 p-2 rounded-lg">
+                          <Database className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm">Master Data Setup</div>
+                          <div className="text-xs text-gray-500">Manage categories, locations & config</div>
                         </div>
                       </button>
                     </>

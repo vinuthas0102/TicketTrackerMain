@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Upload, Copy, Info, AlertCircle, Save } from 'lucide-react';
 import { Ticket } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTickets } from '../../context/TicketContext';
 import { FileService } from '../../services/fileService';
+import { MasterDataService } from '../../services/masterDataService';
 import { safeDateToISOString, getCurrentDateISOString } from '../../lib/transformers/dataTransformer';
 
 interface TicketFormProps {
@@ -24,6 +25,13 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
   const [attachmentCopyStatus, setAttachmentCopyStatus] = useState<string>('');
   const [pendingStatus, setPendingStatus] = useState<'DRAFT' | 'SUBMITTED'>('SUBMITTED');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [masterCategories, setMasterCategories] = useState<string[]>([]);
+  const [masterLocations, setMasterLocations] = useState<string[]>([]);
+
+  useEffect(() => {
+    MasterDataService.getActive('categories').then(setMasterCategories).catch(() => setMasterCategories([]));
+    MasterDataService.getActive('locations').then(setMasterLocations).catch(() => setMasterLocations([]));
+  }, []);
   
   // Get module-specific ticket prefix
   const getTicketPrefix = (moduleId: string): string => {
@@ -313,20 +321,22 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
     }
   };
 
-  const availableCategories = selectedModule?.config?.categories || [
-    'Civil Maintenance',
-    'Electrical Maintenance',
-    'Plumbing & Sanitary',
-    'Carpentry',
-    'HVAC / Air Conditioning',
-    'Water Supply',
-    'Sewage & Drainage',
-    'Road & External Area',
-    'Housekeeping, Fire & Safety',
-    'Security Systems',
-    'Street Lighting',
-    'Utility Services',
-  ];
+  const availableCategories = masterCategories.length > 0
+    ? masterCategories
+    : (selectedModule?.config?.categories || [
+        'Civil Maintenance',
+        'Electrical Maintenance',
+        'Plumbing & Sanitary',
+        'Carpentry',
+        'HVAC / Air Conditioning',
+        'Water Supply',
+        'Sewage & Drainage',
+        'Road & External Area',
+        'Housekeeping, Fire & Safety',
+        'Security Systems',
+        'Street Lighting',
+        'Utility Services',
+      ]);
   const availableRequestTypes = selectedModule?.config?.requestTypes || [];
   const selectedRequestType = availableRequestTypes.find(rt => rt.value === formData.requestType);
   const showCEInspectionNotice = selectedRequestType?.requiresCEInspection === true;
@@ -499,8 +509,9 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                       onChange={(e) => setFormData({ ...formData, propertyLocation: e.target.value })}
                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="Location01">Location01</option>
-                      <option value="Location02">Location02</option>
+                      {(masterLocations.length > 0 ? masterLocations : ['Location01', 'Location02']).map(loc => (
+                        <option key={loc} value={loc}>{loc}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
