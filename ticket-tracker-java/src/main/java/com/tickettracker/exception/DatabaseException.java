@@ -12,6 +12,10 @@ public class DatabaseException extends TicketTrackerException {
         super("DATABASE_ERROR", message, cause, 500);
     }
 
+    public DatabaseException(String message, Throwable cause) {
+        super("DATABASE_ERROR", message, cause, 500);
+    }
+
     public DatabaseException(SQLException cause) {
         super("DATABASE_ERROR",
               String.format("Database error: %s", cause.getMessage()),
