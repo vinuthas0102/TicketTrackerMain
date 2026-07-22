@@ -41,17 +41,24 @@ public class AuditServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
+            User currentUser = getCurrentUser(request);
             String ticketIdParam = request.getParameter("ticketId");
             String stepIdParam = request.getParameter("stepId");
 
             if (ticketIdParam != null) {
                 byte[] ticketId = hexToBytes(ticketIdParam);
                 List<AuditLog> logs = auditLogDAO.findByTicketId(ticketId);
+                if (currentUser != null && "EMPLOYEE".equalsIgnoreCase(currentUser.getRole())) {
+                    logs = filterForEmployee(logs);
+                }
                 List<AuditLogResponse> enrichedLogs = enrichLogsWithProgressDocs(logs);
                 sendJsonResponse(response, enrichedLogs);
             } else if (stepIdParam != null) {
                 byte[] stepId = hexToBytes(stepIdParam);
                 List<AuditLog> logs = auditLogDAO.findByStepId(stepId);
+                if (currentUser != null && "EMPLOYEE".equalsIgnoreCase(currentUser.getRole())) {
+                    logs = filterForEmployee(logs);
+                }
                 List<AuditLogResponse> enrichedLogs = enrichLogsWithProgressDocs(logs);
                 sendJsonResponse(response, enrichedLogs);
             } else {
@@ -162,6 +169,20 @@ public class AuditServlet extends HttpServlet {
             return (User) session.getAttribute("currentUser");
         }
         return null;
+    }
+
+    private List<AuditLog> filterForEmployee(List<AuditLog> logs) {
+        List<AuditLog> filtered = new ArrayList<>();
+        for (AuditLog log : logs) {
+            String category = log.getActionCategory();
+            boolean isTicketLevel = "ticket_action".equalsIgnoreCase(category)
+                    || "status_change".equalsIgnoreCase(category)
+                    || log.getStepId() == null;
+            if (isTicketLevel) {
+                filtered.add(log);
+            }
+        }
+        return filtered;
     }
 
     private void sendJsonResponse(HttpServletResponse response, Object data) throws IOException {

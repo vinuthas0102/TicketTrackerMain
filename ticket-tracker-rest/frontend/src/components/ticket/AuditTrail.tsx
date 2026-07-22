@@ -84,8 +84,16 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
     }
   };
 
+  const isEmployee = user?.role === 'EMPLOYEE';
+
   const filteredAuditTrail = useMemo(() => {
     return ticket.auditTrail.filter(entry => {
+      if (isEmployee) {
+        const cat = entry.actionCategory;
+        const isTicketLevel = cat === 'ticket_action' || cat === 'status_change' || !entry.stepId;
+        if (!isTicketLevel) return false;
+      }
+
       const entryUser = users.find(u => u.id === entry.userId);
       const entryDocs = entry.progressDocs || [];
 
@@ -122,7 +130,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
 
       return true;
     });
-  }, [ticket.auditTrail, searchQuery, filterCategory, filterUserRole, filterWithDocuments, users]);
+  }, [ticket.auditTrail, searchQuery, filterCategory, filterUserRole, filterWithDocuments, users, isEmployee]);
 
   const sortedAuditTrail = useMemo(() => {
     return [...filteredAuditTrail].sort((a, b) =>
@@ -338,11 +346,11 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
           >
             <option value="">All Actions</option>
             <option value="ticket_action">Ticket Actions</option>
-            <option value="workflow_action">Workflow Actions</option>
-            <option value="document_action">Document Actions</option>
+            {!isEmployee && <option value="workflow_action">Workflow Actions</option>}
+            {!isEmployee && <option value="document_action">Document Actions</option>}
             <option value="status_change">Status Changes</option>
-            <option value="assignment_change">Assignments</option>
-            <option value="progress_update">Progress Updates</option>
+            {!isEmployee && <option value="assignment_change">Assignments</option>}
+            {!isEmployee && <option value="progress_update">Progress Updates</option>}
           </select>
           <select
             value={filterUserRole}
