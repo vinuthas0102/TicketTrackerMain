@@ -25,6 +25,7 @@ export interface Module {
   config: {
     categories: string[];
     requestTypes?: RequestType[];
+    requiresFinanceApproval?: boolean;
   };
   active: boolean;
   created_at: Date;

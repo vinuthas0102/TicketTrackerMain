@@ -54,6 +54,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
   useEffect(() => {
     const fetchFinanceApprovals = async () => {
       if (!ticket.requiresFinanceApproval) return;
+      if (selectedModule?.config?.requiresFinanceApproval !== true) return;
 
       setLoadingFinanceData(true);
       try {
@@ -258,17 +259,11 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
 
     if (
       (ticket.status === 'ACTIVE' || ticket.status === 'REJECTED_BY_FINANCE') &&
+      selectedModule?.config?.requiresFinanceApproval === true &&
       ticket.requiresFinanceApproval !== false &&
       workflowCompleted
     ) {
       availableTransitions = ['SENT_TO_FINANCE', ...availableTransitions];
-      console.log('[TicketView] Added SENT_TO_FINANCE to available transitions');
-    } else {
-      console.log('[TicketView] SENT_TO_FINANCE NOT added. Conditions:', {
-        statusCheck: ticket.status === 'ACTIVE' || ticket.status === 'REJECTED_BY_FINANCE',
-        financeApprovalCheck: ticket.requiresFinanceApproval !== false,
-        workflowCompletedCheck: workflowCompleted
-      });
     }
 
     return availableTransitions;
@@ -559,7 +554,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
               </div>
             </CollapsibleSection>
 
-            {ticket.requiresFinanceApproval !== false && financeApprovals.length > 0 && (
+            {selectedModule?.config?.requiresFinanceApproval === true && ticket.requiresFinanceApproval !== false && financeApprovals.length > 0 && (
               <CollapsibleSection
                 title="Finance Approval"
                 defaultExpanded={ticket.status === 'SENT_TO_FINANCE' || ticket.status === 'APPROVED_BY_FINANCE' || ticket.status === 'REJECTED_BY_FINANCE'}

@@ -64,7 +64,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
   isExpanded = false,
   viewMode = 'grid'
 }) => {
-  const { user, displayPreferences } = useAuth();
+  const { user, displayPreferences, selectedModule } = useAuth();
   const { changeTicketStatus } = useTickets();
 
   const getStatusIcon = (status: string) => {
@@ -252,6 +252,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
     if (!user) return false;
     if (user.role !== 'EO' && user.role !== 'DO') return false;
     if (ticket.status !== 'ACTIVE' && ticket.status !== 'REJECTED_BY_FINANCE') return false;
+    if (selectedModule?.config?.requiresFinanceApproval !== true) return false;
     if (ticket.requiresFinanceApproval === false) return false;
     const completedCount = ticket.workflow.filter(step => step.status === 'COMPLETED').length;
     const allTasksCompleted = ticket.workflow.length === 0 || completedCount === ticket.workflow.length;

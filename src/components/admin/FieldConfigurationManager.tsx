@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Module, ModuleFieldConfiguration, FieldDropdownOption, FieldContext, User } from '../../types';
 import { FieldConfigService } from '../../services/fieldConfigService';
-import { Settings, Plus, Edit, Trash2, GripVertical } from 'lucide-react';
+import { Settings, Plus, Edit, Trash2, GripVertical, IndianRupee } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { FieldEditorModal } from './FieldEditorModal';
+import { supabase } from '../../lib/supabase';
 
 interface FieldConfigurationManagerProps {
   modules: Module[];
@@ -162,6 +163,10 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
               <strong>Module:</strong> {selectedModule.name} | <strong>Context:</strong> {selectedContext === 'ticket' ? 'Ticket Fields' : 'Workflow Step Fields'}
             </p>
           </div>
+        )}
+
+        {selectedModule && (
+          <FinanceApprovalToggle module={selectedModule} onUpdated={(updated) => setSelectedModule(updated)} />
         )}
       </div>
 
@@ -323,3 +328,78 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
 };
 
 export default FieldConfigurationManager;
+
+interface FinanceApprovalToggleProps {
+  module: Module;
+  onUpdated: (module: Module) => void;
+}
+
+const FinanceApprovalToggle: React.FC<FinanceApprovalToggleProps> = ({ module, onUpdated }) => {
+  const [enabled, setEnabled] = useState<boolean>(module.config?.requiresFinanceApproval ?? false);
+  const [saving, setSaving] = useState(false);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
+
+  const handleToggle = async (value: boolean) => {
+    setEnabled(value);
+    setSaving(true);
+    setSavedMessage(null);
+    try {
+      const updatedConfig = { ...(module.config || {}), requiresFinanceApproval: value };
+      const { error } = await supabase
+        .from('modules')
+        .update({ config: updatedConfig })
+        .eq('id', module.id);
+      if (error) throw error;
+      onUpdated({ ...module, config: updatedConfig });
+      setSavedMessage(value ? 'Finance approval enabled for this module' : 'Finance approval disabled for this module');
+      setTimeout(() => setSavedMessage(null), 3000);
+    } catch (err) {
+      console.error('Error updating finance approval setting:', err);
+      setEnabled(!value);
+      setSavedMessage('Failed to update setting. Please try again.');
+      setTimeout(() => setSavedMessage(null), 3000);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-center w-10 h-10 bg-green-50 rounded-lg">
+            <IndianRupee className="w-5 h-5 text-green-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">Finance Approval Required</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              When enabled, tickets in this module must be sent to finance for cost approval before completion. When disabled, tickets can be completed directly.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-3">
+          {savedMessage && (
+            <span className="text-xs text-gray-500">{savedMessage}</span>
+          )}
+          <label className="inline-flex items-center cursor-pointer">
+            <span className="relative">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={enabled}
+                onChange={(e) => handleToggle(e.target.checked)}
+                disabled={saving}
+              />
+              <div className={`w-11 h-6 rounded-full transition-colors duration-200 ${enabled ? 'bg-green-500' : 'bg-gray-300'}`}>
+                <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform duration-200 ${enabled ? 'translate-x-5' : ''}`} />
+              </div>
+            </span>
+            <span className="ml-2 text-sm font-medium text-gray-700">
+              {enabled ? 'Yes' : 'No'}
+            </span>
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+};
