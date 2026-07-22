@@ -204,7 +204,13 @@ export class MasterDataService {
     }
     try {
       const companyCode = await this.getConfig('company_code') || 'NMDC';
-      const loc3 = (locationPrefix || 'LOC').substring(0, 3).toUpperCase();
+
+      let effectivePrefix = locationPrefix;
+      if (!effectivePrefix) {
+        const activeLocations = await this.getActive('locations');
+        effectivePrefix = activeLocations.length > 0 ? activeLocations[0] : 'LOC';
+      }
+      const loc3 = effectivePrefix.substring(0, 3).toUpperCase();
 
       const { data: existing, error: selectError } = await supabase
         .from('ticket_number_counter')

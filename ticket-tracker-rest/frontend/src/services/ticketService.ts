@@ -186,7 +186,7 @@ export class TicketService {
         assignedTo: ticketData.assignedTo,
         dueDate: ticketData.dueDate,
         propertyId: ticketData.propertyId || 'PROP001',
-        propertyLocation: ticketData.propertyLocation || 'Location01',
+        propertyLocation: ticketData.propertyLocation || '',
         requestType: ticketData.requestType,
         data: ticketData.data || {},
         copiedFromTicketId,

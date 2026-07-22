@@ -175,7 +175,7 @@ export class TicketService {
             department: ticket.data?.department || '',
             category: ticket.data?.category || '',
             propertyId: ticket.property_id || 'PROP001',
-            propertyLocation: ticket.property_location || 'Location01',
+            propertyLocation: ticket.property_location || '',
             completionDocumentsRequired: ticket.completion_documents_required !== false,
             financeOfficerId: ticket.finance_officer_id,
             financeSubmissionCount: ticket.finance_submission_count || 0,
@@ -280,7 +280,7 @@ export class TicketService {
 
     try {
       const moduleCode = await MasterDataService.getModuleCode(ticketData.moduleId);
-      const ticketNumber = await MasterDataService.generateTicketNumber(ticketData.propertyLocation || 'Location01', moduleCode);
+      const ticketNumber = await MasterDataService.generateTicketNumber(ticketData.propertyLocation || '', moduleCode);
 
       const { data, error } = await supabase
         .from('tickets')
@@ -296,7 +296,7 @@ export class TicketService {
             assigned_to: ticketData.assignedTo,
             due_date: ticketData.dueDate,
             property_id: ticketData.propertyId || 'PROP001',
-            property_location: ticketData.propertyLocation || 'Location01',
+            property_location: ticketData.propertyLocation || '',
             data: ticketData.data || {},
             requires_finance_approval: ticketData.requiresFinanceApproval !== undefined ? ticketData.requiresFinanceApproval : false,
             request_type: ticketData.requestType || null,
@@ -354,7 +354,7 @@ export class TicketService {
 
       try {
         const moduleCode = await MasterDataService.getModuleCode(moduleId);
-        const ticketNumber = await MasterDataService.generateTicketNumber(ticketInput.propertyLocation || 'Location01', moduleCode);
+        const ticketNumber = await MasterDataService.generateTicketNumber(ticketInput.propertyLocation || '', moduleCode);
 
         const { data, error } = await supabase
           .from('tickets')

@@ -141,7 +141,7 @@ export const transformTicketFromBackend = (ticket: any): any => {
     department: ticket.data?.department || '',
     category: ticket.data?.category || ticket.category || 'General',
     propertyId: ticket.propertyId || 'PROP001',
-    propertyLocation: ticket.propertyLocation || 'Location01',
+    propertyLocation: ticket.propertyLocation || '',
     completionDocumentsRequired: ticket.completionDocumentsRequired !== false,
     requiresFinanceApproval: ticket.requiresFinanceApproval === true,
     financeOfficerId: ticket.financeOfficerId,

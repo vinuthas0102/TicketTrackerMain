@@ -29,7 +29,12 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
 
   useEffect(() => {
     MasterDataService.getActive('categories').then(setMasterCategories).catch(() => setMasterCategories([]));
-    MasterDataService.getActive('locations').then(setMasterLocations).catch(() => setMasterLocations([]));
+    MasterDataService.getActive('locations').then((locs) => {
+      setMasterLocations(locs);
+      if (!ticket && !copiedTicket && locs.length > 0) {
+        setFormData(prev => ({ ...prev, propertyLocation: locs[0] }));
+      }
+    }).catch(() => setMasterLocations([]));
   }, []);
   
   // Get module-specific ticket prefix
@@ -78,7 +83,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
     estCompletionDate: safeDateToISOString(ticket?.dueDate),
     department: user?.department || '',
     propertyId: sourceTicket?.propertyId || 'PROP001',
-    propertyLocation: sourceTicket?.propertyLocation || 'Location01',
+    propertyLocation: sourceTicket?.propertyLocation || '',
     requestType: sourceTicket?.requestType || (user?.role === 'EMPLOYEE' ? 'General Maintenance' : '')
   });
 
@@ -106,7 +111,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
         estCompletionDate: '',
         department: user?.department || '',
         propertyId: copiedTicket.propertyId || 'PROP001',
-        propertyLocation: copiedTicket.propertyLocation || 'Location01',
+        propertyLocation: copiedTicket.propertyLocation || '',
         requestType: copiedTicket.requestType || (user?.role === 'EMPLOYEE' ? 'General Maintenance' : '')
       });
     }
@@ -127,7 +132,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
         estCompletionDate: safeDateToISOString(ticket.dueDate),
         department: ticket.department || user?.department || '',
         propertyId: ticket.propertyId || 'PROP001',
-        propertyLocation: ticket.propertyLocation || 'Location01',
+        propertyLocation: ticket.propertyLocation || '',
         requestType: ticket.requestType || (user?.role === 'EMPLOYEE' ? 'General Maintenance' : '')
       });
     }
@@ -296,7 +301,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
           estCompletionDate: '',
           department: user?.department || '',
           propertyId: 'PROP001',
-          propertyLocation: 'Location01',
+          propertyLocation: masterLocations.length > 0 ? masterLocations[0] : '',
           requestType: user?.role === 'EMPLOYEE' ? 'General Maintenance' : ''
         });
         setFiles(null);
@@ -526,6 +531,9 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                       {(masterLocations.length > 0 ? masterLocations : ['Location01', 'Location02']).map(loc => (
                         <option key={loc} value={loc}>{loc}</option>
                       ))}
+                      {formData.propertyLocation && masterLocations.length > 0 && !masterLocations.includes(formData.propertyLocation) && (
+                        <option value={formData.propertyLocation}>{formData.propertyLocation} (inactive)</option>
+                      )}
                     </select>
                   </div>
                 </div>

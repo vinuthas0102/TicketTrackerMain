@@ -47,7 +47,8 @@ public class TicketService {
             }
 
             if (ticket.getPropertyLocation() == null || ticket.getPropertyLocation().trim().isEmpty()) {
-                ticket.setPropertyLocation("Location01");
+                List<String> activeLocations = masterDataService.getActiveLocationNames();
+                ticket.setPropertyLocation(activeLocations.isEmpty() ? "LOC" : activeLocations.get(0));
             }
 
             if (ticket.getTicketNumber() == null || ticket.getTicketNumber().isEmpty()) {
@@ -192,7 +193,8 @@ public class TicketService {
                 }
 
                 if (ticket.getPropertyLocation() == null || ticket.getPropertyLocation().trim().isEmpty()) {
-                    ticket.setPropertyLocation("Location01");
+                    List<String> activeLocations = masterDataService.getActiveLocationNames();
+                    ticket.setPropertyLocation(activeLocations.isEmpty() ? "LOC" : activeLocations.get(0));
                 }
 
                 if (ticket.getTicketNumber() == null || ticket.getTicketNumber().isEmpty()) {

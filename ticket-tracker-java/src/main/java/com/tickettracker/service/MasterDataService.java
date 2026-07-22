@@ -65,6 +65,10 @@ public class MasterDataService {
         logger.info("Updated module code for module");
     }
 
+    public List<String> getActiveLocationNames() throws Exception {
+        return masterDataDAO.findActiveNames("master_locations");
+    }
+
     public String generateTicketNumber(String locationPrefix, String moduleCode) throws Exception {
         String companyCode = masterDataDAO.getConfigValue("company_code");
         if (companyCode == null || companyCode.isEmpty()) {
@@ -72,7 +76,8 @@ public class MasterDataService {
         }
         String loc3 = locationPrefix;
         if (loc3 == null || loc3.isEmpty()) {
-            loc3 = "LOC";
+            List<String> activeLocations = masterDataDAO.findActiveNames("master_locations");
+            loc3 = activeLocations.isEmpty() ? "LOC" : activeLocations.get(0);
         }
         if (loc3.length() > 3) {
             loc3 = loc3.substring(0, 3);

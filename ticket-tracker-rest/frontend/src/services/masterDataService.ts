@@ -124,7 +124,7 @@ export class MasterDataService {
   static async generateTicketNumber(locationPrefix: string, moduleCode: string): Promise<string> {
     try {
       const result = await apiClient.post<{ ticketNumber: string }>('/master-data/generate-ticket-number', {
-        locationPrefix,
+        locationPrefix: locationPrefix || '',
         moduleCode,
       });
       return result?.ticketNumber || `TKT-${Date.now()}`;

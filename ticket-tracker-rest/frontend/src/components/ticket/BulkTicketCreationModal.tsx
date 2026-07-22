@@ -29,7 +29,15 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
 
   useEffect(() => {
     MasterDataService.getActive('categories').then(setMasterCategories).catch(() => setMasterCategories([]));
-    MasterDataService.getActive('locations').then(setMasterLocations).catch(() => setMasterLocations([]));
+    MasterDataService.getActive('locations').then((locs) => {
+      setMasterLocations(locs);
+      const defaultLoc = locs.length > 0 ? locs[0] : '';
+      setRows(prev => prev.map(row =>
+        row.propertyLocation === 'Location01' || !row.propertyLocation
+          ? { ...row, propertyLocation: defaultLoc }
+          : row
+      ));
+    }).catch(() => setMasterLocations([]));
   }, []);
 
   useEffect(() => {
@@ -43,7 +51,7 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
       assignedTo: '',
       department: user?.department || '',
       propertyId: 'PROP001',
-      propertyLocation: 'Location01',
+      propertyLocation: masterLocations.length > 0 ? masterLocations[0] : '',
       attachments: null,
       errors: {},
     }));
@@ -95,7 +103,7 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
       assignedTo: '',
       department: user?.department || '',
       propertyId: 'PROP001',
-      propertyLocation: 'Location01',
+      propertyLocation: masterLocations.length > 0 ? masterLocations[0] : '',
       attachments: null,
       errors: {},
     }));
@@ -119,7 +127,7 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
       assignedTo: '',
       department: user?.department || '',
       propertyId: 'PROP001',
-      propertyLocation: 'Location01',
+      propertyLocation: masterLocations.length > 0 ? masterLocations[0] : '',
       attachments: null,
       errors: {},
     }));

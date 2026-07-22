@@ -284,6 +284,26 @@ public class MasterDataDAO extends BaseDAO {
         }
     }
 
+    public List<String> findActiveNames(String tableName) throws SQLException {
+        String sql = String.format(
+            "SELECT name FROM %s WHERE is_active = 1 ORDER BY display_order ASC", tableName);
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        List<String> names = new ArrayList<>();
+        try {
+            conn = getConnection();
+            stmt = conn.prepareStatement(sql);
+            rs = stmt.executeQuery();
+            while (rs.next()) {
+                names.add(rs.getString("name"));
+            }
+            return names;
+        } finally {
+            closeResources(conn, stmt, rs);
+        }
+    }
+
     public static class MapItem {
         private byte[] id;
         private String name;
