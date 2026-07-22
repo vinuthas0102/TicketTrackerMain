@@ -1,6 +1,7 @@
 import React from 'react';
 import { Ticket, User } from '../../types';
 import TicketCard from './TicketCard';
+import TicketTable from './TicketTable';
 import { useTickets } from '../../context/TicketContext';
 import StatusTransitionModal from '../ticket/StatusTransitionModal';
 
@@ -74,6 +75,21 @@ const TicketGrid: React.FC<TicketGridProps> = ({
 
   return (
     <>
+      {viewMode === 'table' ? (
+        <TicketTable
+          tickets={tickets}
+          getUserById={getUserById}
+          onTicketClick={onTicketClick}
+          onModify={onModifyTicket}
+          onApprove={(ticket) => handleStatusChange(ticket, 'approve')}
+          onClose={(ticket) => handleStatusChange(ticket, 'close')}
+          onCancel={(ticket) => handleStatusChange(ticket, 'cancel')}
+          onMarkInProgress={(ticket) => handleStatusChange(ticket, 'inprogress')}
+          onReopen={(ticket) => handleStatusChange(ticket, 'reopen')}
+          onReinstate={(ticket) => handleStatusChange(ticket, 'reinstate')}
+          onSendToFinance={(ticket) => handleStatusChange(ticket, 'sendToFinance')}
+        />
+      ) : (
       <div className={`${
         viewMode === 'grid' 
           ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8' 
@@ -103,6 +119,7 @@ const TicketGrid: React.FC<TicketGridProps> = ({
           />
         ))}
       </div>
+      )}
 
       {statusModalTicket && (
         <StatusTransitionModal

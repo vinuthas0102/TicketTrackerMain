@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tickettracker.exception.TicketTrackerException;
 import com.tickettracker.model.User;
 import com.tickettracker.service.AuthService;
+import com.tickettracker.service.UserService;
 import com.tickettracker.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,12 +25,14 @@ public class AuthServlet extends HttpServlet {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthServlet.class);
     private AuthService authService;
+    private UserService userService;
     private ObjectMapper objectMapper;
 
     @Override
     public void init() throws ServletException {
         super.init();
         this.authService = new AuthService();
+        this.userService = new UserService();
         this.objectMapper = JsonUtil.getObjectMapper();
     }
 
@@ -136,6 +139,9 @@ public class AuthServlet extends HttpServlet {
 
         sendJsonResponse(response, loginResponse);
 
+        userService.logUserActivity(user.getId(), "login", request.getRemoteAddr(),
+                request.getHeader("User-Agent"), "User logged in");
+
         logger.info("User logged in: {} with new session", email);
     }
 
@@ -145,6 +151,8 @@ public class AuthServlet extends HttpServlet {
         if (session != null) {
             User user = (User) session.getAttribute("currentUser");
             if (user != null) {
+                userService.logUserActivity(user.getId(), "logout", request.getRemoteAddr(),
+                        request.getHeader("User-Agent"), "User logged out");
                 logger.info("User logged out: {}", user.getEmail());
             }
             session.invalidate();

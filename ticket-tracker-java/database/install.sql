@@ -142,7 +142,15 @@ SELECT '========================================================================
 SELECT 'requestTypes added to modules and C&E users created!' FROM DUAL;
 SELECT '' FROM DUAL;
 
--- Step 12: Verification
+-- Step 12: Add parity columns and tables (Bolt feature parity)
+SELECT '==================================================================================' FROM DUAL;
+SELECT 'STEP 11: Adding parity columns and tables...' FROM DUAL;
+SELECT '==================================================================================' FROM DUAL;
+@17-oracle-add-parity-columns-and-tables.sql
+SELECT 'Parity columns and tables added!' FROM DUAL;
+SELECT '' FROM DUAL;
+
+-- Step 13: Verification
 SELECT '==================================================================================' FROM DUAL;
 SELECT 'INSTALLATION VERIFICATION' FROM DUAL;
 SELECT '==================================================================================' FROM DUAL;

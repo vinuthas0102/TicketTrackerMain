@@ -20,6 +20,9 @@ export const API_ENDPOINTS = {
     DISABLE: (id: string) => `/users/${id}/disable`,
     LOCK: (id: string) => `/users/${id}/lock`,
     UNLOCK: (id: string) => `/users/${id}/unlock`,
+    RESET_PASSWORD: (id: string) => `/users/reset-password/${id}`,
+    ACTIVITY_LOGS: (id: string) => `/users/${id}/activity-logs`,
+    AUDIT: (id: string) => `/users/${id}/audit`,
   },
 
   MODULES: {
@@ -61,12 +64,16 @@ export const API_ENDPOINTS = {
     DELETE: (id: string) => `/files/${id}`,
     PROGRESS_DOCS: '/files/progress-docs',
     COMPLETION_CERT: '/files/completion-cert',
+    COMPLETION_CERTIFICATES: '/files/completion-certificates',
+    CHECK_COMPLETION_CERT: '/files/completion-certificates/check',
+    COPY_ATTACHMENTS: '/files/copy-attachments',
     LIST_BY_TICKET: (ticketId: string) => `/files?ticketId=${ticketId}`,
     LIST_BY_STEP: (stepId: string) => `/files?stepId=${stepId}`,
   },
 
   FINANCE: {
     SUBMISSIONS: '/finance-approvals',
+    PENDING: '/finance-approvals/pending',
     GET: (id: string) => `/finance-approvals/${id}`,
     APPROVE: (id: string) => `/finance-approvals/${id}/approve`,
     REJECT: (id: string) => `/finance-approvals/${id}/reject`,
@@ -84,12 +91,18 @@ export const API_ENDPOINTS = {
     CREATE: '/field-config',
     UPDATE: (id: string) => `/field-config/${id}`,
     DELETE: (id: string) => `/field-config/${id}`,
-    BY_MODULE: (moduleId: string) => `/field-config/module/${moduleId}`,
+    BY_MODULE: (moduleId: string) => `/field-config?moduleId=${moduleId}`,
+    REORDER: '/field-config/reorder',
+    OPTIONS: (configId: string) => `/field-config/options/${configId}`,
+    CREATE_OPTION: '/field-config/options',
+    UPDATE_OPTION: (id: string) => `/field-config/options/${id}`,
+    DELETE_OPTION: (id: string) => `/field-config/options/${id}`,
   },
 
   FIELD_VALUES: {
-    GET: (ticketId: string) => `/field-values/${ticketId}`,
-    SAVE: (ticketId: string) => `/field-values/${ticketId}`,
+    GET: (entityId: string) => `/field-values/${entityId}`,
+    SAVE: (entityId: string) => `/field-values/${entityId}`,
+    DELETE: (entityId: string, fieldKey: string) => `/field-values/${entityId}/${fieldKey}`,
   },
 
   FILE_REFERENCES: {
@@ -102,6 +115,7 @@ export const API_ENDPOINTS = {
   USER_PREFERENCES: {
     GET: '/user-preferences',
     SAVE: '/user-preferences',
+    RESET: '/user-preferences',
   },
 
   AUDIT: {

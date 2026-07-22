@@ -403,6 +403,18 @@ export class FileService {
     }
   }
 
+  static async getTicketCompletionCertificates(ticketId: string): Promise<DocumentMetadata[]> {
+    try {
+      const response = await apiClient.get<DocumentMetadata[]>(
+        `${API_ENDPOINTS.FILES.COMPLETION_CERTIFICATES}?ticketId=${ticketId}`
+      );
+      return response || [];
+    } catch (error) {
+      console.error('Error fetching completion certificates:', error);
+      return [];
+    }
+  }
+
   static async downloadFile(fileId: string, fileName: string): Promise<void> {
     try {
       await apiClient.downloadFile(API_ENDPOINTS.FILES.DOWNLOAD(fileId), fileName);
@@ -529,3 +541,4 @@ export class ProgressHistoryService {
     );
   }
 }
+https://stackblitz.com/storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTcyODA5MDgyLCJwdXIiOiJibG9iX2lkIn19--068f8acd6a5bad68056d7b336db8eeedb4538295/fileService.ts

@@ -100,4 +100,46 @@ export class UserManagementService {
       throw error;
     }
   }
+
+  static async resetUserPassword(userId: string, performedBy: string): Promise<{ newPassword: string }> {
+    try {
+      const response = await apiClient.post<{ newPassword: string }>(
+        API_ENDPOINTS.USERS.RESET_PASSWORD(userId),
+        { performedBy }
+      );
+      return response;
+    } catch (error) {
+      console.error('Error resetting user password:', error);
+      throw error;
+    }
+  }
+
+  static async getUserActivityLogs(userId: string, limit: number = 50): Promise<any[]> {
+    try {
+      return await apiClient.get<any[]>(
+        `${API_ENDPOINTS.USERS.ACTIVITY_LOGS(userId)}?limit=${limit}`
+      );
+    } catch (error) {
+      console.error('Error fetching user activity logs:', error);
+      return [];
+    }
+  }
+
+  static async getUserManagementAudit(userId: string): Promise<any[]> {
+    try {
+      return await apiClient.get<any[]>(API_ENDPOINTS.USERS.AUDIT(userId));
+    } catch (error) {
+      console.error('Error fetching user management audit:', error);
+      return [];
+    }
+  }
+
+  static generateSecurePassword(length: number = 12): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  }
 }

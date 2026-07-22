@@ -59,6 +59,10 @@ public class FileServlet extends HttpServlet {
         try {
             if (pathInfo == null || pathInfo.equals("/")) {
                 handleGetAllDocuments(request, response);
+            } else if ("/completion-certificates".equals(pathInfo)) {
+                handleGetCompletionCertificates(request, response);
+            } else if ("/completion-certificates/check".equals(pathInfo)) {
+                handleCheckCompletionCertificate(request, response);
             } else {
                 String[] pathParts = pathInfo.split("/");
                 if (pathParts.length == 2) {
@@ -100,6 +104,8 @@ public class FileServlet extends HttpServlet {
                 } else {
                     sendError(response, 400, "Multipart form data required for completion certificate upload");
                 }
+            } else if ("/copy-attachments".equals(pathInfo)) {
+                handleCopyAttachments(request, response, currentUser);
             } else if ("/upload".equals(pathInfo) || pathInfo == null || "/".equals(pathInfo)) {
                 if (contentType != null && contentType.startsWith("multipart/form-data")) {
                     handleFileUpload(request, response, currentUser);
@@ -338,6 +344,55 @@ public class FileServlet extends HttpServlet {
         } catch (Exception e) {
             logger.error("Unexpected error in DELETE /api/files", e);
             sendError(response, 500, "Internal server error");
+        }
+    }
+
+    private void handleGetCompletionCertificates(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        String ticketIdStr = request.getParameter("ticketId");
+        if (ticketIdStr == null) {
+            sendError(response, 400, "ticketId parameter is required");
+            return;
+        }
+        try {
+            byte[] ticketId = UuidUtil.uuidStringToBytes(ticketIdStr);
+            sendJsonResponse(response, documentService.getTicketCompletionCertificates(ticketId));
+        } catch (TicketTrackerException e) {
+            sendError(response, e.getHttpStatus(), e.getMessage());
+        }
+    }
+
+    private void handleCheckCompletionCertificate(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        String ticketIdStr = request.getParameter("ticketId");
+        if (ticketIdStr == null) {
+            sendError(response, 400, "ticketId parameter is required");
+            return;
+        }
+        try {
+            byte[] ticketId = UuidUtil.uuidStringToBytes(ticketIdStr);
+            boolean has = documentService.hasTicketCompletionCertificate(ticketId);
+            sendJsonResponse(response, Map.of("hasCompletionCertificate", has));
+        } catch (TicketTrackerException e) {
+            sendError(response, e.getHttpStatus(), e.getMessage());
+        }
+    }
+
+    private void handleCopyAttachments(HttpServletRequest request, HttpServletResponse response, User currentUser)
+            throws IOException {
+        String sourceTicketIdStr = request.getParameter("sourceTicketId");
+        String targetTicketIdStr = request.getParameter("targetTicketId");
+        if (sourceTicketIdStr == null || targetTicketIdStr == null) {
+            sendError(response, 400, "sourceTicketId and targetTicketId parameters are required");
+            return;
+        }
+        try {
+            byte[] sourceTicketId = UuidUtil.uuidStringToBytes(sourceTicketIdStr);
+            byte[] targetTicketId = UuidUtil.uuidStringToBytes(targetTicketIdStr);
+            documentService.copyTicketAttachments(sourceTicketId, targetTicketId, currentUser.getId());
+            sendJsonResponse(response, Map.of("success", true));
+        } catch (TicketTrackerException e) {
+            sendError(response, e.getHttpStatus(), e.getMessage());
         }
     }
 

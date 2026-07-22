@@ -5,6 +5,7 @@ import com.tickettracker.exception.TicketTrackerException;
 import com.tickettracker.model.User;
 import com.tickettracker.service.UserService;
 import com.tickettracker.util.JsonUtil;
+import com.tickettracker.util.UuidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +47,10 @@ public class UserManagementServlet extends HttpServlet {
                     handleGetUser(pathParts[1], response);
                 } else if (pathParts.length == 3 && pathParts[2].equals("role")) {
                     handleGetUsersByRole(request, response);
+                } else if (pathParts.length == 3 && pathParts[2].equals("activity-logs")) {
+                    handleGetActivityLogs(pathParts[1], request, response);
+                } else if (pathParts.length == 3 && pathParts[2].equals("audit")) {
+                    handleGetManagementAudit(pathParts[1], response);
                 } else {
                     sendError(response, 400, "Invalid request path");
                 }
@@ -65,6 +70,13 @@ public class UserManagementServlet extends HttpServlet {
             User currentUser = getCurrentUser(request);
             if (currentUser == null) {
                 sendError(response, 401, "Authentication required");
+                return;
+            }
+
+            String pathInfo = request.getPathInfo();
+
+            if (pathInfo != null && pathInfo.startsWith("/reset-password/")) {
+                handleResetPassword(pathInfo.substring("/reset-password/".length()), currentUser, response);
                 return;
             }
 
@@ -177,6 +189,40 @@ public class UserManagementServlet extends HttpServlet {
         byte[] id = hexToBytes(userId);
         User user = userService.getUserById(id);
         sendJsonResponse(response, user);
+    }
+
+    private void handleGetActivityLogs(String userIdStr, HttpServletRequest request, HttpServletResponse response)
+            throws TicketTrackerException, IOException {
+        User currentUser = getCurrentUser(request);
+        if (currentUser == null) {
+            sendError(response, 401, "Authentication required");
+            return;
+        }
+        if (!currentUser.isAdmin()) {
+            sendError(response, 403, "Only EO can view activity logs");
+            return;
+        }
+        byte[] userId = UuidUtil.uuidStringToBytes(userIdStr);
+        String limitStr = request.getParameter("limit");
+        int limit = limitStr != null ? Integer.parseInt(limitStr) : 50;
+        sendJsonResponse(response, userService.getUserActivityLogs(userId, limit));
+    }
+
+    private void handleGetManagementAudit(String userIdStr, HttpServletResponse response)
+            throws TicketTrackerException, IOException {
+        byte[] userId = UuidUtil.uuidStringToBytes(userIdStr);
+        sendJsonResponse(response, userService.getUserManagementAudit(userId));
+    }
+
+    private void handleResetPassword(String userIdStr, User currentUser, HttpServletResponse response)
+            throws TicketTrackerException, IOException {
+        if (!currentUser.isAdmin()) {
+            sendError(response, 403, "Only EO can reset passwords");
+            return;
+        }
+        byte[] userId = UuidUtil.uuidStringToBytes(userIdStr);
+        String newPassword = userService.resetUserPassword(userId, currentUser.getId());
+        sendJsonResponse(response, Map.of("success", true, "newPassword", newPassword));
     }
 
     private void handleGetUsersByRole(HttpServletRequest request, HttpServletResponse response)

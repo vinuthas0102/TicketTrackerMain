@@ -223,6 +223,55 @@ public class DependencyService {
         }
     }
 
+    public List<WorkflowStep> getStepsWithDependencies(byte[] ticketId)
+            throws TicketTrackerException {
+        try {
+            List<WorkflowStep> steps = workflowStepDAO.findByTicketId(ticketId);
+            for (WorkflowStep step : steps) {
+                List<WorkflowStepDependency> deps = dependencyDAO.findByStepId(step.getId());
+                step.setDependencies(deps != null && !deps.isEmpty()
+                        ? com.tickettracker.util.JsonUtil.getObjectMapper().writeValueAsString(deps)
+                        : null);
+            }
+            return steps;
+        } catch (SQLException e) {
+            logger.error("Error fetching steps with dependencies", e);
+            throw new DatabaseException("Failed to fetch steps with dependencies", e);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            logger.error("Error serializing dependencies", e);
+            throw new DatabaseException("Failed to serialize dependencies", e);
+        }
+    }
+
+    public boolean isDescendantOf(byte[] stepId, byte[] potentialDescendantId)
+            throws TicketTrackerException {
+        try {
+            Set<String> visited = new HashSet<>();
+            Queue<byte[]> queue = new LinkedList<>();
+            queue.add(stepId);
+
+            while (!queue.isEmpty()) {
+                byte[] current = queue.poll();
+                String currentHex = bytesToHex(current);
+                if (visited.contains(currentHex)) continue;
+                visited.add(currentHex);
+
+                if (java.util.Arrays.equals(current, potentialDescendantId)) {
+                    return true;
+                }
+
+                List<WorkflowStepDependency> dependents = dependencyDAO.findDependentSteps(current);
+                for (WorkflowStepDependency dep : dependents) {
+                    queue.add(dep.getStepId());
+                }
+            }
+            return false;
+        } catch (SQLException e) {
+            logger.error("Error checking descendant relationship", e);
+            throw new DatabaseException("Failed to check descendant relationship", e);
+        }
+    }
+
     private void validateDependency(WorkflowStepDependency dependency) throws ValidationException {
         ValidationException validation = new ValidationException("Dependency validation failed");
 

@@ -120,6 +120,28 @@ export class FinanceApprovalService {
       throw error;
     }
   }
+
+  static async getPendingFinanceApprovals(): Promise<FinanceApproval[]> {
+    try {
+      const raw = await apiClient.get<any[]>(API_ENDPOINTS.FINANCE.PENDING);
+      const list = Array.isArray(raw) ? raw : [];
+      return list.map(mapRawToFinanceApproval);
+    } catch (error) {
+      console.error('Error fetching pending finance approvals:', error);
+      return [];
+    }
+  }
+
+  static async getFinanceApprovalById(approvalId: string): Promise<FinanceApproval | null> {
+    try {
+      const raw = await apiClient.get<any>(API_ENDPOINTS.FINANCE.GET(approvalId));
+      if (!raw) return null;
+      return mapRawToFinanceApproval(raw);
+    } catch (error) {
+      console.error('Error fetching finance approval by ID:', error);
+      return null;
+    }
+  }
 }
 
 function mapRawToFinanceApproval(raw: any): FinanceApproval {

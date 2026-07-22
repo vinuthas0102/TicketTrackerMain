@@ -90,4 +90,56 @@ export class FieldConfigService {
       throw error;
     }
   }
+
+  static async reorderFields(moduleId: string, orderedIds: string[]): Promise<void> {
+    try {
+      await apiClient.put(`${API_ENDPOINTS.FIELD_CONFIG.REORDER}?moduleId=${moduleId}`, orderedIds);
+    } catch (error) {
+      console.error('Error reordering fields:', error);
+      throw error;
+    }
+  }
+
+  static async getFieldDropdownOptions(fieldConfigId: string): Promise<any[]> {
+    try {
+      return await apiClient.get<any[]>(API_ENDPOINTS.FIELD_CONFIG.OPTIONS(fieldConfigId));
+    } catch (error) {
+      console.error('Error fetching dropdown options:', error);
+      return [];
+    }
+  }
+
+  static async createDropdownOption(option: any): Promise<any> {
+    try {
+      return await apiClient.post(API_ENDPOINTS.FIELD_CONFIG.CREATE_OPTION, option);
+    } catch (error) {
+      console.error('Error creating dropdown option:', error);
+      throw error;
+    }
+  }
+
+  static async updateDropdownOption(optionId: string, updates: any): Promise<void> {
+    try {
+      await apiClient.put(API_ENDPOINTS.FIELD_CONFIG.UPDATE_OPTION(optionId), updates);
+    } catch (error) {
+      console.error('Error updating dropdown option:', error);
+      throw error;
+    }
+  }
+
+  static async deleteDropdownOption(optionId: string): Promise<void> {
+    try {
+      await apiClient.delete(API_ENDPOINTS.FIELD_CONFIG.DELETE_OPTION(optionId));
+    } catch (error) {
+      console.error('Error deleting dropdown option:', error);
+      throw error;
+    }
+  }
+
+  static validateFieldValue(value: any, config: FieldConfig): { valid: boolean; error?: string } {
+    if (config.required && (value === null || value === undefined || value === '')) {
+      return { valid: false, error: `${config.label} is required` };
+    }
+    return { valid: true };
+  }
 }

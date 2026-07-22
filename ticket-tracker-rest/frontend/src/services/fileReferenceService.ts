@@ -202,30 +202,39 @@ export class FileReferenceService {
     }
   }
 
-  static async updateFileReferenceStatus(
-    referenceId: string,
-    status: string,
-    updatedBy: string,
-    file?: File
-  ): Promise<void> {
+  static validateTemplateJSON(json: string): { valid: boolean; error?: string } {
     try {
-      if (file) {
-        await apiClient.uploadFile(
-          API_ENDPOINTS.FILE_REFERENCES.UPDATE_STATUS(referenceId),
-          file,
-          {
-            status,
-            updatedBy,
-          }
-        );
-      } else {
-        await apiClient.put(API_ENDPOINTS.FILE_REFERENCES.UPDATE_STATUS(referenceId), {
-          status,
-          updatedBy,
-        });
+      const parsed = JSON.parse(json);
+      if (!parsed.fileReferences || !Array.isArray(parsed.fileReferences)) {
+        return { valid: false, error: 'fileReferences array is required' };
       }
+      for (const ref of parsed.fileReferences) {
+        if (!ref.referenceName || typeof ref.referenceName !== 'string') {
+          return { valid: false, error: 'Each reference must have a referenceName' };
+        }
+        if (typeof ref.isMandatory !== 'boolean') {
+          return { valid: false, error: 'Each reference must have isMandatory boolean' };
+        }
+      }
+      return { valid: true };
+    } catch (e) {
+      return { valid: false, error: 'Invalid JSON format' };
+    }
+  }
+
+  static async createStepFileReferences(
+    stepId: string,
+    templateId: string,
+    userId: string
+  ): Promise<WorkflowStepFileReference[]> {
+    try {
+      const references = await apiClient.post<WorkflowStepFileReference[]>(
+        API_ENDPOINTS.FILE_REFERENCES.BY_STEP(stepId),
+        { templateId, userId }
+      );
+      return references || [];
     } catch (error) {
-      console.error('Error updating file reference status:', error);
+      console.error('Error creating step file references:', error);
       throw error;
     }
   }

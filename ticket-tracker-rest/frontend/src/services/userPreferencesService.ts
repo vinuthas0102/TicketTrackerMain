@@ -136,4 +136,19 @@ export class UserPreferencesService {
   static clearCache(): void {
     cache = null;
   }
+
+  static async resetToDefaults(userId: string): Promise<UserDisplayPreferences> {
+    try {
+      await apiClient.delete(API_ENDPOINTS.USER_PREFERENCES.RESET, { userId });
+      const defaults = UserPreferencesService.getDefaultPreferences();
+      defaults.userId = userId;
+      cache = defaults;
+      return defaults;
+    } catch (error) {
+      console.error('Error resetting user preferences:', error);
+      const defaults = UserPreferencesService.getDefaultPreferences();
+      defaults.userId = userId;
+      return defaults;
+    }
+  }
 }

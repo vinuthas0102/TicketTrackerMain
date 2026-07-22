@@ -31,6 +31,30 @@ export class DependencyService {
     }
   }
 
+  static async getDependentSteps(stepId: string): Promise<any[]> {
+    try {
+      return await apiClient.get<any[]>(`/workflow-steps/${stepId}/dependent-steps`);
+    } catch (error) {
+      console.error('Error fetching dependent steps:', error);
+      return [];
+    }
+  }
+
+  static async getStepsWithDependencies(ticketId: string): Promise<any[]> {
+    try {
+      const steps = await apiClient.get<any[]>(`/tickets/${ticketId}/workflow-steps`);
+      for (const step of steps) {
+        if (step.id) {
+          step.dependencies = await this.getDependencies(step.id);
+        }
+      }
+      return steps;
+    } catch (error) {
+      console.error('Error fetching steps with dependencies:', error);
+      return [];
+    }
+  }
+
   static async deleteDependency(dependencyId: string, deletedBy: string): Promise<void> {
     try {
       await apiClient.delete(

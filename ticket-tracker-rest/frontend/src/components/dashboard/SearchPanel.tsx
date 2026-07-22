@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, X, Grid3X3, List, LayoutGrid } from 'lucide-react';
+import { Search, Filter, X, Grid3x3 as Grid3X3, List, LayoutGrid, Table } from 'lucide-react';
 import { TicketStatus } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTickets } from '../../context/TicketContext';
@@ -15,8 +15,8 @@ interface SearchFilters {
 interface SearchPanelProps {
   filters: SearchFilters;
   onFiltersChange: (filters: SearchFilters) => void;
-  viewMode: 'grid' | 'list' | 'compact';
-  onViewModeChange: (mode: 'grid' | 'list' | 'compact') => void;
+  viewMode: 'grid' | 'list' | 'compact' | 'table';
+  onViewModeChange: (mode: 'grid' | 'list' | 'compact' | 'table') => void;
 }
 
 const SearchPanel: React.FC<SearchPanelProps> = ({ filters, onFiltersChange, viewMode, onViewModeChange }) => {
@@ -93,7 +93,7 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, onFiltersChange, vie
             </button>
             <button
               onClick={() => onViewModeChange('compact')}
-              className={`p-1.5 rounded-r-lg transition-colors duration-200 ${
+              className={`p-1.5 transition-colors duration-200 ${
                 viewMode === 'compact'
                   ? 'bg-blue-500 text-white shadow-sm'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -101,6 +101,17 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, onFiltersChange, vie
               title="Compact View"
             >
               <LayoutGrid className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => onViewModeChange('table')}
+              className={`p-1.5 rounded-r-lg transition-colors duration-200 ${
+                viewMode === 'table'
+                  ? 'bg-blue-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+              title="Table View"
+            >
+              <Table className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -140,6 +151,8 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, onFiltersChange, vie
               >
                 <option value="">All</option>
                 <option value="DRAFT">Draft</option>
+                <option value="SUBMITTED">Submitted</option>
+                <option value="REVIEWED">Reviewed</option>
                 <option value="CREATED">Created</option>
                 <option value="ACTIVE">Active</option>
                 <option value="COMPLETED">Completed</option>

@@ -5,6 +5,7 @@ import com.tickettracker.exception.TicketTrackerException;
 import com.tickettracker.model.User;
 import com.tickettracker.service.FieldValueService;
 import com.tickettracker.util.JsonUtil;
+import com.tickettracker.util.UuidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +51,7 @@ public class FieldValueServlet extends HttpServlet {
 
             String[] pathParts = pathInfo.split("/");
             if (pathParts.length == 2) {
-                byte[] entityId = hexToBytes(pathParts[1]);
+                byte[] entityId = UuidUtil.uuidStringToBytes(pathParts[1]);
                 Map<String, Object> values = fieldValueService.getFieldValues(
                         entityId, currentUser.getId());
                 sendJsonResponse(response, values);
@@ -62,6 +63,76 @@ public class FieldValueServlet extends HttpServlet {
             handleException(response, e);
         } catch (Exception e) {
             logger.error("Unexpected error in GET /api/field-values", e);
+            sendError(response, 500, "Internal server error");
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        try {
+            User currentUser = getCurrentUser(request);
+            if (currentUser == null) {
+                sendError(response, 401, "Authentication required");
+                return;
+            }
+
+            String pathInfo = request.getPathInfo();
+            if (pathInfo == null || pathInfo.equals("/")) {
+                sendError(response, 400, "Entity ID required");
+                return;
+            }
+
+            String[] pathParts = pathInfo.split("/");
+            if (pathParts.length == 2) {
+                byte[] entityId = UuidUtil.uuidStringToBytes(pathParts[1]);
+                Map<String, Object> values = objectMapper.readValue(request.getInputStream(), Map.class);
+                fieldValueService.saveFieldValues(entityId, values, currentUser.getId());
+                Map<String, Object> result = fieldValueService.getFieldValues(entityId, currentUser.getId());
+                sendJsonResponse(response, result);
+            } else {
+                sendError(response, 400, "Invalid request path");
+            }
+
+        } catch (TicketTrackerException e) {
+            handleException(response, e);
+        } catch (Exception e) {
+            logger.error("Unexpected error in POST /api/field-values", e);
+            sendError(response, 500, "Internal server error");
+        }
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        try {
+            User currentUser = getCurrentUser(request);
+            if (currentUser == null) {
+                sendError(response, 401, "Authentication required");
+                return;
+            }
+
+            String pathInfo = request.getPathInfo();
+            if (pathInfo == null || pathInfo.equals("/")) {
+                sendError(response, 400, "Entity ID and field key required");
+                return;
+            }
+
+            String[] pathParts = pathInfo.split("/");
+            if (pathParts.length == 3) {
+                byte[] entityId = UuidUtil.uuidStringToBytes(pathParts[1]);
+                String fieldKey = pathParts[2];
+                fieldValueService.deleteTicketFieldValue(entityId, fieldKey);
+                sendJsonResponse(response, Map.of("success", true));
+            } else {
+                sendError(response, 400, "Invalid request path. Expected /{entityId}/{fieldKey}");
+            }
+
+        } catch (TicketTrackerException e) {
+            handleException(response, e);
+        } catch (Exception e) {
+            logger.error("Unexpected error in DELETE /api/field-values", e);
             sendError(response, 500, "Internal server error");
         }
     }
@@ -94,19 +165,6 @@ public class FieldValueServlet extends HttpServlet {
         sendError(response, e.getHttpStatus(), e.getMessage());
     }
 
-    private byte[] hexToBytes(String hex) {
-        if (hex == null || hex.isEmpty()) {
-            return null;
-        }
-        int len = hex.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-                    + Character.digit(hex.charAt(i + 1), 16));
-        }
-        return data;
-    }
-
     private static class ErrorResponse {
         private int status;
         private String message;
@@ -116,12 +174,7 @@ public class FieldValueServlet extends HttpServlet {
             this.message = message;
         }
 
-        public int getStatus() {
-            return status;
-        }
-
-        public String getMessage() {
-            return message;
-        }
+        public int getStatus() { return status; }
+        public String getMessage() { return message; }
     }
 }

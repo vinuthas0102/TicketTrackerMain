@@ -79,6 +79,27 @@ public class UserPreferencesServlet extends HttpServlet {
         }
     }
 
+    @Override
+    protected void doDelete(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        try {
+            User currentUser = getCurrentUser(request);
+            if (currentUser == null) {
+                sendError(response, 401, "Authentication required");
+                return;
+            }
+
+            userPreferencesService.resetToDefaults(currentUser.getId());
+            sendJsonResponse(response, java.util.Map.of("success", true, "message", "Preferences reset to defaults"));
+
+        } catch (TicketTrackerException e) {
+            handleException(response, e);
+        } catch (Exception e) {
+            logger.error("Unexpected error in DELETE /api/user-preferences", e);
+            sendError(response, 500, "Internal server error");
+        }
+    }
+
     private User getCurrentUser(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session != null) {

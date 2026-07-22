@@ -152,6 +152,52 @@ public class DocumentService {
         }
     }
 
+    public List<Document> getTicketCompletionCertificates(byte[] ticketId) throws TicketTrackerException {
+        try {
+            return documentDAO.findByTicketId(ticketId).stream()
+                    .filter(Document::isCompletionCertificate)
+                    .collect(java.util.stream.Collectors.toList());
+        } catch (SQLException e) {
+            logger.error("Error fetching completion certificates", e);
+            throw new DatabaseException("Failed to fetch completion certificates", e);
+        }
+    }
+
+    public boolean hasTicketCompletionCertificate(byte[] ticketId) throws TicketTrackerException {
+        try {
+            return documentDAO.findByTicketId(ticketId).stream()
+                    .anyMatch(Document::isCompletionCertificate);
+        } catch (SQLException e) {
+            logger.error("Error checking completion certificate", e);
+            throw new DatabaseException("Failed to check completion certificate", e);
+        }
+    }
+
+    public void copyTicketAttachments(byte[] sourceTicketId, byte[] targetTicketId, byte[] currentUserId)
+            throws TicketTrackerException {
+        try {
+            List<Document> sourceDocs = documentDAO.findByTicketId(sourceTicketId);
+            for (Document doc : sourceDocs) {
+                Document copy = new Document();
+                copy.setTicketId(targetTicketId);
+                copy.setStepId(doc.getStepId());
+                copy.setName(doc.getName());
+                copy.setType(doc.getType());
+                copy.setSize(doc.getSize());
+                copy.setStoragePath(doc.getStoragePath());
+                copy.setFileContent(doc.getFileContent());
+                copy.setCompletionCertificate(doc.isCompletionCertificate());
+                copy.setUploadedBy(currentUserId);
+                documentDAO.create(copy);
+            }
+            logger.info("Copied {} attachments from ticket {} to ticket {}",
+                    sourceDocs.size(), bytesToHex(sourceTicketId), bytesToHex(targetTicketId));
+        } catch (SQLException e) {
+            logger.error("Error copying ticket attachments", e);
+            throw new DatabaseException("Failed to copy ticket attachments", e);
+        }
+    }
+
     private void validateDocument(Document document) throws ValidationException {
         ValidationException validation = new ValidationException("Document validation failed");
 

@@ -1,6 +1,8 @@
 package com.tickettracker.service;
 
+import com.tickettracker.dao.UserActivityLogDAO;
 import com.tickettracker.dao.UserDAO;
+import com.tickettracker.dao.UserManagementAuditDAO;
 import com.tickettracker.exception.*;
 import com.tickettracker.model.User;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -11,15 +13,20 @@ import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 public class UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final UserDAO userDAO;
+    private final UserManagementAuditDAO auditDAO;
+    private final UserActivityLogDAO activityLogDAO;
     private final SecureRandom secureRandom;
 
     public UserService() {
         this.userDAO = new UserDAO();
+        this.auditDAO = new UserManagementAuditDAO();
+        this.activityLogDAO = new UserActivityLogDAO();
         this.secureRandom = new SecureRandom();
     }
 
@@ -198,8 +205,14 @@ public class UserService {
                 throw new ValidationException("userId", "Cannot change your own role");
             }
 
+            String oldRole = user.getRoleInternal();
             user.setRole(newRole);
             userDAO.update(user);
+
+            logAuditAction("user_updated", userId, currentUserId,
+                    "{\"role\":\"" + oldRole + "\"}",
+                    "{\"role\":\"" + newRole + "\"}",
+                    "User role updated to " + newRole);
 
             logger.info("User role updated: {} to {} by user: {}",
                 user.getEmail(), newRole, bytesToHex(currentUserId));
@@ -207,6 +220,93 @@ public class UserService {
         } catch (SQLException e) {
             logger.error("Error updating user role", e);
             throw new DatabaseException("Failed to update user role", e);
+        }
+    }
+
+    public String generateSecurePassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        StringBuilder password = new StringBuilder();
+        for (int i = 0; i < 12; i++) {
+            password.append(chars.charAt(secureRandom.nextInt(chars.length())));
+        }
+        return password.toString();
+    }
+
+    public String resetUserPassword(byte[] userId, byte[] currentUserId)
+            throws TicketTrackerException {
+        try {
+            User user = getUserById(userId);
+            String newPassword = generateSecurePassword();
+
+            String newSalt = generateSalt();
+            String newPasswordHash = hashPassword(newPassword, newSalt);
+
+            boolean updated = userDAO.updatePassword(userId, newPasswordHash, newSalt);
+            if (!updated) {
+                throw new DatabaseException("Failed to reset password");
+            }
+
+            logAuditAction("password_reset", userId, currentUserId,
+                    null, null, "Password reset by admin");
+
+            logger.info("Password reset for user: {} by user: {}",
+                    user.getEmail(), bytesToHex(currentUserId));
+
+            return newPassword;
+        } catch (SQLException e) {
+            logger.error("Error resetting user password", e);
+            throw new DatabaseException("Failed to reset password", e);
+        }
+    }
+
+    public List<UserActivityLogDAO.ActivityLog> getUserActivityLogs(byte[] userId, int limit)
+            throws TicketTrackerException {
+        try {
+            return activityLogDAO.findByUserId(userId, limit);
+        } catch (SQLException e) {
+            logger.error("Error fetching user activity logs", e);
+            throw new DatabaseException("Failed to fetch user activity logs", e);
+        }
+    }
+
+    public List<UserManagementAuditDAO.AuditEntry> getUserManagementAudit(byte[] targetUserId)
+            throws TicketTrackerException {
+        try {
+            return auditDAO.findByTargetUserId(targetUserId);
+        } catch (SQLException e) {
+            logger.error("Error fetching user management audit", e);
+            throw new DatabaseException("Failed to fetch user management audit", e);
+        }
+    }
+
+    public void logUserActivity(byte[] userId, String action, String ipAddress,
+                                 String userAgent, String details) {
+        try {
+            UserActivityLogDAO.ActivityLog log = new UserActivityLogDAO.ActivityLog();
+            log.setUserId(userId);
+            log.setAction(action);
+            log.setIpAddress(ipAddress);
+            log.setUserAgent(userAgent);
+            log.setDetails(details);
+            activityLogDAO.insert(log);
+        } catch (SQLException e) {
+            logger.warn("Failed to log user activity", e);
+        }
+    }
+
+    private void logAuditAction(String action, byte[] targetUserId, byte[] performedBy,
+                                String oldData, String newData, String description) {
+        try {
+            UserManagementAuditDAO.AuditEntry entry = new UserManagementAuditDAO.AuditEntry();
+            entry.setAction(action);
+            entry.setTargetUserId(targetUserId);
+            entry.setPerformedBy(performedBy);
+            entry.setOldData(oldData);
+            entry.setNewData(newData);
+            entry.setDescription(description);
+            auditDAO.insert(entry);
+        } catch (SQLException e) {
+            logger.warn("Failed to log audit action", e);
         }
     }
 
