@@ -47,6 +47,8 @@ public class UserManagementServlet extends HttpServlet {
                     handleGetUser(pathParts[1], response);
                 } else if (pathParts.length == 3 && pathParts[2].equals("role")) {
                     handleGetUsersByRole(request, response);
+                } else if (pathParts.length == 3 && pathParts[2].equals("filter")) {
+                    handleGetUsersByRoleAndDepartment(request, response);
                 } else if (pathParts.length == 3 && pathParts[2].equals("activity-logs")) {
                     handleGetActivityLogs(pathParts[1], request, response);
                 } else if (pathParts.length == 3 && pathParts[2].equals("audit")) {
@@ -234,6 +236,23 @@ public class UserManagementServlet extends HttpServlet {
         }
 
         List<User> users = userService.getUsersByRole(role.trim().toLowerCase());
+        sendJsonResponse(response, users);
+    }
+
+    private void handleGetUsersByRoleAndDepartment(HttpServletRequest request, HttpServletResponse response)
+            throws TicketTrackerException, IOException {
+        String role = request.getParameter("role");
+        String department = request.getParameter("department");
+        if (role == null || role.trim().isEmpty()) {
+            sendError(response, 400, "Role parameter required");
+            return;
+        }
+        if (department == null || department.trim().isEmpty()) {
+            sendError(response, 400, "Department parameter required");
+            return;
+        }
+
+        List<User> users = userService.getUsersByRoleAndDepartment(role.trim().toUpperCase(), department.trim());
         sendJsonResponse(response, users);
     }
 

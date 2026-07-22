@@ -398,7 +398,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Unassigned</option>
-                      {(row.department ? users.filter(u => u.department === row.department) : users).map(user => (
+                      {(row.department ? users.filter(u => u.department === row.department && (parentStep ? u.role === 'TECHNICIAN' : u.role === 'DO')) : users.filter(u => parentStep ? u.role === 'TECHNICIAN' : u.role === 'DO')).map(user => (
                         <option key={user.id} value={user.id}>
                           {user.name}
                         </option>

@@ -138,6 +138,31 @@ public class UserDAO extends BaseDAO {
         }
     }
 
+    public List<User> findByRoleAndDepartment(String role, String department) throws SQLException {
+        String sql = "SELECT id, username, name, email, role, department, sap_id, password_hash, password_salt, " +
+                "avatar, active, created_at, updated_at, last_login FROM users WHERE LOWER(role) = LOWER(?) AND LOWER(department) = LOWER(?) AND active = 1 ORDER BY name";
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        List<User> users = new ArrayList<>();
+
+        try {
+            conn = getConnection();
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, role);
+            stmt.setString(2, department);
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                users.add(mapResultSetToUser(rs));
+            }
+            return users;
+        } finally {
+            closeResources(conn, stmt, rs);
+        }
+    }
+
     public User findByDepartment(String department) throws SQLException {
         String sql = "SELECT id, username, name, email, role, department, sap_id, password_hash, password_salt, " +
                 "avatar, active, created_at, updated_at, last_login FROM users WHERE LOWER(department) = LOWER(?) AND active = 1 FETCH FIRST 1 ROW ONLY";

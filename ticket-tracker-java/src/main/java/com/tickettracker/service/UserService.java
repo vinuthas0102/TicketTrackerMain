@@ -74,6 +74,15 @@ public class UserService {
         }
     }
 
+    public List<User> getUsersByRoleAndDepartment(String role, String department) throws TicketTrackerException {
+        try {
+            return userDAO.findByRoleAndDepartment(role, department);
+        } catch (SQLException e) {
+            logger.error("Error fetching users by role and department", e);
+            throw new DatabaseException("Failed to fetch users by role and department", e);
+        }
+    }
+
     public User createUser(User user, String password, byte[] currentUserId)
             throws TicketTrackerException {
         try {

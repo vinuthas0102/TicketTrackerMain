@@ -421,6 +421,14 @@ public class TicketServlet extends HttpServlet {
             return;
         }
 
+        Ticket existingTicket = ticketService.getTicket(ticketId);
+        if (existingTicket != null && "COMPLETED".equalsIgnoreCase(existingTicket.getStatus())) {
+            logger.warn("Rejected status change for completed ticket {} by user {}",
+                    ticketIdHex, currentUser.getEmail());
+            sendError(response, 409, "Status cannot be changed for completed tickets");
+            return;
+        }
+
         String normalizedStatus = statusRequest.newStatus.toLowerCase().trim();
         ticketService.updateTicketStatus(ticketId, normalizedStatus, currentUser.getId());
 

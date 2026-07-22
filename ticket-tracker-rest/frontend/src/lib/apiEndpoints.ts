@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
     RESET_PASSWORD: (id: string) => `/users/reset-password/${id}`,
     ACTIVITY_LOGS: (id: string) => `/users/${id}/activity-logs`,
     AUDIT: (id: string) => `/users/${id}/audit`,
+    FILTER: '/users/filter',
   },
 
   MODULES: {

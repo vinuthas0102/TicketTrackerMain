@@ -134,6 +134,18 @@ export class UserManagementService {
     }
   }
 
+  static async getUsersByRoleAndDepartment(role: string, department: string): Promise<User[]> {
+    try {
+      const users = await apiClient.get<any[]>(
+        `${API_ENDPOINTS.USERS.FILTER}?role=${encodeURIComponent(role)}&department=${encodeURIComponent(department)}`
+      );
+      return users.map(transformUserFromBackend);
+    } catch (error) {
+      console.error('Error fetching users by role and department:', error);
+      return [];
+    }
+  }
+
   static generateSecurePassword(length: number = 12): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
     let password = '';

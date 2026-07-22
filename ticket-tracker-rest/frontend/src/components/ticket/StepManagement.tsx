@@ -454,8 +454,8 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     const uniqueDepartments = Array.from(new Set(users.map(u => u.department).filter(Boolean)));
     const isSubTask = !!parentStep;
     const filteredUsers = formData.department
-      ? users.filter(u => u.department === formData.department && (!isSubTask || u.role === 'TECHNICIAN' || u.role === 'DO'))
-      : users;
+      ? users.filter(u => u.department === formData.department && (isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO'))
+      : users.filter(u => isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO');
     const [availableDependencySteps, setAvailableDependencySteps] = useState<WorkflowStep[]>([]);
     const [fileReferenceTemplates, setFileReferenceTemplates] = useState<FileReferenceTemplate[]>([]);
     const [completionFile, setCompletionFile] = useState<File | null>(null);

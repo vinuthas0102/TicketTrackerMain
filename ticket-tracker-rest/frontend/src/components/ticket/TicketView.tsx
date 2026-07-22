@@ -223,7 +223,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
       'APPROVED_BY_FINANCE': ['COMPLETED', 'ACTIVE'],
       'REJECTED_BY_FINANCE': ['ACTIVE'],
       'CLOSED': ['ACTIVE'],
-      'COMPLETED': ['ACTIVE'],
+      'COMPLETED': [],
       'CANCELLED': ['CREATED']
     };
 
