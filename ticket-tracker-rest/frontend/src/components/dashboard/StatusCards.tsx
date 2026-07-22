@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Clock, Play, CheckCircle, XCircle } from 'lucide-react';
+import { FileText, Clock, Play, CheckCircle, XCircle, Send, Eye } from 'lucide-react';
 import { TicketStatus } from '../../types';
 import { useTickets } from '../../context/TicketContext';
 
@@ -18,6 +18,20 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter 
       icon: FileText,
       color: 'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-800 border-gray-300',
       hoverColor: 'hover:from-gray-200 hover:to-gray-300 hover:shadow-lg'
+    },
+    { 
+      status: 'SUBMITTED' as TicketStatus, 
+      label: 'Submitted', 
+      icon: Send,
+      color: 'bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-800 border-indigo-300',
+      hoverColor: 'hover:from-indigo-200 hover:to-indigo-300 hover:shadow-lg'
+    },
+    { 
+      status: 'REVIEWED' as TicketStatus, 
+      label: 'Reviewed', 
+      icon: Eye,
+      color: 'bg-gradient-to-br from-cyan-100 to-cyan-200 text-cyan-800 border-cyan-300',
+      hoverColor: 'hover:from-cyan-200 hover:to-cyan-300 hover:shadow-lg'
     },
     { 
       status: 'CREATED' as TicketStatus, 

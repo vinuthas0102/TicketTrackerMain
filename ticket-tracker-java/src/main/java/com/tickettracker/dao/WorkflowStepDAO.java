@@ -14,8 +14,9 @@ public class WorkflowStepDAO extends BaseDAO {
         String sql = "INSERT INTO workflow_steps (id, ticket_id, step_number, title, description, status, " +
                 "assigned_to, parent_step_id, level_1, level_2, level_3, dependencies, is_parallel, " +
                 "mandatory_documents, optional_documents, completion_certificate_required, due_date, " +
-                "data, progress, dependency_mode, is_dependency_locked, created_by, start_date, step_type) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "data, progress, dependency_mode, is_dependency_locked, created_by, start_date, step_type, " +
+                "remarks, actual_completed_at) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -54,6 +55,8 @@ public class WorkflowStepDAO extends BaseDAO {
             stmt.setBytes(22, step.getCreatedBy());
             stmt.setTimestamp(23, step.getStartDate());
             stmt.setString(24, step.getStepType());
+            stmt.setString(25, step.getRemarks());
+            stmt.setTimestamp(26, step.getActualCompletedAt());
 
             int rowsAffected = stmt.executeUpdate();
             logger.info("Created workflow step: {} (rows affected: {})", step.getStepNumber(), rowsAffected);
@@ -186,7 +189,8 @@ public class WorkflowStepDAO extends BaseDAO {
                 "level_3 = ?, dependencies = ?, is_parallel = ?, mandatory_documents = ?, " +
                 "optional_documents = ?, completion_certificate_required = ?, due_date = ?, " +
                 "data = ?, progress = ?, dependency_mode = ?, is_dependency_locked = ?, " +
-                "completed_at = ?, start_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+                "completed_at = ?, start_date = ?, remarks = ?, actual_completed_at = ?, " +
+                "updated_at = CURRENT_TIMESTAMP WHERE id = ?";
 
         
         Connection conn = null;
@@ -217,7 +221,9 @@ public class WorkflowStepDAO extends BaseDAO {
             stmt.setInt(19, step.isDependencyLocked() ? 1 : 0);
             stmt.setTimestamp(20, step.getCompletedAt());
             stmt.setTimestamp(21, step.getStartDate());
-            stmt.setBytes(22, step.getId());
+            stmt.setString(22, step.getRemarks());
+            stmt.setTimestamp(23, step.getActualCompletedAt());
+            stmt.setBytes(24, step.getId());
 
             int rowsAffected = stmt.executeUpdate();
             logger.info("Updated workflow step: {} (rows affected: {})", step.getStepNumber(), rowsAffected);
@@ -433,6 +439,8 @@ public class WorkflowStepDAO extends BaseDAO {
         step.setCompletedAt(rs.getTimestamp("completed_at"));
         step.setStartDate(rs.getTimestamp("start_date"));
         step.setStepType(rs.getString("step_type"));
+        step.setRemarks(rs.getString("remarks"));
+        step.setActualCompletedAt(rs.getTimestamp("actual_completed_at"));
         return step;
     }
 

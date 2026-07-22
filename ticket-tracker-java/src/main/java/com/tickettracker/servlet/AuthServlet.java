@@ -17,6 +17,7 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @WebServlet("/api/auth/*")
 public class AuthServlet extends HttpServlet {
@@ -64,6 +65,9 @@ public class AuthServlet extends HttpServlet {
                 case "change-password":
                     handleChangePassword(request, response);
                     break;
+                case "refresh":
+                    handleRefreshToken(request, response);
+                    break;
                 default:
                     sendError(response, 404, "Auth endpoint not found");
             }
@@ -81,7 +85,7 @@ public class AuthServlet extends HttpServlet {
             throws ServletException, IOException {
         String pathInfo = request.getPathInfo();
 
-        if (pathInfo != null && pathInfo.equals("/current")) {
+        if (pathInfo != null && (pathInfo.equals("/current") || pathInfo.equals("/me"))) {
             handleGetCurrentUser(request, response);
         } else {
             sendError(response, 404, "Endpoint not found");
@@ -117,11 +121,18 @@ public class AuthServlet extends HttpServlet {
 
         logger.info("Created new session after login to prevent fixation: {}", session.getId());
 
+        String token = UUID.randomUUID().toString().replace("-", "");
+        String refreshToken = UUID.randomUUID().toString().replace("-", "");
+        session.setAttribute("authToken", token);
+        session.setAttribute("refreshToken", refreshToken);
+
         Map<String, Object> loginResponse = new HashMap<>();
         loginResponse.put("user", sanitizeUser(user));
         loginResponse.put("message", "Login successful");
         loginResponse.put("sessionId", session.getId());
         loginResponse.put("expiresIn", session.getMaxInactiveInterval());
+        loginResponse.put("token", token);
+        loginResponse.put("refreshToken", refreshToken);
 
         sendJsonResponse(response, loginResponse);
 
@@ -215,14 +226,50 @@ public class AuthServlet extends HttpServlet {
         return null;
     }
 
+    private void handleRefreshToken(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            sendError(response, 401, "No active session");
+            return;
+        }
+
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            sendError(response, 401, "Not authenticated");
+            return;
+        }
+
+        String newToken = UUID.randomUUID().toString().replace("-", "");
+        String newRefreshToken = UUID.randomUUID().toString().replace("-", "");
+        session.setAttribute("authToken", newToken);
+        session.setAttribute("refreshToken", newRefreshToken);
+
+        Map<String, Object> refreshResponse = new HashMap<>();
+        refreshResponse.put("token", newToken);
+        refreshResponse.put("refreshToken", newRefreshToken);
+        refreshResponse.put("user", sanitizeUser(currentUser));
+
+        sendJsonResponse(response, refreshResponse);
+    }
+
     private Map<String, Object> sanitizeUser(User user) {
         Map<String, Object> sanitized = new HashMap<>();
         sanitized.put("id", user.getIdAsString());
         sanitized.put("name", user.getName());
+        sanitized.put("username", user.getUsername());
         sanitized.put("email", user.getEmail());
         sanitized.put("role", user.getRole());
         sanitized.put("department", user.getDepartment());
         sanitized.put("active", user.isActive());
+        sanitized.put("sapId", user.getSapId());
+        sanitized.put("avatar", user.getAvatar());
+        if (user.getLastLogin() != null) {
+            sanitized.put("lastLogin", user.getLastLogin());
+        }
+        if (user.getCreatedAt() != null) {
+            sanitized.put("createdAt", user.getCreatedAt());
+        }
         return sanitized;
     }
 

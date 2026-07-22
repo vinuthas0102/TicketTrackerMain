@@ -56,6 +56,12 @@ public class WorkflowCommentServlet extends HttpServlet {
                 return;
             }
 
+            String pathInfo = request.getPathInfo();
+            if (pathInfo != null && pathInfo.contains("/attachment")) {
+                handleDownloadAttachment(request, response);
+                return;
+            }
+
             String stepIdParam = request.getParameter("stepId");
             if (stepIdParam == null || stepIdParam.isEmpty()) {
                 sendError(response, 400, "stepId parameter required");
@@ -71,6 +77,53 @@ public class WorkflowCommentServlet extends HttpServlet {
         } catch (Exception e) {
             logger.error("Unexpected error in GET /api/workflow-comments", e);
             sendError(response, 500, "Internal server error");
+        }
+    }
+
+    private void handleDownloadAttachment(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        String pathInfo = request.getPathInfo();
+        String[] pathParts = pathInfo.split("/");
+        if (pathParts.length < 3) {
+            sendError(response, 400, "Comment ID required");
+            return;
+        }
+
+        try {
+            byte[] commentId = UuidUtil.uuidStringToBytes(pathParts[1]);
+            WorkflowComment comment = commentService.getCommentById(commentId);
+            if (comment == null) {
+                sendError(response, 404, "Comment not found");
+                return;
+            }
+
+            if (comment.getAttachmentPath() == null || comment.getAttachmentPath().isEmpty()) {
+                sendError(response, 404, "Attachment not found");
+                return;
+            }
+
+            String uploadDir = getServletContext().getRealPath("/WEB-INF/uploads");
+            Path filePath = Paths.get(uploadDir, comment.getAttachmentPath());
+            if (!Files.exists(filePath)) {
+                sendError(response, 404, "Attachment file not found");
+                return;
+            }
+
+            String contentType = comment.getAttachmentType() != null ? comment.getAttachmentType() : "application/octet-stream";
+            response.setContentType(contentType);
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + comment.getAttachmentName() + "\"");
+            response.setContentLengthLong(Files.size(filePath));
+
+            try (InputStream is = Files.newInputStream(filePath)) {
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = is.read(buffer)) != -1) {
+                    response.getOutputStream().write(buffer, 0, bytesRead);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error downloading attachment", e);
+            sendError(response, 500, "Error downloading attachment");
         }
     }
 

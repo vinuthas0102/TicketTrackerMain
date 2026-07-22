@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Calendar, User, AlertTriangle, Clock, CheckCircle, XCircle, FileText, Users, Edit, Check, X, RotateCcw, Eye, Play, IndianRupee } from 'lucide-react';
+import { Calendar, User, AlertTriangle, Clock, CheckCircle, XCircle, FileText, Users, CreditCard as Edit, Check, X, RotateCcw, Eye, Play, IndianRupee, Send, Download } from 'lucide-react';
 import { Ticket, User as UserType, ActionIconDefinition } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTickets } from '../../context/TicketContext';
@@ -49,6 +49,8 @@ const TicketCard: React.FC<TicketCardProps> = ({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'DRAFT': return <FileText className="w-4 h-4" />;
+      case 'SUBMITTED': return <Send className="w-4 h-4" />;
+      case 'REVIEWED': return <Eye className="w-4 h-4" />;
       case 'CREATED': return <Clock className="w-4 h-4" />;
       case 'ACTIVE': return <Users className="w-4 h-4" />;
       case 'SENT_TO_FINANCE': return <IndianRupee className="w-4 h-4" />;
@@ -63,6 +65,8 @@ const TicketCard: React.FC<TicketCardProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'DRAFT': return 'bg-slate-100 text-slate-700 border-slate-300';
+      case 'SUBMITTED': return 'bg-indigo-100 text-indigo-700 border-indigo-300';
+      case 'REVIEWED': return 'bg-cyan-100 text-cyan-700 border-cyan-300';
       case 'CREATED': return 'bg-sky-100 text-sky-700 border-sky-300';
       case 'APPROVED': return 'bg-emerald-100 text-emerald-700 border-emerald-300';
       case 'ACTIVE': return 'bg-amber-100 text-amber-700 border-amber-300';
@@ -114,6 +118,8 @@ const TicketCard: React.FC<TicketCardProps> = ({
 
     const statusColors = {
       'DRAFT': { gradient: 'from-slate-300 to-gray-300', bg: 'bg-slate-50', shadow: 'shadow-slate-200/50' },
+      'SUBMITTED': { gradient: 'from-indigo-300 to-blue-300', bg: 'bg-indigo-50', shadow: 'shadow-indigo-200/50' },
+      'REVIEWED': { gradient: 'from-cyan-300 to-teal-300', bg: 'bg-cyan-50', shadow: 'shadow-cyan-200/50' },
       'CREATED': { gradient: 'from-sky-300 to-blue-300', bg: 'bg-sky-50', shadow: 'shadow-sky-200/50' },
       'APPROVED': { gradient: 'from-emerald-300 to-teal-300', bg: 'bg-emerald-50', shadow: 'shadow-emerald-200/50' },
       'ACTIVE': { gradient: 'from-amber-300 to-yellow-300', bg: 'bg-amber-50', shadow: 'shadow-amber-200/50' },

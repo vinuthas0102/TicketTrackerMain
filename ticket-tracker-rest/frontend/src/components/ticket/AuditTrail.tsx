@@ -50,12 +50,33 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
     }
   };
 
+  const getActionLabel = (action: string) => {
+    switch (action) {
+      case 'CREATED': return 'Ticket Created';
+      case 'STATUS_CHANGED': return 'Status Changed';
+      case 'WORKFLOW_ADDED': return 'Task Added';
+      case 'WORKFLOW_UPDATED': return 'Task Updated';
+      case 'WORKFLOW_DELETED': return 'Task Deleted';
+      case 'UPDATED': return 'Ticket Updated';
+      case 'DELETED': return 'Ticket Deleted';
+      case 'BULK_WORKFLOW_ADDED': return 'Tasks Bulk Added';
+      case 'PROGRESS_UPDATED': return 'Progress Updated';
+      default: return action;
+    }
+  };
+
   const getActionDescription = (entry: any) => {
     switch (entry.action) {
       case 'CREATED':
         return 'Ticket created';
       case 'STATUS_CHANGE':
         return `Status changed from ${entry.oldValue} to ${entry.newValue}`;
+      case 'WORKFLOW_ADDED':
+        return 'Task added';
+      case 'WORKFLOW_UPDATED':
+        return 'Task updated';
+      case 'WORKFLOW_DELETED':
+        return 'Task deleted';
       case 'UPDATED':
         return 'Ticket updated';
       default:
@@ -435,7 +456,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
                           </p>
                           {entry.stepId && (
                             <div className="mt-1 text-xs text-gray-600 bg-blue-50 p-1.5 rounded border-l-2 border-blue-300 flex items-center space-x-1">
-                              <span className="font-medium">Workflow:</span>
+                              <span className="font-medium">Task:</span>
                               <span>{ticket.workflow.find(s => s.id === entry.stepId)?.title || 'Unknown Step'}</span>
                             </div>
                           )}

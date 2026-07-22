@@ -94,6 +94,12 @@ public class FileServlet extends HttpServlet {
                 } else {
                     sendError(response, 400, "Multipart form data required for progress document upload");
                 }
+            } else if ("/completion-cert".equals(pathInfo)) {
+                if (contentType != null && contentType.startsWith("multipart/form-data")) {
+                    handleCompletionCertificateUpload(request, response, currentUser);
+                } else {
+                    sendError(response, 400, "Multipart form data required for completion certificate upload");
+                }
             } else if ("/upload".equals(pathInfo) || pathInfo == null || "/".equals(pathInfo)) {
                 if (contentType != null && contentType.startsWith("multipart/form-data")) {
                     handleFileUpload(request, response, currentUser);
@@ -256,6 +262,47 @@ public class FileServlet extends HttpServlet {
             }
         }
         return "unknown";
+    }
+
+    private void handleCompletionCertificateUpload(HttpServletRequest request, HttpServletResponse response, User currentUser)
+            throws ServletException, IOException, TicketTrackerException {
+        Part filePart = request.getPart("file");
+        if (filePart == null) {
+            sendError(response, 400, "No file provided");
+            return;
+        }
+
+        String fileName = getFileName(filePart);
+        String ticketIdStr = request.getParameter("ticketId");
+        String stepIdStr = request.getParameter("stepId");
+
+        if (!isValidParameter(ticketIdStr)) {
+            sendError(response, 400, "ticketId is required for completion certificate upload");
+            return;
+        }
+
+        Document document = new Document();
+        document.setName(fileName);
+        document.setType(filePart.getContentType());
+        document.setSize(filePart.getSize());
+        document.setTicketId(ByteArrayUtil.hexToBytes(ticketIdStr));
+        if (isValidParameter(stepIdStr)) {
+            document.setStepId(ByteArrayUtil.hexToBytes(stepIdStr));
+        }
+        document.setUploadedBy(currentUser.getId());
+        document.setCompletionCertificate(true);
+
+        try (InputStream fileContent = filePart.getInputStream()) {
+            byte[] fileData = new byte[(int) filePart.getSize()];
+            fileContent.read(fileData);
+            document.setFileContent(fileData);
+        }
+
+        Document createdDoc = documentService.createDocument(document, currentUser.getId());
+        createdDoc.setFileContent(null);
+
+        response.setStatus(HttpServletResponse.SC_CREATED);
+        sendJsonResponse(response, createdDoc);
     }
 
     @Override

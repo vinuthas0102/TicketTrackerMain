@@ -92,6 +92,34 @@ public class FinanceApprovalServlet extends HttpServlet {
         }
     }
 
+    @Override
+    protected void doPut(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String pathInfo = request.getPathInfo();
+
+        try {
+            User currentUser = getCurrentUser(request);
+            if (currentUser == null) {
+                sendError(response, 401, "Authentication required");
+                return;
+            }
+
+            if (pathInfo != null && pathInfo.contains("/approve")) {
+                handleApprove(request, response, currentUser);
+            } else if (pathInfo != null && pathInfo.contains("/reject")) {
+                handleReject(request, response, currentUser);
+            } else {
+                sendError(response, 400, "Invalid request path");
+            }
+
+        } catch (TicketTrackerException e) {
+            handleException(response, e);
+        } catch (Exception e) {
+            logger.error("Unexpected error in PUT /api/finance-approvals", e);
+            sendError(response, 500, "Internal server error");
+        }
+    }
+
     private void handleGetApprovals(HttpServletRequest request, HttpServletResponse response)
             throws TicketTrackerException, IOException {
         String ticketIdParam = request.getParameter("ticketId");

@@ -24,7 +24,7 @@ public class UserDAO extends BaseDAO {
      * @throws SQLException if database error occurs
      */
     public User findByEmail(String email) throws SQLException {
-        String sql = "SELECT id, username, name, email, role, department, password_hash, password_salt, " +
+        String sql = "SELECT id, username, name, email, role, department, sap_id, password_hash, password_salt, " +
                 "avatar, active, created_at, updated_at, last_login FROM users WHERE email = ? AND active = 1";
 
         Connection conn = null;
@@ -55,7 +55,7 @@ public class UserDAO extends BaseDAO {
      * @throws SQLException if database error occurs
      */
     public User findById(byte[] id) throws SQLException {
-        String sql = "SELECT id, username, name, email, role, department, password_hash, password_salt, " +
+        String sql = "SELECT id, username, name, email, role, department, sap_id, password_hash, password_salt, " +
                 "avatar, active, created_at, updated_at, last_login FROM users WHERE id = ?";
 
         Connection conn = null;
@@ -85,7 +85,7 @@ public class UserDAO extends BaseDAO {
      * @throws SQLException if database error occurs
      */
     public List<User> findAll() throws SQLException {
-        String sql = "SELECT id, username, name, email, role, department, password_hash, password_salt, " +
+        String sql = "SELECT id, username, name, email, role, department, sap_id, password_hash, password_salt, " +
                 "avatar, active, created_at, updated_at, last_login FROM users WHERE active = 1 ORDER BY name";
 
         Connection conn = null;
@@ -115,7 +115,7 @@ public class UserDAO extends BaseDAO {
      * @throws SQLException if database error occurs
      */
     public List<User> findByRole(String role) throws SQLException {
-        String sql = "SELECT id, username, name, email, role, department, password_hash, password_salt, " +
+        String sql = "SELECT id, username, name, email, role, department, sap_id, password_hash, password_salt, " +
                 "avatar, active, created_at, updated_at, last_login FROM users WHERE LOWER(role) = LOWER(?) AND active = 1 ORDER BY name";
 
         Connection conn = null;
@@ -139,7 +139,7 @@ public class UserDAO extends BaseDAO {
     }
 
     public User findByDepartment(String department) throws SQLException {
-        String sql = "SELECT id, username, name, email, role, department, password_hash, password_salt, " +
+        String sql = "SELECT id, username, name, email, role, department, sap_id, password_hash, password_salt, " +
                 "avatar, active, created_at, updated_at, last_login FROM users WHERE LOWER(department) = LOWER(?) AND active = 1 FETCH FIRST 1 ROW ONLY";
 
         Connection conn = null;
@@ -169,8 +169,8 @@ public class UserDAO extends BaseDAO {
      * @throws SQLException if database error occurs
      */
     public User create(User user) throws SQLException {
-        String sql = "INSERT INTO users (id, username, name, email, role, department, password_hash, " +
-                "password_salt, avatar, active) VALUES (SYS_GUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+        String sql = "INSERT INTO users (id, username, name, email, role, department, sap_id, password_hash, " +
+                "password_salt, avatar, active) VALUES (SYS_GUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                 "RETURNING id INTO ?";
 
         Connection conn = null;
@@ -185,10 +185,11 @@ public class UserDAO extends BaseDAO {
             stmt.setString(3, user.getEmail());
             stmt.setString(4, user.getRoleInternal());
             stmt.setString(5, user.getDepartment());
-            stmt.setString(6, user.getPasswordHash());
-            stmt.setString(7, user.getPasswordSalt());
-            stmt.setString(8, user.getAvatar());
-            stmt.setInt(9, user.isActive() ? 1 : 0);
+            stmt.setString(6, user.getSapId());
+            stmt.setString(7, user.getPasswordHash());
+            stmt.setString(8, user.getPasswordSalt());
+            stmt.setString(9, user.getAvatar());
+            stmt.setInt(10, user.isActive() ? 1 : 0);
 
             int rowsAffected = stmt.executeUpdate();
 
@@ -212,7 +213,7 @@ public class UserDAO extends BaseDAO {
      */
     public boolean update(User user) throws SQLException {
         String sql = "UPDATE users SET username = ?, name = ?, email = ?, role = ?, department = ?, " +
-                "avatar = ?, active = ? WHERE id = ?";
+                "sap_id = ?, avatar = ?, active = ? WHERE id = ?";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -226,9 +227,10 @@ public class UserDAO extends BaseDAO {
             stmt.setString(3, user.getEmail());
             stmt.setString(4, user.getRoleInternal());
             stmt.setString(5, user.getDepartment());
-            stmt.setString(6, user.getAvatar());
-            stmt.setInt(7, user.isActive() ? 1 : 0);
-            stmt.setBytes(8, user.getId());
+            stmt.setString(6, user.getSapId());
+            stmt.setString(7, user.getAvatar());
+            stmt.setInt(8, user.isActive() ? 1 : 0);
+            stmt.setBytes(9, user.getId());
 
             int rowsAffected = stmt.executeUpdate();
             logger.info("User updated: {}", user.getEmail());
@@ -284,6 +286,7 @@ public class UserDAO extends BaseDAO {
         user.setEmail(rs.getString("email"));
         user.setRoleInternal(rs.getString("role"));
         user.setDepartment(rs.getString("department"));
+        user.setSapId(rs.getString("sap_id"));
         user.setPasswordHash(rs.getString("password_hash"));
         user.setPasswordSalt(rs.getString("password_salt"));
         user.setAvatar(rs.getString("avatar"));

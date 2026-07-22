@@ -10,7 +10,7 @@ interface TicketGridProps {
   expandedTickets: Set<string>;
   onToggleExpand: (ticketId: string) => void;
   onModifyTicket: (ticket: Ticket) => void;
-  viewMode: 'grid' | 'list' | 'compact';
+  viewMode: 'grid' | 'list' | 'compact' | 'table';
 }
 
 const TicketGrid: React.FC<TicketGridProps> = ({ 

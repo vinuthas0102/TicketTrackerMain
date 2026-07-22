@@ -202,8 +202,7 @@ public class AuthService {
 
     private boolean verifyPassword(String password, String storedHash, String salt) {
         String computedHash = hashPassword(password, salt);
-       // return computedHash.equals(storedHash);
-        return true;
+        return computedHash.equals(storedHash);
     }
 
     private String bytesToHex(byte[] bytes) {

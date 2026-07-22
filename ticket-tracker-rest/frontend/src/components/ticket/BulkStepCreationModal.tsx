@@ -10,6 +10,8 @@ import { safeDateToISOString, getCurrentDateISOString } from '../../lib/transfor
 
 interface BulkStepCreationModalProps {
   ticketId: string;
+  ticketTitle?: string;
+  ticketDescription?: string;
   parentStep?: WorkflowStep;
   existingSteps: WorkflowStep[];
   onClose: () => void;
@@ -18,6 +20,8 @@ interface BulkStepCreationModalProps {
 
 const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
   ticketId,
+  ticketTitle,
+  ticketDescription,
   parentStep,
   existingSteps,
   onClose,

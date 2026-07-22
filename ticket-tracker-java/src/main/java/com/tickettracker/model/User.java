@@ -24,6 +24,7 @@ public class User {
     private String email;
     private String role;
     private String department;
+    private String sapId;
 
     @JsonIgnore
     private String passwordHash;
@@ -113,6 +114,8 @@ public class User {
                 return "VENDOR";
             case "finance":
                 return "FINANCE";
+            case "technician":
+                return "TECHNICIAN";
             default:
                 return role.toUpperCase();
         }
@@ -144,6 +147,9 @@ public class User {
             case "FINANCE":
                 this.role = "finance";
                 break;
+            case "TECHNICIAN":
+                this.role = "technician";
+                break;
             default:
                 this.role = role.toLowerCase();
         }
@@ -172,6 +178,14 @@ public class User {
 
     public void setDepartment(String department) {
         this.department = department;
+    }
+
+    public String getSapId() {
+        return sapId;
+    }
+
+    public void setSapId(String sapId) {
+        this.sapId = sapId;
     }
 
     public String getPasswordHash() {
@@ -264,6 +278,13 @@ public class User {
      */
     public boolean isVendor() {
         return "vendor".equalsIgnoreCase(role);
+    }
+
+    /**
+     * Check if user is a technician
+     */
+    public boolean isTechnician() {
+        return "technician".equalsIgnoreCase(role);
     }
 
     /**

@@ -186,9 +186,9 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
   const canDelete = () => {
     if (!user) return false;
     if (user.role === 'EO') return true;
-    if (user.role === 'DO') return ticket.department === user.department && ['DRAFT', 'CREATED'].includes(ticket.status);
+    if (user.role === 'DO') return ticket.department === user.department && ['DRAFT', 'SUBMITTED', 'REVIEWED', 'CREATED'].includes(ticket.status);
     if (user.role === 'VENDOR') return false; // Vendors cannot delete tickets
-    return ticket.createdBy === user.id && ['DRAFT', 'CREATED'].includes(ticket.status);
+    return ticket.createdBy === user.id && ['DRAFT', 'SUBMITTED', 'REVIEWED', 'CREATED'].includes(ticket.status);
   };
 
   const canChangeStatus = () => {
@@ -213,7 +213,9 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
     if (user.role !== 'EO') return [];
 
     const transitions: Record<string, string[]> = {
-      'DRAFT': ['CREATED'],
+      'DRAFT': ['SUBMITTED', 'CREATED'],
+      'SUBMITTED': ['REVIEWED', 'CANCELLED'],
+      'REVIEWED': ['ACTIVE', 'APPROVED', 'CANCELLED'],
       'CREATED': ['ACTIVE', 'APPROVED', 'CANCELLED'],
       'APPROVED': ['ACTIVE', 'CANCELLED'],
       'ACTIVE': ['COMPLETED', 'CANCELLED'],
@@ -371,7 +373,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
                   <div className="bg-gray-50 rounded-lg p-3">
                     <div className="flex justify-between text-sm text-gray-600 mb-2">
                       <span className="font-medium">Overall Progress</span>
-                      <span>{completedWorkflows}/{totalWorkflows} workflows completed</span>
+                      <span>{completedWorkflows}/{totalWorkflows} tasks completed</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                       <div

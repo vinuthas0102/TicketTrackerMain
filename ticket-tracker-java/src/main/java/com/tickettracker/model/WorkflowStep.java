@@ -42,8 +42,10 @@ public class WorkflowStep {
     private Timestamp createdAt;
     private Timestamp updatedAt;
     private Timestamp completedAt;
+    private Timestamp actualCompletedAt;
     private Timestamp startDate;
     private String stepType;
+    private String remarks;
 
     // File reference fields (not persisted in workflow_steps table)
     private byte[] fileReferenceTemplateId;
@@ -345,6 +347,16 @@ public class WorkflowStep {
         this.completedAt = completedAt;
     }
 
+    @JsonProperty("actualCompletedAt")
+    public Timestamp getActualCompletedAt() {
+        return actualCompletedAt;
+    }
+
+    @JsonProperty("actualCompletedAt")
+    public void setActualCompletedAt(Timestamp actualCompletedAt) {
+        this.actualCompletedAt = actualCompletedAt;
+    }
+
     @JsonProperty("startDate")
     public Timestamp getStartDate() {
         return startDate;
@@ -361,6 +373,14 @@ public class WorkflowStep {
 
     public void setStepType(String stepType) {
         this.stepType = stepType;
+    }
+
+    public String getRemarks() {
+        return remarks;
+    }
+
+    public void setRemarks(String remarks) {
+        this.remarks = remarks;
     }
 
     public String getAssignedToName() {

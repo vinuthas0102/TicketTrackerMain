@@ -62,7 +62,7 @@ export interface Ticket {
   isExpanded?: boolean;
 }
 
-export type TicketStatus = 'DRAFT' | 'CREATED' | 'APPROVED' | 'ACTIVE' | 'SENT_TO_FINANCE' | 'APPROVED_BY_FINANCE' | 'REJECTED_BY_FINANCE' | 'COMPLETED' | 'CLOSED' | 'CANCELLED';
+export type TicketStatus = 'DRAFT' | 'SUBMITTED' | 'REVIEWED' | 'CREATED' | 'APPROVED' | 'ACTIVE' | 'SENT_TO_FINANCE' | 'APPROVED_BY_FINANCE' | 'REJECTED_BY_FINANCE' | 'COMPLETED' | 'CLOSED' | 'CANCELLED';
 
 export type WorkflowStepStatus = 'NOT_STARTED' | 'WIP' | 'COMPLETED' | 'CLOSED';
 
@@ -185,6 +185,7 @@ export interface BulkStepInput {
   optional_documents?: string[];
   fileReferenceTemplateId?: string;
   selectedFileReferences?: Array<{ referenceName: string; isMandatory: boolean }>;
+  remarks?: string;
 }
 
 export interface BulkStepRow extends BulkStepInput {

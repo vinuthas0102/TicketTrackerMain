@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, Copy, Search, Filter, ChevronRight, List, Table as TableIcon, Grid, Paperclip, CheckSquare, Square, FileText, Download } from 'lucide-react';
+import { X, Copy, Search, Filter, ChevronRight, List, Table as TableIcon, Grid2x2 as Grid, Paperclip, CheckSquare, Square, FileText, Download } from 'lucide-react';
 import { Ticket, TicketStatus, FileAttachment } from '../../types';
 import { useTickets } from '../../context/TicketContext';
 import { useAuth } from '../../context/AuthContext';
@@ -176,6 +176,8 @@ const CopyTicketModal: React.FC<CopyTicketModalProps> = ({ onClose, onSelectTick
   const getStatusColor = (status: TicketStatus) => {
     const colors: Record<TicketStatus, string> = {
       DRAFT: 'bg-gray-100 text-gray-800',
+      SUBMITTED: 'bg-indigo-100 text-indigo-800',
+      REVIEWED: 'bg-cyan-100 text-cyan-800',
       CREATED: 'bg-blue-100 text-blue-800',
       APPROVED: 'bg-green-100 text-green-800',
       ACTIVE: 'bg-orange-100 text-orange-800',
@@ -298,11 +300,11 @@ const CopyTicketModal: React.FC<CopyTicketModalProps> = ({ onClose, onSelectTick
               <div className="flex items-center space-x-4 text-xs text-gray-500">
                 <span className="flex items-center">
                   <span className="font-medium text-gray-700">Category:</span>
-                  <span className="ml-1">{ticket.category}</span>
+                  <span className="ml-1">{ticket.category || 'N/A'}</span>
                 </span>
                 <span className="flex items-center">
                   <span className="font-medium text-gray-700">Department:</span>
-                  <span className="ml-1">{ticket.department}</span>
+                  <span className="ml-1">{ticket.department || 'N/A'}</span>
                 </span>
                 <span className="flex items-center">
                   <span className="font-medium text-gray-700">Created:</span>
@@ -359,7 +361,7 @@ const CopyTicketModal: React.FC<CopyTicketModalProps> = ({ onClose, onSelectTick
           <div className="text-xs text-gray-500 space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-gray-600">Category:</span>
-              <span className="font-medium text-gray-700">{ticket.category}</span>
+              <span className="font-medium text-gray-700">{ticket.category || 'N/A'}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-600">Created:</span>

@@ -26,13 +26,10 @@ public class AuthenticationFilter implements Filter {
     private static final Set<String> PUBLIC_PATHS = new HashSet<>(Arrays.asList(
             "/api/auth/login",
             "/api/auth/register",
-            "/api/user",
+            "/api/auth/csrf-token",
+            "/api/auth/refresh",
             "/api/modules",
-            "/api/tickets",
-            "/api/workflow-steps",
-            "/api/workflow-comments",
-            "/api/files/",
-            "/api/file-references/"
+            "/api/user"
     ));
 
     @Override

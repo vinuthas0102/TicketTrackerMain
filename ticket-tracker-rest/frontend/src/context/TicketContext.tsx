@@ -234,7 +234,7 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
     try {
       if (!selectedModule) throw new Error('No module selected');
 
-      await TicketService.deleteTicket(id);
+      await TicketService.deleteTicket(id, user?.id || '');
 
       // Reload tickets to get the updated list
       if (user) {

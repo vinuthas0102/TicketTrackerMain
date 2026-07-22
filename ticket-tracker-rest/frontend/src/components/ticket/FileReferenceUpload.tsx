@@ -62,6 +62,11 @@ export const FileReferenceUpload: React.FC<FileReferenceUploadProps> = ({
         fileReferenceId: reference.id,
       });
 
+      await FileReferenceService.updateStepFileReference(reference.id, {
+        documentId: reference.id,
+        uploadedBy: user.id,
+      });
+
       await loadFileReferences();
       if (onUploadComplete) {
         onUploadComplete();

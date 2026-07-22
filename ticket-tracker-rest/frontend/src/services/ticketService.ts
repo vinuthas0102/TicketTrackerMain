@@ -287,6 +287,15 @@ export class TicketService {
       payload.userId = userId;
 
       await apiClient.put(API_ENDPOINTS.TICKETS.UPDATE(id), payload);
+
+      await this.createAuditLog({
+        ticketId: id,
+        action: 'UPDATED',
+        actionCategory: 'ticket_action',
+        description: 'Ticket updated',
+        performedBy: userId,
+        newData: JSON.stringify(payload),
+      });
     } catch (error) {
       console.error('Error updating ticket:', error);
       throw error;
@@ -323,9 +332,17 @@ export class TicketService {
     }
   }
 
-  static async deleteTicket(id: string): Promise<void> {
+  static async deleteTicket(id: string, userId: string): Promise<void> {
     try {
       await apiClient.delete(API_ENDPOINTS.TICKETS.DELETE(id));
+
+      await this.createAuditLog({
+        ticketId: id,
+        action: 'DELETED',
+        actionCategory: 'ticket_action',
+        description: `Ticket ${id} deleted`,
+        performedBy: userId,
+      });
     } catch (error) {
       console.error('Error deleting ticket:', error);
       throw error;
