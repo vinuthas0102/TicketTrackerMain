@@ -87,6 +87,18 @@ public class ModuleServlet extends HttpServlet {
                 return;
             }
 
+            String[] pathParts = pathInfo.split("/");
+
+            if (pathParts.length == 3 && "config".equals(pathParts[2])) {
+                handleUpdateModuleConfig(request, response, pathParts[1]);
+                return;
+            }
+
+            if (pathParts.length != 2) {
+                sendError(response, 400, "Invalid request path");
+                return;
+            }
+
             String body = getRequestBody(request);
             Module module = objectMapper.readValue(body, Module.class);
 
@@ -99,6 +111,41 @@ public class ModuleServlet extends HttpServlet {
         } catch (Exception e) {
             logger.error("Unexpected error in PUT /api/modules", e);
             sendError(response, 500, "Internal server error");
+        }
+    }
+
+    private void handleUpdateModuleConfig(HttpServletRequest request, HttpServletResponse response,
+                                          String moduleIdHex)
+            throws IOException {
+        try {
+            byte[] moduleId = hexToBytes(moduleIdHex);
+            Module module = moduleService.getModuleById(moduleId);
+
+            String body = getRequestBody(request);
+            com.fasterxml.jackson.databind.JsonNode configUpdate = objectMapper.readTree(body);
+
+            String existingConfig = module.getConfig();
+            com.fasterxml.jackson.databind.node.ObjectNode configNode;
+            if (existingConfig != null && !existingConfig.isEmpty()) {
+                configNode = (com.fasterxml.jackson.databind.node.ObjectNode) objectMapper.readTree(existingConfig);
+            } else {
+                configNode = objectMapper.createObjectNode();
+            }
+
+            if (configUpdate.has("requiresFinanceApproval")) {
+                configNode.put("requiresFinanceApproval", configUpdate.get("requiresFinanceApproval").asBoolean());
+            }
+
+            module.setConfig(objectMapper.writeValueAsString(configNode));
+            Module updatedModule = moduleService.updateModule(module);
+
+            logger.info("Module config updated for module: {}", module.getName());
+            sendJsonResponse(response, updatedModule);
+        } catch (TicketTrackerException e) {
+            handleException(response, e);
+        } catch (Exception e) {
+            logger.error("Error updating module config", e);
+            sendError(response, 500, "Internal server error: " + e.getMessage());
         }
     }
 

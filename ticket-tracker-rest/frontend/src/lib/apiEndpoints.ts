@@ -29,6 +29,7 @@ export const API_ENDPOINTS = {
   MODULES: {
     LIST: '/modules',
     GET: (id: string) => `/modules/${id}`,
+    UPDATE_CONFIG: (id: string) => `/modules/${id}/config`,
   },
 
   TICKETS: {

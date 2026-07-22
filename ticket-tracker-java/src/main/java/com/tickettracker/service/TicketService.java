@@ -19,6 +19,7 @@ public class TicketService {
     private final AuditLogDAO auditLogDAO;
     private final UserDAO userDAO;
     private final MasterDataService masterDataService;
+    private final ModuleDAO moduleDAO;
 
     public TicketService() {
         this.ticketDAO = new TicketDAO();
@@ -26,6 +27,7 @@ public class TicketService {
         this.auditLogDAO = new AuditLogDAO();
         this.userDAO = new UserDAO();
         this.masterDataService = new MasterDataService();
+        this.moduleDAO = new ModuleDAO();
     }
 
     public Ticket createTicket(Ticket ticket, byte[] currentUserId) throws TicketTrackerException {
@@ -51,6 +53,23 @@ public class TicketService {
             if (ticket.getTicketNumber() == null || ticket.getTicketNumber().isEmpty()) {
                 String moduleCode = masterDataService.getModuleCode(ticket.getModuleId());
                 ticket.setTicketNumber(masterDataService.generateTicketNumber(ticket.getPropertyLocation(), moduleCode));
+            }
+
+            if (ticket.getModuleId() != null) {
+                try {
+                    Module module = moduleDAO.findById(ticket.getModuleId());
+                    if (module != null && module.getConfig() != null) {
+                        String config = module.getConfig();
+                        if (config.contains("\"requiresFinanceApproval\":true") ||
+                            config.contains("\"requiresFinanceApproval\": true")) {
+                            ticket.setRequiresFinanceApproval(true);
+                        } else {
+                            ticket.setRequiresFinanceApproval(false);
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.warn("Failed to load module config for finance approval: {}", e.getMessage());
+                }
             }
 
             Ticket createdTicket = ticketDAO.create(ticket);
@@ -305,6 +324,18 @@ public class TicketService {
 
             if ("COMPLETED".equals(existingTicket.getStatus())) {
                 throw new ForbiddenException("Cannot update a completed ticket");
+            }
+
+            User currentUser = userDAO.findById(currentUserId);
+            if (currentUser != null && "eo".equalsIgnoreCase(currentUser.getRole())
+                    && existingTicket.getCreatedBy() != null
+                    && !java.util.Arrays.equals(existingTicket.getCreatedBy(), currentUserId)) {
+                if (ticket.getTitle() != null && !ticket.getTitle().equals(existingTicket.getTitle())) {
+                    throw new ForbiddenException("EO users can only modify Priority and Category on tickets raised by other users");
+                }
+                if (ticket.getDescription() != null && !ticket.getDescription().equals(existingTicket.getDescription())) {
+                    throw new ForbiddenException("EO users can only modify Priority and Category on tickets raised by other users");
+                }
             }
 
             validateTicket(ticket);

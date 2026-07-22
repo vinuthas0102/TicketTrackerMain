@@ -16,8 +16,7 @@ interface TicketFormProps {
 }
 
 const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copiedTicket, copiedAttachmentIds = [] }) => {
-  const { user } = useAuth();
-  const { selectedModule } = useAuth();
+  const { user, selectedModule } = useAuth();
   const { createTicket, updateTicket, tickets } = useTickets();
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState<FileList | null>(null);
@@ -135,6 +134,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
   }, [ticket]);
 
   const isEditing = !!ticket;
+  const isEOEditingOthersTicket = isEditing && user?.role === 'EO' && ticket?.createdBy !== user?.id;
 
   if (!isOpen) return null;
 
@@ -183,6 +183,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
         propertyLocation: formData.propertyLocation,
         createdBy: user.id,
         requestType: formData.requestType || undefined,
+        requiresFinanceApproval: selectedModule.config?.requiresFinanceApproval ?? false,
       };
 
       let targetTicketId: string | undefined;
@@ -455,6 +456,17 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                 </div>
               )}
 
+              {isEOEditingOthersTicket && (
+                <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                    <p className="text-sm text-amber-800 font-medium">
+                      You can only modify Priority and Category for tickets raised by other users. All other fields are read-only.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Title */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -466,6 +478,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Brief description..."
+                  disabled={isEOEditingOthersTicket}
                 />
               </div>
 
@@ -480,6 +493,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                   rows={6}
                   className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Detailed description..."
+                  disabled={isEOEditingOthersTicket}
                 />
               </div>
 
@@ -562,6 +576,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                     onChange={(e) => setFormData({ ...formData, estCompletionDate: e.target.value })}
                     className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     min={getCurrentDateISOString()}
+                    disabled={isEOEditingOthersTicket}
                   />
                 </div>
               </div>
@@ -576,6 +591,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                     value={formData.requestType}
                     onChange={(e) => setFormData({ ...formData, requestType: e.target.value })}
                     className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={isEOEditingOthersTicket}
                   >
                     <option value="">Select a request type...</option>
                     {availableRequestTypes.map(rt => (
@@ -598,7 +614,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   Attachments
                 </label>
-                <div className="mt-1 flex justify-center px-4 pt-3 pb-4 border-2 border-gray-300 border-dashed rounded-md">
+                <div className={`mt-1 flex justify-center px-4 pt-3 pb-4 border-2 border-gray-300 border-dashed rounded-md ${isEOEditingOthersTicket ? 'opacity-50 pointer-events-none' : ''}`}>
                   <div className="space-y-1 text-center">
                     <Upload className="mx-auto h-8 w-8 text-gray-400" />
                     <div className="flex text-xs text-gray-600">
@@ -612,6 +628,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                           multiple
                           onChange={handleFileChange}
                           accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.xlsx,.xls"
+                          disabled={isEOEditingOthersTicket}
                         />
                       </label>
                       <p className="pl-1">or drag and drop</p>

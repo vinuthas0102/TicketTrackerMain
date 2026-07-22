@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Module, ModuleFieldConfiguration, FieldDropdownOption, FieldContext, User } from '../../types';
 import { FieldConfigService } from '../../services/fieldConfigService';
-import { Settings, Plus, Edit, Trash2, GripVertical } from 'lucide-react';
+import { apiClient } from '../../lib/apiClient';
+import { API_ENDPOINTS } from '../../lib/apiEndpoints';
+import { Settings, Plus, Edit, Trash2, GripVertical, IndianRupee, CheckCircle, XCircle } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { FieldEditorModal } from './FieldEditorModal';
 
@@ -18,10 +20,13 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
   const [error, setError] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<(ModuleFieldConfiguration & { options?: FieldDropdownOption[] }) | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [financeApprovalEnabled, setFinanceApprovalEnabled] = useState<boolean>(false);
+  const [updatingFinanceApproval, setUpdatingFinanceApproval] = useState(false);
 
   useEffect(() => {
     if (selectedModule) {
       loadFields();
+      setFinanceApprovalEnabled(selectedModule.config?.requiresFinanceApproval === true);
     }
   }, [selectedModule, selectedContext]);
 
@@ -106,6 +111,25 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
     }
   };
 
+  const handleToggleFinanceApproval = async (enabled: boolean) => {
+    if (!selectedModule) return;
+    setUpdatingFinanceApproval(true);
+    try {
+      await apiClient.put(API_ENDPOINTS.MODULES.UPDATE_CONFIG(selectedModule.id), {
+        requiresFinanceApproval: enabled,
+      });
+      setFinanceApprovalEnabled(enabled);
+      setSelectedModule({
+        ...selectedModule,
+        config: { ...selectedModule.config, requiresFinanceApproval: enabled },
+      });
+    } catch (err) {
+      alert('Failed to update finance approval setting: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    } finally {
+      setUpdatingFinanceApproval(false);
+    }
+  };
+
   if (user.role !== 'EO') {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
@@ -161,6 +185,37 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
             <p className="text-sm text-blue-800">
               <strong>Module:</strong> {selectedModule.name} | <strong>Context:</strong> {selectedContext === 'ticket' ? 'Ticket Fields' : 'Workflow Step Fields'}
             </p>
+          </div>
+        )}
+
+        {selectedModule && (
+          <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <IndianRupee className="w-5 h-5 text-blue-600" />
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Finance Approval Required</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">When enabled, tickets in this module must be sent to finance for approval before completion.</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                {updatingFinanceApproval && (
+                  <span className="text-xs text-gray-400">Updating...</span>
+                )}
+                <button
+                  onClick={() => handleToggleFinanceApproval(!financeApprovalEnabled)}
+                  disabled={updatingFinanceApproval}
+                  className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    financeApprovalEnabled
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {financeApprovalEnabled ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                  <span>{financeApprovalEnabled ? 'Yes' : 'No'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

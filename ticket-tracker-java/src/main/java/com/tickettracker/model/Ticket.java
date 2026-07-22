@@ -59,7 +59,7 @@ public class Ticket {
         this.createdBy = createdBy;
         this.status = "open";
         this.completionDocumentsRequired = true;
-        this.requiresFinanceApproval = true;
+        this.requiresFinanceApproval = false;
         this.financeSubmissionCount = 0;
     }
 
