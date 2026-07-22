@@ -468,8 +468,9 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       };
       loadDepartments();
     }, []);
+    const normalizeDept = (d?: string) => (d || '').trim().toLowerCase();
     const filteredUsers = formData.department
-      ? users.filter(u => u.department === formData.department && (isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO'))
+      ? users.filter(u => normalizeDept(u.department) === normalizeDept(formData.department) && (isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO'))
       : users.filter(u => isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO');
     const [availableDependencySteps, setAvailableDependencySteps] = useState<WorkflowStep[]>([]);
     const [fileReferenceTemplates, setFileReferenceTemplates] = useState<FileReferenceTemplate[]>([]);
@@ -680,7 +681,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                 setFormData({
                   ...formData,
                   department: newDept,
-                  assignedTo: (assignedUser && newDept && assignedUser.department !== newDept) ? '' : formData.assignedTo
+                  assignedTo: (assignedUser && newDept && normalizeDept(assignedUser.department) !== normalizeDept(newDept)) ? '' : formData.assignedTo
                 });
               }}
               className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isSubTask ? 'bg-gray-100 cursor-not-allowed' : ''}`}
