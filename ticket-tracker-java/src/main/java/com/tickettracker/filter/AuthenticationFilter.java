@@ -51,6 +51,11 @@ public class AuthenticationFilter implements Filter {
 
         logger.debug("Authentication filter processing: {}", path);
 
+        if ("OPTIONS".equalsIgnoreCase(httpRequest.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         if (isPublicPath(path)) {
             chain.doFilter(request, response);
             return;
