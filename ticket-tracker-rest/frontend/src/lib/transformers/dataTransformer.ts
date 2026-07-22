@@ -84,7 +84,7 @@ export const transformUserFromBackend = (user: any): any => {
     name: user.name,
     role: roleToFrontend(user.role),
     department: user.department,
-    sapId: user.sap_id || undefined,
+    sapId: user.sapId || user.sap_id || undefined,
     active: user.active,
     lastLogin: safeParseDate(user.last_login),
     lockedUntil: safeParseDate(user.locked_until),

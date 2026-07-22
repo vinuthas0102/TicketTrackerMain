@@ -153,6 +153,7 @@ export class AuthService {
         email: data.email,
         role: data.role === 'dept_officer' ? 'DO' : data.role === 'eo' ? 'EO' : data.role === 'employee' ? 'EMPLOYEE' : data.role === 'vendor' ? 'VENDOR' : data.role === 'finance' ? 'FINANCE' : data.role === 'technician' ? 'TECHNICIAN' : data.role,
         department: data.department,
+        sapId: data.sap_id,
         lastLogin: data.last_login ? new Date(data.last_login) : undefined
       };
     } catch (error) {
@@ -184,6 +185,7 @@ export class AuthService {
         email: data.email,
         role: data.role === 'dept_officer' ? 'DO' : data.role === 'eo' ? 'EO' : data.role === 'employee' ? 'EMPLOYEE' : data.role === 'vendor' ? 'VENDOR' : data.role === 'finance' ? 'FINANCE' : data.role === 'technician' ? 'TECHNICIAN' : data.role,
         department: data.department,
+        sapId: data.sap_id,
         lastLogin: data.last_login ? new Date(data.last_login) : undefined
       };
     } catch (error) {
@@ -327,6 +329,7 @@ export class AuthService {
         email: user.email,
         role: user.role === 'dept_officer' ? 'DO' : user.role === 'eo' ? 'EO' : user.role === 'employee' ? 'EMPLOYEE' : user.role === 'vendor' ? 'VENDOR' : user.role === 'finance' ? 'FINANCE' : user.role === 'technician' ? 'TECHNICIAN' : user.role,
         department: user.department,
+        sapId: user.sap_id,
         lastLogin: user.last_login ? new Date(user.last_login) : undefined
       }))
       .filter(user => {
