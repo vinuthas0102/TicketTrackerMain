@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, X, Grid3x3 as Grid3X3, List, LayoutGrid, Table } from 'lucide-react';
 import { TicketStatus } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTickets } from '../../context/TicketContext';
+import { MasterDataService } from '../../services/masterDataService';
 
 interface SearchFilters {
   search: string;
@@ -23,6 +24,21 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, onFiltersChange, vie
   const [showAdvanced, setShowAdvanced] = useState(false);
   const { user } = useAuth();
   const { users } = useTickets();
+  const [availableDepartments, setAvailableDepartments] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        const depts = await MasterDataService.getActive('departments');
+        setAvailableDepartments(depts);
+      } catch (err) {
+        console.error('Failed to load departments:', err);
+        const uniqueDepts = [...new Set(users.map(u => u.department))];
+        setAvailableDepartments(uniqueDepts);
+      }
+    };
+    loadDepartments();
+  }, []);
 
   const handleFilterChange = (key: keyof SearchFilters, value: string) => {
     onFiltersChange({
@@ -44,7 +60,6 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, onFiltersChange, vie
 
   const hasActiveFilters = Object.values(filters).some(value => value !== '');
 
-  const availableDepartments = [...new Set(users.map(u => u.department))];
   const availableUsers = users.filter(u => {
     if (user?.role === 'EMPLOYEE') return u.id === user.id;
     if (user?.role === 'DO') return u.department === user.department;

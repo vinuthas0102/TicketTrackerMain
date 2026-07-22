@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Copy, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { UserManagementService, CreateUserRequest } from '../../services/userManagementService';
 import { IconDisplayType, IconSize } from '../../types';
 import { UserPreferencesService } from '../../services/userPreferencesService';
+import { MasterDataService } from '../../services/masterDataService';
 
 interface UserCreateModalProps {
   onClose: () => void;
@@ -29,6 +30,19 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
   const [tempPassword, setTempPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [departments, setDepartments] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        const depts = await MasterDataService.getActive('departments');
+        setDepartments(depts);
+      } catch (err) {
+        console.error('Failed to load departments:', err);
+      }
+    };
+    loadDepartments();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,14 +280,28 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Department <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={formData.department}
-              onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="e.g., IT, HR, Finance"
-              required
-            />
+            {departments.length > 0 ? (
+              <select
+                value={formData.department}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Select Department</option>
+                {departments.map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={formData.department}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., IT, HR, Finance"
+                required
+              />
+            )}
           </div>
 
           <div>

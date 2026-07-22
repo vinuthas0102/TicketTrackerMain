@@ -18,6 +18,7 @@ import { DocumentMetadata, FileService } from '../../services/fileService';
 import { TicketService } from '../../services/ticketService';
 import { DependencyService } from '../../services/dependencyService';
 import { getHierarchyColors, getStatusBadgeColor, getHierarchyLevel, getHierarchyLevelInfo, getHierarchyIcon, getHierarchyBorderStyle, hierarchyColorLegend } from '../../lib/hierarchyColors';
+import { MasterDataService } from '../../services/masterDataService';
 
 interface WorkflowManagementProps {
   ticket: Ticket;
@@ -456,8 +457,22 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       selectedFileReferences: [] as SelectedFileReference[],
       remarks: step?.remarks || ''
     });
-    const uniqueDepartments = Array.from(new Set(users.map(u => u.department).filter(Boolean)));
+    const [masterDepartments, setMasterDepartments] = useState<string[]>([]);
     const isSubTask = !!parentStep;
+
+    React.useEffect(() => {
+      const loadDepartments = async () => {
+        try {
+          const depts = await MasterDataService.getActive('departments');
+          setMasterDepartments(depts);
+        } catch (err) {
+          console.error('Failed to load departments:', err);
+          const uniqueDepts = Array.from(new Set(users.map(u => u.department).filter(Boolean)));
+          setMasterDepartments(uniqueDepts);
+        }
+      };
+      loadDepartments();
+    }, []);
     const filteredUsers = formData.department
       ? users.filter(u => u.department === formData.department && (isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO'))
       : users.filter(u => isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO');
@@ -692,7 +707,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
               className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isSubTask ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <option value="">All Departments</option>
-              {uniqueDepartments.map(dept => (
+              {masterDepartments.map(dept => (
                 <option key={dept} value={dept}>{dept}</option>
               ))}
             </select>

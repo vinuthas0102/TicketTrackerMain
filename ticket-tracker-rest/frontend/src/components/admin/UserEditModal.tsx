@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { User, IconDisplayType, IconSize } from '../../types';
 import { UserManagementService, UpdateUserRequest } from '../../services/userManagementService';
 import { UserPreferencesService } from '../../services/userPreferencesService';
+import { MasterDataService } from '../../services/masterDataService';
 
 interface UserEditModalProps {
   user: User;
@@ -28,6 +29,19 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ user, onClose, onUserUpda
   const [loading, setLoading] = useState(false);
   const [loadingPreferences, setLoadingPreferences] = useState(true);
   const [error, setError] = useState('');
+  const [departments, setDepartments] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        const depts = await MasterDataService.getActive('departments');
+        setDepartments(depts);
+      } catch (err) {
+        console.error('Failed to load departments:', err);
+      }
+    };
+    loadDepartments();
+  }, []);
 
   useEffect(() => {
     const loadPreferences = async () => {
@@ -180,14 +194,31 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ user, onClose, onUserUpda
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Department <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={formData.department}
-              onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="e.g., IT, HR, Finance"
-              required
-            />
+            {departments.length > 0 ? (
+              <select
+                value={formData.department}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Select Department</option>
+                {departments.map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+                {formData.department && !departments.includes(formData.department) && (
+                  <option value={formData.department}>{formData.department} (inactive)</option>
+                )}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={formData.department}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., IT, HR, Finance"
+                required
+              />
+            )}
           </div>
 
           <div>
