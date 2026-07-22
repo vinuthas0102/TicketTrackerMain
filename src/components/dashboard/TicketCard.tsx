@@ -20,7 +20,7 @@ const ListField: React.FC<ListFieldProps> = ({ label, value, wide, muted, urgent
     <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider leading-none mb-1">{label}</span>
     <span className={`text-sm font-semibold leading-tight ${
       urgent ? 'text-rose-600' : muted ? 'text-gray-400 italic font-normal' : 'text-gray-800'
-    } ${wide ? 'truncate' : 'whitespace-nowrap'}`}>
+    } ${wide ? 'truncate' : 'whitespace-nowrap'}`} title={value}>
       {value}
     </span>
   </div>
@@ -442,13 +442,6 @@ const TicketCard: React.FC<TicketCardProps> = ({
             <ListField label="RAISED BY" value={createdByUser?.name || '—'} />
             <ListField label="SAP ID" value={createdByUser?.sapId || '—'} />
             <ListField label="RAISED ON" value={formatDate(ticket.createdAt)} />
-            {user?.role !== 'EMPLOYEE' && (
-              <ListField
-                label="ASSIGNED TO"
-                value={assignedToUser?.name || 'Unassigned'}
-                muted={!assignedToUser}
-              />
-            )}
             <ListField
               label="DUE DATE"
               value={ticket.dueDate ? formatDate(ticket.dueDate) : formatDate(ticket.createdAt)}
@@ -464,6 +457,21 @@ const TicketCard: React.FC<TicketCardProps> = ({
               <div>
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Description</p>
                 <p className="text-sm text-gray-700 leading-relaxed">{ticket.description}</p>
+              </div>
+            )}
+            {user?.role !== 'EMPLOYEE' && (
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Assigned To</p>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  {assignedToUser ? (
+                    <span className="flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-gray-400" />
+                      {assignedToUser.name}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 italic">Unassigned</span>
+                  )}
+                </p>
               </div>
             )}
             {totalWorkflows > 0 && (
@@ -573,7 +581,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
                   </span>
                 )}
               </div>
-              <h3 className="text-base font-bold text-gray-900 mb-1.5 line-clamp-2 leading-snug">
+              <h3 className="text-base font-bold text-gray-900 mb-1.5 line-clamp-1 leading-snug" title={ticket.title}>
                 {ticket.title}
               </h3>
               <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
@@ -612,14 +620,6 @@ const TicketCard: React.FC<TicketCardProps> = ({
                   {createdByUser?.name?.split(' ')[0] || 'Unknown'}
                 </span>
               </div>
-              {assignedToUser && (
-                <div className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" />
-                  <span className="font-medium truncate max-w-24" title={assignedToUser.name}>
-                    {assignedToUser.name.split(' ')[0]}
-                  </span>
-                </div>
-              )}
             </div>
             <div className={`flex items-center gap-1 font-medium ${isOverdue ? 'text-rose-600' : ''}`}>
               <Calendar className="w-3.5 h-3.5" />

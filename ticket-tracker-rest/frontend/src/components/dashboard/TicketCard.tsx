@@ -393,7 +393,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
                   </span>
                 )}
               </div>
-              <h3 className="text-base font-bold text-gray-900 mb-1.5 line-clamp-2 leading-snug">
+              <h3 className="text-base font-bold text-gray-900 mb-1.5 line-clamp-1 leading-snug" title={ticket.title}>
                 {ticket.title}
               </h3>
               <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
@@ -437,14 +437,6 @@ const TicketCard: React.FC<TicketCardProps> = ({
                   </span>
                 )}
               </div>
-              {assignedToUser && (
-                <div className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" />
-                  <span className="font-medium truncate max-w-24" title={assignedToUser.name}>
-                    {assignedToUser.name.split(' ')[0]}
-                  </span>
-                </div>
-              )}
             </div>
             <div className={`flex items-center gap-1 font-medium ${isOverdue ? 'text-rose-600' : ''}`}>
               <Calendar className="w-3.5 h-3.5" />

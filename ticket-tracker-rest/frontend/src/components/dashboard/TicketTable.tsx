@@ -204,9 +204,6 @@ const TicketTable: React.FC<TicketTableProps> = ({
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Status</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Priority</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Dept</th>
-              {user?.role !== 'EMPLOYEE' && (
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Assigned To</th>
-              )}
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
                 <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />Due</span>
               </th>
@@ -220,7 +217,6 @@ const TicketTable: React.FC<TicketTableProps> = ({
           <tbody className="divide-y divide-gray-100">
             {tickets.map((ticket, idx) => {
               const createdByUser = getUserById(ticket.createdBy);
-              const assignedToUser = ticket.assignedTo ? getUserById(ticket.assignedTo) : undefined;
               const isOverdue = ticket.dueDate && new Date() > ticket.dueDate
                 && ticket.status !== 'COMPLETED' && ticket.status !== 'CANCELLED';
 
@@ -236,7 +232,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                     <span className="text-xs font-bold text-gray-500 font-mono">{ticket.ticketNumber}</span>
                   </td>
                   <td className="px-4 py-3 max-w-xs">
-                    <span className="font-medium text-gray-900 line-clamp-1">{ticket.title}</span>
+                    <span className="font-medium text-gray-900 line-clamp-1" title={ticket.title}>{ticket.title}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded border ${getStatusColor(ticket.status)}`}>
@@ -252,18 +248,6 @@ const TicketTable: React.FC<TicketTableProps> = ({
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-gray-600 text-xs">{ticket.department}</span>
                   </td>
-                  {user?.role !== 'EMPLOYEE' && (
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {assignedToUser ? (
-                        <span className="flex items-center gap-1 text-xs text-gray-700">
-                          <Users className="w-3.5 h-3.5 text-gray-400" />
-                          {assignedToUser.name}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-400 italic">Unassigned</span>
-                      )}
-                    </td>
-                  )}
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`text-xs ${isOverdue ? 'text-rose-600 font-semibold' : 'text-gray-600'}`}>
                       {ticket.dueDate ? formatDate(ticket.dueDate) : formatDate(ticket.createdAt)}
