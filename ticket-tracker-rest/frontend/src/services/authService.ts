@@ -42,10 +42,8 @@ export class AuthService {
   static async fetchCsrfToken(): Promise<void> {
     try {
       const response = await apiClient.get<{ csrfToken: string }>(API_ENDPOINTS.AUTH.CSRF_TOKEN);
-      console.log('[AuthService] CSRF token response:', response);
       if (response && response.csrfToken) {
         setCsrfToken(response.csrfToken);
-        console.log('[AuthService] CSRF token fetched and stored successfully');
       } else {
         console.warn('[AuthService] CSRF token not found in response:', response);
       }
@@ -106,7 +104,6 @@ export class AuthService {
           return cachedUsers;
         }
       } else {
-        console.log(`Successfully loaded ${users.length} users from API`);
         const transformedUsers = users.map(transformUserFromBackend);
         this.setCachedUsers(transformedUsers);
         return transformedUsers;
@@ -114,19 +111,8 @@ export class AuthService {
       return [];
     } catch (error: any) {
       console.error('Error fetching users:', error);
-      console.error('Full API URL:', `${API_BASE_URL}${API_ENDPOINTS.USERS.LIST}`);
-      console.error('API Base URL:', API_BASE_URL);
-      console.error('API Endpoint:', API_ENDPOINTS.USERS.LIST);
-      console.error('Error details:', {
-        code: error.code,
-        message: error.message,
-        status: error.status,
-      });
-      console.error('Please verify your backend is running and accessible at the API URL above');
-
       const cachedUsers = this.getCachedUsers();
       if (cachedUsers && cachedUsers.length > 0) {
-        console.warn(`API request failed. Using ${cachedUsers.length} cached users as fallback`);
         return cachedUsers;
       }
 

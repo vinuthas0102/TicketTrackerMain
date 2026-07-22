@@ -5,8 +5,6 @@ import { useAuth } from '../../context/AuthContext';
 const ModuleSelection: React.FC = () => {
   const { availableModules, selectModule } = useAuth();
 
-  console.log('ModuleSelection: Available modules:', availableModules.length, availableModules.map(m => m.name));
-
   const getIconComponent = (iconName: string) => {
     // Map icon names to actual Lucide icons
     const iconMap: Record<string, string> = {

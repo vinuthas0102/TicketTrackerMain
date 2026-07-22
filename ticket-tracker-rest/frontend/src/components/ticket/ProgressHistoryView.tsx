@@ -35,31 +35,16 @@ const ProgressHistoryView: React.FC<ProgressHistoryViewProps> = ({ step, ticketI
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    console.log('[ProgressHistoryView] Component mounted/updated for step:', step.id, 'refreshKey:', refreshKey);
     loadHistory();
   }, [step.id, refreshKey]);
 
   const loadHistory = async () => {
-    console.log('[ProgressHistoryView] loadHistory() called for step:', step.id);
     try {
       setLoading(true);
-      console.log('[ProgressHistoryView] Setting loading to true, about to fetch history for step:', step.id);
       const data = await ProgressHistoryService.getStepProgressHistory(step.id);
-      console.log('[ProgressHistoryView] Fetch completed successfully');
-      console.log('[ProgressHistoryView] Received history data:', {
-        count: data.length,
-        entries: data,
-        types: data.map(e => e.type),
-        hasDocuments: data.filter(e => e.documents && e.documents.length > 0).length,
-        hasCertificates: data.filter(e => e.completionCertificates && e.completionCertificates.length > 0).length
-      });
       setHistory(data);
     } catch (error) {
       console.error('[ProgressHistoryView] Failed to load progress history:', error);
-      console.error('[ProgressHistoryView] Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
     } finally {
       setLoading(false);
     }
@@ -325,8 +310,6 @@ const ProgressHistoryView: React.FC<ProgressHistoryViewProps> = ({ step, ticketI
           const isOwnUpdate = entry.userId === user?.id;
           const hasDocuments = entry.documents && entry.documents.length > 0;
           const hasCertificates = entry.completionCertificates && entry.completionCertificates.length > 0;
-
-          console.log('Entry:', entry.id, 'Type:', entry.type, 'Has docs:', hasDocuments, 'Docs:', entry.documents);
 
           return (
             <div

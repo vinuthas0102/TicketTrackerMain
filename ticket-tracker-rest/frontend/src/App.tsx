@@ -42,7 +42,7 @@ const Dashboard: React.FC = () => {
   const [showEditForm, setShowEditForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | null>(null);
   const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'compact'>('list');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'compact' | 'table'>('list');
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [showUserPreferences, setShowUserPreferences] = useState(false);
@@ -135,7 +135,6 @@ const Dashboard: React.FC = () => {
 
   const handleDeleteTicket = async (ticketId: string) => {
     // In real app, this would call the delete function
-    console.log('Delete ticket:', ticketId);
     // await deleteTicket(ticketId);
   };
 
@@ -561,9 +560,7 @@ const App: React.FC = () => {
     if (import.meta.env.DEV) {
       import('./lib/diagnostics').then(({ runDiagnostics, checkDatabaseConnection }) => {
         runDiagnostics();
-        checkDatabaseConnection().then(result => {
-          console.log('Database connection check:', result);
-        });
+        checkDatabaseConnection();
       });
     }
   }, []);

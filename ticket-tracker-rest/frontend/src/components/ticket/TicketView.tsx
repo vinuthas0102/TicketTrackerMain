@@ -238,29 +238,12 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
 
     // Add SENT_TO_FINANCE option for ACTIVE and REJECTED_BY_FINANCE status
     // Only if all workflow tasks are completed and finance approval is required
-    console.log('[TicketView REST] Finance option check:', {
-      ticketId: ticket.id,
-      status: ticket.status,
-      requiresFinanceApproval: ticket.requiresFinanceApproval,
-      workflowCompleted,
-      totalWorkflows: ticket.workflow.length,
-      completedWorkflows: ticket.workflow.filter(s => s.status === 'COMPLETED').length,
-      workflowStatuses: ticket.workflow.map(s => ({ id: s.id, title: s.title, status: s.status }))
-    });
-
     if (
       (ticket.status === 'ACTIVE' || ticket.status === 'REJECTED_BY_FINANCE') &&
       ticket.requiresFinanceApproval !== false &&
       workflowCompleted
     ) {
       availableTransitions = ['SENT_TO_FINANCE', ...availableTransitions];
-      console.log('[TicketView REST] Added SENT_TO_FINANCE to available transitions');
-    } else {
-      console.log('[TicketView REST] SENT_TO_FINANCE NOT added. Conditions:', {
-        statusCheck: ticket.status === 'ACTIVE' || ticket.status === 'REJECTED_BY_FINANCE',
-        financeApprovalCheck: ticket.requiresFinanceApproval !== false,
-        workflowCompletedCheck: workflowCompleted
-      });
     }
 
     return availableTransitions;

@@ -22,7 +22,7 @@ interface TicketCardProps {
   onSendToFinance?: (ticket: Ticket) => void;
   onView?: (ticket: Ticket) => void;
   isExpanded?: boolean;
-  viewMode?: 'grid' | 'list' | 'compact';
+  viewMode?: 'grid' | 'list' | 'compact' | 'table';
 }
 
 const TicketCard: React.FC<TicketCardProps> = ({

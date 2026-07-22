@@ -180,17 +180,13 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
       let targetTicketId: string | undefined;
 
       if (isEditing && ticket) {
-        console.log('[TicketForm] Updating existing ticket:', ticket.id);
         await updateTicket(ticket.id, ticketData);
         targetTicketId = ticket.id;
       } else {
-        console.log('[TicketForm] Creating new ticket');
         targetTicketId = await createTicket(ticketData, copiedTicket?.id);
-        console.log('[TicketForm] Ticket created with ID:', targetTicketId);
       }
 
       if (!targetTicketId) {
-        console.error('[TicketForm] No ticket ID available for file upload');
         throw new Error('Ticket ID is missing after save operation');
       }
 
@@ -198,7 +194,6 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
 
       if (files && files.length > 0) {
         hasFileOperations = true;
-        console.log(`[TicketForm] Uploading ${files.length} file(s) to ticket ${targetTicketId}`);
         setCopyingAttachments(true);
         setAttachmentCopyStatus(`Uploading ${files.length} file${files.length !== 1 ? 's' : ''}...`);
 
@@ -208,7 +203,6 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
           const errors: string[] = [];
 
           for (let i = 0; i < files.length; i++) {
-            console.log(`[TicketForm] Uploading file ${i + 1}/${files.length}: ${files[i].name}`);
             try {
               await FileService.uploadStepDocument({
                 file: files[i],
@@ -217,40 +211,34 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                 isMandatory: false,
               });
               uploadedCount++;
-              console.log(`[TicketForm] File uploaded successfully: ${files[i].name}`);
             } catch (error) {
               failedCount++;
               const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-              console.error(`[TicketForm] File upload failed for ${files[i].name}:`, errorMsg);
+              console.error(`File upload failed for ${files[i].name}:`, errorMsg);
               errors.push(`${files[i].name}: ${errorMsg}`);
             }
           }
 
           if (uploadedCount > 0) {
             setAttachmentCopyStatus(`Successfully uploaded ${uploadedCount} file${uploadedCount !== 1 ? 's' : ''}`);
-            console.log(`[TicketForm] Upload complete: ${uploadedCount} success, ${failedCount} failed`);
           }
 
           if (failedCount > 0) {
-            console.error('[TicketForm] File upload errors:', errors);
             alert(
               `Ticket ${isEditing ? 'updated' : 'created'} successfully, but ${failedCount} file${failedCount !== 1 ? 's' : ''} failed to upload:\n${errors.slice(0, 3).join('\n')}`
             );
           }
         } catch (error) {
-          console.error('[TicketForm] Error during file upload:', error);
+          console.error('Error during file upload:', error);
           alert(`Ticket ${isEditing ? 'updated' : 'created'} successfully, but files failed to upload.`);
         } finally {
           setCopyingAttachments(false);
           setTimeout(() => setAttachmentCopyStatus(''), 2000);
         }
-      } else {
-        console.log('[TicketForm] No files selected for upload');
       }
 
       if (!isEditing && copiedTicket && copiedAttachmentIds.length > 0) {
         hasFileOperations = true;
-        console.log(`[TicketForm] Copying ${copiedAttachmentIds.length} attachment(s)`);
         setCopyingAttachments(true);
         setAttachmentCopyStatus(`Copying ${copiedAttachmentIds.length} attachment${copiedAttachmentIds.length !== 1 ? 's' : ''}...`);
 
@@ -266,17 +254,15 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
             setAttachmentCopyStatus(
               `Successfully copied ${copyResult.successCount} attachment${copyResult.successCount !== 1 ? 's' : ''}`
             );
-            console.log(`[TicketForm] Copied ${copyResult.successCount} attachments`);
           }
 
           if (copyResult.failedCount > 0) {
-            console.error('[TicketForm] Attachment copy errors:', copyResult.errors);
             alert(
               `Ticket created successfully, but ${copyResult.failedCount} attachment${copyResult.failedCount !== 1 ? 's' : ''} failed to copy:\n${copyResult.errors.slice(0, 3).join('\n')}`
             );
           }
         } catch (error) {
-          console.error('[TicketForm] Error copying attachments:', error);
+          console.error('Error copying attachments:', error);
           alert('Ticket created successfully, but attachments failed to copy.');
         } finally {
           setCopyingAttachments(false);
@@ -285,7 +271,6 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
       }
 
       const delayBeforeClose = hasFileOperations ? 2500 : 0;
-      console.log(`[TicketForm] Closing modal in ${delayBeforeClose}ms`);
 
       setTimeout(() => {
         onClose();
@@ -309,7 +294,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
       }, delayBeforeClose);
 
     } catch (error) {
-      console.error('[TicketForm] Ticket operation error:', error);
+      console.error('Ticket operation error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to save ticket';
       alert(errorMessage);
     } finally {
@@ -322,12 +307,9 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
     setFiles(selectedFiles);
 
     if (selectedFiles && selectedFiles.length > 0) {
-      console.log(`[TicketForm] ${selectedFiles.length} file(s) selected:`);
-      Array.from(selectedFiles).forEach((file, index) => {
-        console.log(`  [${index + 1}] ${file.name} (${(file.size / 1024).toFixed(2)} KB, ${file.type})`);
-      });
+      setFiles(selectedFiles);
     } else {
-      console.log('[TicketForm] No files selected');
+      setFiles(null);
     }
   };
 
@@ -350,7 +332,6 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
   const showCEInspectionNotice = selectedRequestType?.requiresCEInspection === true;
 
   if (selectedModule && availableRequestTypes.length === 0) {
-    console.warn('No request types configured for module:', selectedModule.name, 'Config:', selectedModule.config);
   }
 
   return (

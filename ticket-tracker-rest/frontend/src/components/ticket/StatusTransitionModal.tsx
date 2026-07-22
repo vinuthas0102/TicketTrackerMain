@@ -131,14 +131,6 @@ const StatusTransitionModal: React.FC<StatusTransitionModalProps> = ({
         await FinanceApprovalService.submitToFinance(request, user.id);
         alert('Ticket successfully submitted to finance department for approval');
       } else {
-        console.log('Attempting status change:', {
-          ticketId: ticket.id,
-          currentStatus: ticket.status,
-          newStatus: selectedStatus,
-          remarks: remarks.trim(),
-          hasCompletionFile: !!completionFile
-        });
-
         await changeTicketStatus({
           ticketId: ticket.id,
           newStatus: selectedStatus as TicketStatus,

@@ -93,6 +93,11 @@ public class UserService {
 
             User createdUser = userDAO.create(user);
 
+            logAuditAction("user_created", createdUser.getId(), currentUserId,
+                    null,
+                    "{\"email\":\"" + user.getEmail() + "\",\"role\":\"" + user.getRoleInternal() + "\",\"department\":\"" + user.getDepartment() + "\"}",
+                    "User created with role " + user.getRoleInternal());
+
             logger.info("User created: {} by user: {}",
                 user.getEmail(), bytesToHex(currentUserId));
 
@@ -121,6 +126,11 @@ public class UserService {
                 throw new DatabaseException("Failed to update user");
             }
 
+            logAuditAction("user_updated", user.getId(), currentUserId,
+                    "{\"email\":\"" + existingUser.getEmail() + "\",\"role\":\"" + existingUser.getRoleInternal() + "\",\"department\":\"" + existingUser.getDepartment() + "\"}",
+                    "{\"email\":\"" + user.getEmail() + "\",\"role\":\"" + user.getRoleInternal() + "\",\"department\":\"" + user.getDepartment() + "\"}",
+                    "User profile updated");
+
             logger.info("User updated: {} by user: {}",
                 user.getEmail(), bytesToHex(currentUserId));
 
@@ -143,6 +153,11 @@ public class UserService {
             user.setActive(false);
             userDAO.update(user);
 
+            logAuditAction("user_deactivated", userId, currentUserId,
+                    "{\"active\":true}",
+                    "{\"active\":false}",
+                    "User account deactivated");
+
             logger.info("User deactivated: {} by user: {}",
                 user.getEmail(), bytesToHex(currentUserId));
 
@@ -158,6 +173,11 @@ public class UserService {
             User user = getUserById(userId);
             user.setActive(true);
             userDAO.update(user);
+
+            logAuditAction("user_activated", userId, currentUserId,
+                    "{\"active\":false}",
+                    "{\"active\":true}",
+                    "User account activated");
 
             logger.info("User activated: {} by user: {}",
                 user.getEmail(), bytesToHex(currentUserId));
@@ -182,6 +202,9 @@ public class UserService {
             if (!updated) {
                 throw new DatabaseException("Failed to update password");
             }
+
+            logAuditAction("password_updated", userId, currentUserId,
+                    null, null, "Password updated by admin");
 
             logger.info("Password updated for user: {} by user: {}",
                 user.getEmail(), bytesToHex(currentUserId));

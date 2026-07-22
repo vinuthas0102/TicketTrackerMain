@@ -86,7 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       let prefs = await UserPreferencesService.getUserPreferences(userId);
 
       if (!prefs) {
-        console.log('No user preferences found, initializing defaults for user:', userId);
+
         prefs = await UserPreferencesService.initializeDefaultPreferences(userId);
       }
 
@@ -104,9 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loadModules = async () => {
     try {
-      console.log('AuthContext: Loading modules...');
       const modules = await AuthService.getAvailableModules();
-      console.log('AuthContext: Loaded modules:', modules.length, modules.map(m => m.name));
       setAvailableModules(modules);
 
       const savedModule = localStorage.getItem('selectedModule');
@@ -147,8 +145,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const selectModule = (module: Module) => {
-    console.log('Selecting module:', module);
-    console.log('Module categories:', module.config?.categories);
     setSelectedModule(module);
     localStorage.setItem('selectedModule', JSON.stringify(module));
   };

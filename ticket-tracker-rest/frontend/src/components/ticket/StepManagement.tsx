@@ -371,31 +371,23 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
   };
 
   const toggleDocUpload = (stepId: string) => {
-    console.log('[StepManagement] toggleDocUpload called for step:', stepId);
     const newShowDocUpload = new Set(showDocUpload);
     if (newShowDocUpload.has(stepId)) {
-      console.log('[StepManagement] Hiding document upload for step:', stepId);
       newShowDocUpload.delete(stepId);
     } else {
-      console.log('[StepManagement] Showing document upload for step:', stepId);
       newShowDocUpload.add(stepId);
     }
     setShowDocUpload(newShowDocUpload);
-    console.log('[StepManagement] Document upload visibility updated. Currently showing for:', Array.from(newShowDocUpload));
   };
 
   const toggleProgressHistory = (stepId: string) => {
-    console.log('[StepManagement] toggleProgressHistory called for step:', stepId);
     const newShowHistory = new Set(showProgressHistory);
     if (newShowHistory.has(stepId)) {
-      console.log('[StepManagement] Hiding progress history for step:', stepId);
       newShowHistory.delete(stepId);
     } else {
-      console.log('[StepManagement] Showing progress history for step:', stepId);
       newShowHistory.add(stepId);
     }
     setShowProgressHistory(newShowHistory);
-    console.log('[StepManagement] Progress history visibility updated. Currently showing for:', Array.from(newShowHistory));
   };
 
   const getChildren = (parentId: string) => {
@@ -1048,22 +1040,16 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     if (!editingStep) return;
 
     if (data.status === 'COMPLETED') {
-      console.log('[StepManagement] Validating workflow completion for step:', editingStep.id);
-
       try {
-        console.log('[StepManagement] Checking file references...');
         const fileReferences = await FileReferenceService.getStepFileReferences(editingStep.id);
-        console.log('[StepManagement] File references:', fileReferences);
         const mandatoryReferences = fileReferences.filter(ref => ref.isMandatory);
         const incompleteMandatory = mandatoryReferences.filter(ref => !ref.documentId);
 
         if (incompleteMandatory.length > 0) {
           const refNames = incompleteMandatory.map(ref => `- ${ref.referenceName}`).join('\n');
-          console.log('[StepManagement] Incomplete mandatory file references:', incompleteMandatory);
           alert(`Cannot complete workflow. The following mandatory file references have not been uploaded:\n\n${refNames}\n\nTo upload these files:\n1. Close this form\n2. Click the "Upload Documents" button on the step card\n3. In the "File References (Template-Based)" section, upload each required document\n\nNote: Uploading a completion certificate alone does not satisfy file reference requirements.`);
           return;
         }
-        console.log('[StepManagement] File references validation passed');
       } catch (error) {
         console.error('[StepManagement] Error checking file references:', error);
         alert('Error validating file references: ' + (error instanceof Error ? error.message : 'Unknown error'));
@@ -1071,7 +1057,6 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       }
 
       try {
-        console.log('[StepManagement] Validating sub-task completion...');
         const incompleteSubTasks = getChildren(editingStep.id).filter(
           s => s.status !== 'COMPLETED' && s.status !== 'CLOSED'
         );
@@ -1080,7 +1065,6 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           alert(`Cannot complete this task until all sub-tasks are completed.\n\nIncomplete sub-tasks:\n${subTaskList}`);
           return;
         }
-        console.log('[StepManagement] Sub-task validation passed');
       } catch (error) {
         console.error('[StepManagement] Error validating sub-tasks:', error);
         alert('Error validating sub-tasks: ' + (error instanceof Error ? error.message : 'Unknown error'));
@@ -1088,9 +1072,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       }
 
       try {
-        console.log('[StepManagement] Validating dependencies...');
         const validationResult = await DependencyService.validateStepCompletion(editingStep, ticket.workflow);
-        console.log('[StepManagement] Dependency validation result:', validationResult);
         if (!validationResult.canComplete) {
           const incompleteTitles = validationResult.incompleteDependencies
             .map(s => `- ${s.title} (Status: ${s.status})`)
@@ -1098,7 +1080,6 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           alert(`Cannot complete this workflow due to incomplete dependencies.\n\n${validationResult.message}\n\nIncomplete dependencies:\n${incompleteTitles}`);
           return;
         }
-        console.log('[StepManagement] Dependency validation passed');
       } catch (error) {
         console.error('[StepManagement] Error validating dependencies:', error);
         alert('Error validating dependencies: ' + (error instanceof Error ? error.message : 'Unknown error'));
@@ -1106,16 +1087,13 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       }
 
       try {
-        console.log('[StepManagement] Checking mandatory documents...');
         if (editingStep.mandatory_documents && editingStep.mandatory_documents.length > 0) {
           const hasMandatoryDocs = await checkMandatoryDocuments(editingStep.id, editingStep.mandatory_documents.length);
-          console.log('[StepManagement] Has mandatory documents:', hasMandatoryDocs);
           if (!hasMandatoryDocs) {
             alert(`Cannot complete this workflow. Please upload all ${editingStep.mandatory_documents.length} mandatory documents first.`);
             return;
           }
         }
-        console.log('[StepManagement] Mandatory documents validation passed');
       } catch (error) {
         console.error('[StepManagement] Error checking mandatory documents:', error);
         alert('Error validating mandatory documents: ' + (error instanceof Error ? error.message : 'Unknown error'));
@@ -1123,16 +1101,13 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       }
 
       try {
-        console.log('[StepManagement] Checking completion certificate for role:', user?.role);
         if (user?.role === 'DO') {
           const hasCompletionCert = await checkCompletionCertificate(editingStep.id);
-          console.log('[StepManagement] Has completion certificate:', hasCompletionCert);
           if (!hasCompletionCert) {
             alert('Completion certificate is mandatory to complete this task. Please upload evidence/completion certificate before submitting.');
             return;
           }
         }
-        console.log('[StepManagement] Completion certificate validation passed');
       } catch (error) {
         console.error('[StepManagement] Error checking completion certificate:', error);
         alert('Error validating completion certificate: ' + (error instanceof Error ? error.message : 'Unknown error'));
@@ -1140,19 +1115,15 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       }
 
       try {
-        console.log('[StepManagement] Final check - verifying mandatory references complete...');
         const mandatoryRefsComplete = await FileReferenceService.checkMandatoryReferencesComplete(editingStep.id);
-        console.log('[StepManagement] Mandatory references complete:', mandatoryRefsComplete);
         if (!mandatoryRefsComplete) {
           const incompleteRefs = await FileReferenceService.getIncompleteReferences(editingStep.id);
-          console.log('[StepManagement] Incomplete references:', incompleteRefs);
           if (incompleteRefs.length > 0) {
             const refList = incompleteRefs.map(ref => `- ${ref.referenceName}`).join('\n');
             alert(`Cannot complete this workflow. Please upload all required file references first:\n\n${refList}\n\nUse the "File References (Template-Based)" section in the Upload Documents panel to upload each required document.`);
             return;
           }
         }
-        console.log('[StepManagement] All validation checks passed!');
       } catch (error) {
         console.error('[StepManagement] Error in final mandatory references check:', error);
         alert('Error validating mandatory references: ' + (error instanceof Error ? error.message : 'Unknown error'));

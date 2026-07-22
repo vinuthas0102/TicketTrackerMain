@@ -60,34 +60,20 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
         setLoading(true);
         setError(null);
 
-        console.log('TicketContext: Loading data for user:', user?.id, 'role:', user?.role, 'module:', selectedModule?.id);
-
         const usersData = await AuthService.getAllUsers();
         setUsers(usersData);
-        console.log('TicketContext: Loaded users:', usersData.length);
-
         if (selectedModule && user) {
-          console.log('TicketContext: Fetching tickets for module:', selectedModule.name);
           const ticketsData = await TicketService.getTicketsByModule(
             selectedModule.id,
             user.id,
             user.role
           );
-          console.log('TicketContext: Loaded tickets:', ticketsData.length);
           setTickets(ticketsData);
         } else {
-          console.log('TicketContext: No module or user selected, clearing tickets');
           setTickets([]);
         }
       } catch (err) {
-        console.error('TicketContext: Failed to load data:', {
-          error: err,
-          message: err instanceof Error ? err.message : 'Unknown error',
-          stack: err instanceof Error ? err.stack : undefined,
-          user: user?.id,
-          role: user?.role,
-          module: selectedModule?.id
-        });
+        console.error('TicketContext: Failed to load data:', err);
 
         const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
         setError(errorMessage);
@@ -97,7 +83,7 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
           try {
             const fallbackUsers = await AuthService.getAllUsers();
             setUsers(fallbackUsers);
-            console.log('TicketContext: Loaded fallback users:', fallbackUsers.length);
+
           } catch (userErr) {
             console.error('TicketContext: Failed to load fallback users:', userErr);
           }
@@ -207,8 +193,6 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
       if (!user) throw new Error('User not authenticated');
       if (!selectedModule) throw new Error('No module selected');
       
-      console.log('TicketContext.changeTicketStatus called:', request);
-      
       await TicketService.changeTicketStatus(request, user.id);
 
       // Reload tickets to get the updated list
@@ -222,7 +206,6 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
       // Clear any previous errors
       setError(null);
       
-      console.log('Status change completed successfully');
     } catch (err) {
       console.error('Status change error in context:', err);
       setError(err instanceof Error ? err.message : 'Failed to change status');
@@ -296,12 +279,6 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
       if (!user) throw new Error('User not authenticated');
       if (!selectedModule) throw new Error('No module selected');
 
-      console.log('TicketContext.addStep called with:', {
-        ticketId,
-        stepData,
-        userId: user.id
-      });
-
       const stepId = await TicketService.addStep(ticketId, stepData, user.id);
 
       // Reload tickets to get the updated list
@@ -311,8 +288,6 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
         user.role
       );
       setTickets(updatedTickets);
-
-      console.log('Step added and tickets reloaded successfully');
 
       return stepId;
     } catch (err) {

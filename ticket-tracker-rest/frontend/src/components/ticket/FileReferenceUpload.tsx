@@ -32,9 +32,7 @@ export const FileReferenceUpload: React.FC<FileReferenceUploadProps> = ({
     try {
       setLoading(true);
       setError(null);
-      console.log('FileReferenceUpload: Loading file references for step:', stepId);
       const refs = await FileReferenceService.getStepFileReferences(stepId);
-      console.log('FileReferenceUpload: Loaded file references:', refs.length, refs);
       setFileReferences(refs);
     } catch (err) {
       console.error('FileReferenceUpload: Failed to load file references:', err);

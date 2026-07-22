@@ -21,30 +21,18 @@ const ProgressDocuments: React.FC<ProgressDocumentsProps> = ({ step, ticketId, r
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    console.log('[ProgressDocuments] Component mounted/updated for step:', step.id, 'refreshKey:', refreshKey);
     loadDocuments();
   }, [step.id, refreshKey]);
 
   const loadDocuments = async () => {
-    console.log('[ProgressDocuments] loadDocuments() called for step:', step.id);
     try {
       setLoading(true);
-      console.log('[ProgressDocuments] Fetching progress documents for step:', step.id);
       const docs = await FileService.getProgressDocuments(step.id, false);
-      console.log('[ProgressDocuments] Received documents:', {
-        count: docs.length,
-        documents: docs
-      });
       setDocuments(docs);
     } catch (error) {
       console.error('[ProgressDocuments] Failed to load progress documents:', error);
-      console.error('[ProgressDocuments] Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
     } finally {
       setLoading(false);
-      console.log('[ProgressDocuments] Loading complete');
     }
   };
 

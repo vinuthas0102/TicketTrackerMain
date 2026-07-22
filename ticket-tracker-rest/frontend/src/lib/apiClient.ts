@@ -53,10 +53,8 @@ class ApiClient {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('[ApiClient] CSRF token refresh response:', data);
         if (data && data.csrfToken) {
           setCsrfToken(data.csrfToken);
-          console.log('[ApiClient] CSRF token refreshed successfully');
           return true;
         } else {
           console.warn('[ApiClient] CSRF token not found in refresh response:', data);
@@ -129,7 +127,6 @@ class ApiClient {
         const errorData = await response.json().catch(() => ({}));
 
         if (response.status === 403 && requiresCsrf && !isRetry) {
-          console.log('[ApiClient] 403 error, attempting to refresh CSRF token and retry');
           const refreshed = await this.refreshCsrfToken();
           if (refreshed) {
             return this.request<T>(endpoint, options, true);
@@ -157,19 +154,6 @@ class ApiClient {
         };
         logApiError(error);
         throw error;
-      }
-
-      if (import.meta.env.DEV) {
-        console.log('[ApiClient] Response structure:', {
-          endpoint: endpoint,
-          responseType: typeof data,
-          isObject: typeof data === 'object' && data !== null,
-          hasDataField: data && 'data' in data,
-          hasSuccessField: data && 'success' in data,
-          hasErrorField: data && 'error' in data,
-          topLevelKeys: data && typeof data === 'object' ? Object.keys(data).slice(0, 10) : [],
-          willUnwrap: typeof data === 'object' && data !== null && 'data' in data && ('success' in data || 'error' in data)
-        });
       }
 
       if (typeof data === 'object' && data !== null && 'data' in data) {
@@ -242,17 +226,6 @@ class ApiClient {
     const token = getAuthToken();
     const csrfToken = getCsrfToken();
 
-    console.log('[ApiClient] uploadFile:', {
-      endpoint,
-      url,
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      additionalData,
-      hasToken: !!token,
-      hasCsrfToken: !!csrfToken
-    });
-
     const formData = new FormData();
     formData.append('file', file);
 
@@ -261,9 +234,7 @@ class ApiClient {
         const value = additionalData[key];
         if (value !== null && value !== undefined && value !== 'null' && value !== 'undefined') {
           formData.append(key, value);
-          console.log(`[ApiClient] FormData field: ${key} = ${value}`);
         } else {
-          console.log(`[ApiClient] Skipping null/undefined field: ${key} = ${value}`);
         }
       });
     }
@@ -276,7 +247,6 @@ class ApiClient {
     logApiRequest('POST', url, { file: file.name, ...additionalData });
 
     try {
-      console.log('[ApiClient] Sending fetch request to:', url);
       const response = await fetch(url, {
         method: 'POST',
         credentials: 'include',
@@ -284,15 +254,7 @@ class ApiClient {
         body: formData,
       });
 
-      console.log('[ApiClient] Response received:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-
       if (response.status === 401) {
-        console.error('[ApiClient] Authentication error (401)');
         clearAuthToken();
         window.location.href = '/';
         throw new Error('Session expired. Please login again.');
@@ -300,7 +262,6 @@ class ApiClient {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('[ApiClient] Upload failed with error data:', errorData);
         const error: ApiError = {
           code: errorData.error?.code || 'UPLOAD_ERROR',
           message: errorData.error?.message || 'File upload failed',
@@ -311,7 +272,6 @@ class ApiClient {
       }
 
       const data = await response.json();
-      console.log('[ApiClient] Upload successful, response data:', data);
       logApiResponse(response.status, data);
 
       if (typeof data === 'object' && data !== null && 'data' in data) {
@@ -321,7 +281,7 @@ class ApiClient {
       }
       return data;
     } catch (error: any) {
-      console.error('[ApiClient] Upload exception:', error);
+      console.error('[ApiClient] Upload error:', error);
       if (error.code) {
         throw error;
       }

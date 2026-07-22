@@ -87,32 +87,16 @@ export class FileService {
   ): Promise<DocumentMetadata> {
     const { file, stepId, ticketId, userId, isMandatory, isCompletionCertificate = false, fileReferenceId } = options;
 
-    console.log('[FileService] uploadStepDocument called with:', {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      ticketId,
-      stepId,
-      userId,
-      isMandatory,
-      isCompletionCertificate,
-      fileReferenceId
-    });
-
     const validation = this.validateFile(file);
     if (!validation.valid) {
       console.error('[FileService] File validation failed:', validation.error);
       throw new Error(validation.error);
     }
 
-    console.log('[FileService] File validation passed');
-
     try {
       if (onProgress) {
         onProgress({ loaded: 0, total: file.size, percentage: 0 });
       }
-
-      console.log('[FileService] Calling API endpoint:', API_ENDPOINTS.FILES.UPLOAD);
 
       const additionalData: Record<string, any> = {
         ticketId,
@@ -134,8 +118,6 @@ export class FileService {
         file,
         additionalData
       );
-
-      console.log('[FileService] Upload successful:', response);
 
       if (onProgress) {
         onProgress({ loaded: file.size, total: file.size, percentage: 100 });
@@ -332,15 +314,9 @@ export class FileService {
 
   static async getProgressDocuments(stepId: string, includeDeleted: boolean = false): Promise<ProgressDocumentMetadata[]> {
     try {
-      console.log('[ProgressDocumentService] Fetching progress documents for step:', stepId);
       const response = await apiClient.get<ProgressDocumentMetadata[]>(
         `${API_ENDPOINTS.WORKFLOW_STEPS.PROGRESS_DOCUMENTS(stepId)}?includeDeleted=${includeDeleted}`
       );
-      console.log('[ProgressDocumentService] Received response:', {
-        isArray: Array.isArray(response),
-        count: Array.isArray(response) ? response.length : 'N/A',
-        data: response
-      });
 
       return response.map((doc) => ({
         ...doc,
@@ -470,19 +446,9 @@ export interface ProgressHistoryEntry {
 export class ProgressHistoryService {
   static async getStepProgressHistory(stepId: string): Promise<ProgressHistoryEntry[]> {
     try {
-      console.log('[ProgressHistoryService] Fetching progress history for step:', stepId);
-      console.log('[ProgressHistoryService] Using endpoint:', API_ENDPOINTS.WORKFLOW_STEPS.PROGRESS_HISTORY(stepId));
       const response = await apiClient.get<ProgressHistoryEntry[]>(
         API_ENDPOINTS.WORKFLOW_STEPS.PROGRESS_HISTORY(stepId)
       );
-
-      console.log('[ProgressHistoryService] Raw API response:', {
-        type: typeof response,
-        isArray: Array.isArray(response),
-        count: Array.isArray(response) ? response.length : 'N/A',
-        firstEntry: Array.isArray(response) && response.length > 0 ? response[0] : null,
-        data: response
-      });
 
       if (!Array.isArray(response)) {
         console.error('[ProgressHistoryService] Response is not an array:', response);
@@ -503,19 +469,9 @@ export class ProgressHistoryService {
         })),
       }));
 
-      console.log('[ProgressHistoryService] Transformed data:', {
-        count: transformedData.length,
-        types: transformedData.map(e => e.type),
-        entries: transformedData
-      });
-
       return transformedData;
     } catch (error) {
       console.error('[ProgressHistoryService] Error fetching progress history:', error);
-      console.error('[ProgressHistoryService] Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
       return [];
     }
   }
@@ -541,4 +497,3 @@ export class ProgressHistoryService {
     );
   }
 }
-https://stackblitz.com/storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTcyODA5MDgyLCJwdXIiOiJibG9iX2lkIn19--068f8acd6a5bad68056d7b336db8eeedb4538295/fileService.ts
