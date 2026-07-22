@@ -521,9 +521,11 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <StatusCards 
+        <StatusCards
           onStatusFilter={setStatusFilter}
           activeFilter={statusFilter}
+          userRole={user?.role}
+          userId={user?.id}
         />
 
         <SearchPanel 

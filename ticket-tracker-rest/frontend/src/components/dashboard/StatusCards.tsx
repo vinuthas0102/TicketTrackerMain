@@ -7,12 +7,19 @@ import { useAuth } from '../../context/AuthContext';
 interface StatusCardsProps {
   onStatusFilter: (status: TicketStatus | null) => void;
   activeFilter: TicketStatus | null;
+  userRole?: string;
+  userId?: string;
 }
 
-const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter }) => {
+const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter, userRole, userId }) => {
   const { tickets } = useTickets();
   const { user } = useAuth();
-  const userRole = user?.role;
+  const effectiveRole = userRole || user?.role;
+  const effectiveUserId = userId || user?.id;
+
+  const creatorStatuses: TicketStatus[] = ['DRAFT', 'REVIEWED', 'SUBMITTED'];
+  const assigneeStatuses: TicketStatus[] = ['ACTIVE', 'COMPLETED', 'CANCELLED'];
+  const isRoleAware = effectiveRole === 'DO' || effectiveRole === 'TECHNICIAN';
 
   const statusConfig = [
     { 
@@ -24,7 +31,7 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter 
     },
     { 
       status: 'SUBMITTED' as TicketStatus, 
-      label: userRole === 'DO' || userRole === 'TECHNICIAN' ? 'Request Submitted' : 'Submitted', 
+      label: effectiveRole === 'DO' || effectiveRole === 'TECHNICIAN' ? 'Request Submitted' : 'Submitted', 
       icon: Send,
       color: 'bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-800 border-indigo-300',
       hoverColor: 'hover:from-indigo-200 hover:to-indigo-300 hover:shadow-lg'
@@ -81,7 +88,15 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter 
   ];
 
   const getStatusCount = (status: TicketStatus) => {
-    return tickets.filter(ticket => ticket.status === status).length;
+    return tickets.filter(ticket => {
+      if (ticket.status !== status) return false;
+      if (!isRoleAware || !effectiveUserId) return true;
+      if (creatorStatuses.includes(status)) return ticket.createdBy === effectiveUserId;
+      if (assigneeStatuses.includes(status))
+        return ticket.assignedTo === effectiveUserId ||
+          (ticket.workflow && ticket.workflow.some(step => step.assignedTo === effectiveUserId));
+      return true;
+    }).length;
   };
 
   return (

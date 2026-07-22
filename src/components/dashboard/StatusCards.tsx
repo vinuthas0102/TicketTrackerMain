@@ -11,12 +11,17 @@ interface StatusCardsProps {
   activeSubFilter: ActiveSubFilter;
   onSubFilter: (sub: ActiveSubFilter) => void;
   userRole?: User['role'];
+  userId?: string;
 }
 
 const TECHNICIAN_DEPARTMENTS = ['Civil Manager', 'Electrical Manager'];
 
-const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter, activeSubFilter, onSubFilter, userRole }) => {
+const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter, activeSubFilter, onSubFilter, userRole, userId }) => {
   const { tickets, users } = useTickets();
+
+  const creatorStatuses: TicketStatus[] = ['DRAFT', 'REVIEWED', 'SUBMITTED'];
+  const assigneeStatuses: TicketStatus[] = ['ACTIVE', 'COMPLETED', 'CANCELLED'];
+  const isRoleAware = userRole === 'DO' || userRole === 'TECHNICIAN';
 
   const submittedLabel = userRole === 'EMPLOYEE' || userRole === 'DO' || userRole === 'TECHNICIAN'
     ? 'Requests Submitted'
@@ -68,17 +73,26 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
   ];
 
   const getStatusCount = (status: TicketStatus) => {
-    return tickets.filter(ticket => ticket.status === status).length;
+    return tickets.filter(ticket => {
+      if (ticket.status !== status) return false;
+      if (!isRoleAware || !userId) return true;
+      if (creatorStatuses.includes(status)) return ticket.createdBy === userId;
+      if (assigneeStatuses.includes(status))
+        return ticket.assignedTo === userId ||
+          ticket.workflow.some(step => step.assignedTo === userId);
+      return true;
+    }).length;
   };
 
-  const isHODUser = (userId: string) => {
-    const u = users.find(u => u.id === userId);
+  const isHODUser = (id: string) => {
+    const u = users.find(u => u.id === id);
     return u?.role === 'DO' && !TECHNICIAN_DEPARTMENTS.includes(u.department);
   };
 
-  const isTechnicianUser = (userId: string) => {
-    const u = users.find(u => u.id === userId);
-    return u?.role === 'DO' && TECHNICIAN_DEPARTMENTS.includes(u.department);
+  const isTechnicianUser = (id: string) => {
+    const u = users.find(u => u.id === id);
+    return u?.role === 'TECHNICIAN' ||
+      (u?.role === 'DO' && TECHNICIAN_DEPARTMENTS.includes(u.department));
   };
 
   const activeTickets = tickets.filter(t => t.status === 'ACTIVE');
