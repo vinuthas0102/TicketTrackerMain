@@ -238,7 +238,7 @@ const StatusTransitionModal: React.FC<StatusTransitionModalProps> = ({
                 Current Status: <span className="font-bold text-blue-600">{ticket.status}</span>
               </p>
 
-              {selectedModule?.config?.requiresFinanceApproval === true && ticket.requiresFinanceApproval !== false && ticket.latestFinanceStatus !== 'approved' && availableTransitions.includes('COMPLETED') && (
+              {selectedModule?.config?.requiresFinanceApproval === true && ticket.requiresFinanceApproval === true && ticket.latestFinanceStatus !== 'approved' && availableTransitions.includes('COMPLETED') && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start space-x-2">
                   <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">

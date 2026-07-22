@@ -180,7 +180,7 @@ export class TicketService {
             financeOfficerId: ticket.finance_officer_id,
             financeSubmissionCount: ticket.finance_submission_count || 0,
             latestFinanceStatus: ticket.latest_finance_status,
-            requiresFinanceApproval: ticket.requires_finance_approval !== false,
+            requiresFinanceApproval: ticket.requires_finance_approval === true,
             workflow: (workflowData || []).map((step: any) => ({
               id: step.id,
               ticketId: step.ticket_id,
@@ -298,7 +298,7 @@ export class TicketService {
             property_id: ticketData.propertyId || 'PROP001',
             property_location: ticketData.propertyLocation || 'Location01',
             data: ticketData.data || {},
-            requires_finance_approval: ticketData.requiresFinanceApproval !== undefined ? ticketData.requiresFinanceApproval : true,
+            requires_finance_approval: ticketData.requiresFinanceApproval !== undefined ? ticketData.requiresFinanceApproval : false,
             request_type: ticketData.requestType || null,
           },
         ])
@@ -464,7 +464,7 @@ export class TicketService {
 
         if (ticketError) throw ticketError;
 
-        if (ticketData?.requires_finance_approval !== false) {
+        if (ticketData?.requires_finance_approval === true) {
           if (ticketData?.latest_finance_status !== 'approved') {
             throw new Error('Finance approval is required before completing this ticket. Please send the ticket to finance department for cost approval first.');
           }

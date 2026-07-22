@@ -130,7 +130,7 @@ const RowActions: React.FC<RowActionsProps> = ({
     if (!user) return false;
     if (user.role !== 'EO' && user.role !== 'DO') return false;
     if (ticket.status !== 'ACTIVE' && ticket.status !== 'REJECTED_BY_FINANCE') return false;
-    if (ticket.requiresFinanceApproval === false) return false;
+    if (ticket.requiresFinanceApproval !== true) return false;
     const completedCount = ticket.workflow.filter(s => s.status === 'COMPLETED').length;
     return ticket.workflow.length === 0 || completedCount === ticket.workflow.length;
   }, [ticket, user]);
