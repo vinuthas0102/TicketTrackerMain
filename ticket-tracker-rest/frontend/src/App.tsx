@@ -70,9 +70,9 @@ const Dashboard: React.FC = () => {
     }));
   }, [statusFilter]);
 
-  // EO auto-lands on ACTIVE filter on first login
+  // EO, DO, and TECHNICIAN auto-land on ACTIVE filter on first login
   useEffect(() => {
-    if (user?.role === 'EO' && !eoFilterAppliedRef.current) {
+    if (user && (user.role === 'EO' || user.role === 'DO' || user.role === 'TECHNICIAN') && !eoFilterAppliedRef.current) {
       setStatusFilter('ACTIVE');
       eoFilterAppliedRef.current = true;
     }

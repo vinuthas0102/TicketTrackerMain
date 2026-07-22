@@ -18,7 +18,9 @@ const TECHNICIAN_DEPARTMENTS = ['Civil Manager', 'Electrical Manager'];
 const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter, activeSubFilter, onSubFilter, userRole }) => {
   const { tickets, users } = useTickets();
 
-  const submittedLabel = userRole === 'EMPLOYEE' ? 'Requests Submitted' : 'Requests Received';
+  const submittedLabel = userRole === 'EMPLOYEE' || userRole === 'DO' || userRole === 'TECHNICIAN'
+    ? 'Requests Submitted'
+    : 'Requests Received';
 
   const statusConfig = [
     {

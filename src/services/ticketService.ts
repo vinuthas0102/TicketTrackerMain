@@ -24,8 +24,8 @@ export class TicketService {
       let ticketsData;
       let ticketsError;
 
-      if (userId && userRole === 'DO') {
-        console.log('Fetching accessible tickets for DO user:', userId);
+      if (userId && (userRole === 'DO' || userRole === 'TECHNICIAN')) {
+        console.log('Fetching accessible tickets for user:', userId, 'role:', userRole);
 
         const { data: accessibleIds, error: idsError } = await supabase
           .rpc('get_accessible_ticket_ids_for_user', { p_user_id: userId });
@@ -35,12 +35,12 @@ export class TicketService {
           throw idsError;
         }
 
-        console.log('Accessible ticket IDs for DO:', accessibleIds);
+        console.log('Accessible ticket IDs:', accessibleIds);
 
         const accessibleTicketIds = accessibleIds || [];
 
         if (accessibleTicketIds.length === 0) {
-          console.log('No accessible tickets found for DO user');
+          console.log('No accessible tickets found for user');
           return [];
         }
 

@@ -274,6 +274,24 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
       filtered = filtered.filter(ticket => ticket.status === filters.status);
     }
 
+    // Role-aware filtering for DO and TECHNICIAN:
+    // - DRAFT/REVIEWED/SUBMITTED: only show tickets created by this user
+    // - ACTIVE/COMPLETED/CANCELLED: only show tickets assigned to this user
+    //   (ticket-level or workflow-step-level)
+    if (user && (user.role === 'DO' || user.role === 'TECHNICIAN') && filters.status) {
+      const creatorStatuses: TicketStatus[] = ['DRAFT', 'REVIEWED', 'SUBMITTED'];
+      const assigneeStatuses: TicketStatus[] = ['ACTIVE', 'COMPLETED', 'CANCELLED'];
+
+      if (creatorStatuses.includes(filters.status)) {
+        filtered = filtered.filter(ticket => ticket.createdBy === user.id);
+      } else if (assigneeStatuses.includes(filters.status)) {
+        filtered = filtered.filter(ticket =>
+          ticket.assignedTo === user.id ||
+          ticket.workflow.some(step => step.assignedTo === user.id)
+        );
+      }
+    }
+
     // Apply assignee filter
     if (filters.assignedTo) {
       filtered = filtered.filter(ticket => ticket.assignedTo === filters.assignedTo);

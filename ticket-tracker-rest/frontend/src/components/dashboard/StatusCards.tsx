@@ -2,6 +2,7 @@ import React from 'react';
 import { FileText, Clock, Play, CheckCircle, XCircle, Send, Eye } from 'lucide-react';
 import { TicketStatus } from '../../types';
 import { useTickets } from '../../context/TicketContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface StatusCardsProps {
   onStatusFilter: (status: TicketStatus | null) => void;
@@ -10,6 +11,8 @@ interface StatusCardsProps {
 
 const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter }) => {
   const { tickets } = useTickets();
+  const { user } = useAuth();
+  const userRole = user?.role;
 
   const statusConfig = [
     { 
@@ -21,7 +24,7 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter 
     },
     { 
       status: 'SUBMITTED' as TicketStatus, 
-      label: 'Submitted', 
+      label: userRole === 'DO' || userRole === 'TECHNICIAN' ? 'Request Submitted' : 'Submitted', 
       icon: Send,
       color: 'bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-800 border-indigo-300',
       hoverColor: 'hover:from-indigo-200 hover:to-indigo-300 hover:shadow-lg'

@@ -441,9 +441,21 @@ public class TicketService {
                 return true;
             }
 
-            if ("dept_officer".equalsIgnoreCase(userRole) || "DO".equalsIgnoreCase(userRole)) {
-                return user.getDepartment() != null &&
-                       user.getDepartment().equalsIgnoreCase(ticket.getDepartment());
+            if ("dept_officer".equalsIgnoreCase(userRole) || "DO".equalsIgnoreCase(userRole)
+                    || "technician".equalsIgnoreCase(userRole) || "TECHNICIAN".equalsIgnoreCase(userRole)) {
+                if (ticket.getCreatedBy() != null && java.util.Arrays.equals(ticket.getCreatedBy(), userId)) {
+                    return true;
+                }
+                if (ticket.getAssignedTo() != null && java.util.Arrays.equals(ticket.getAssignedTo(), userId)) {
+                    return true;
+                }
+                List<WorkflowStep> steps = workflowStepDAO.findByTicketId(ticketId);
+                for (WorkflowStep step : steps) {
+                    if (step.getAssignedTo() != null && java.util.Arrays.equals(step.getAssignedTo(), userId)) {
+                        return true;
+                    }
+                }
+                return false;
             }
 
             if ("employee".equalsIgnoreCase(userRole) || "vendor".equalsIgnoreCase(userRole)) {
@@ -484,10 +496,11 @@ public class TicketService {
                 return ticketIds;
             }
 
-            if ("dept_officer".equalsIgnoreCase(userRole) || "DO".equalsIgnoreCase(userRole)) {
-                List<Ticket> departmentTickets = ticketDAO.findByDepartment(user.getDepartment());
+            if ("dept_officer".equalsIgnoreCase(userRole) || "DO".equalsIgnoreCase(userRole)
+                    || "technician".equalsIgnoreCase(userRole) || "TECHNICIAN".equalsIgnoreCase(userRole)) {
+                List<Ticket> accessibleTickets = ticketDAO.findAccessibleTickets(userId, userRole);
                 List<byte[]> ticketIds = new ArrayList<>();
-                for (Ticket ticket : departmentTickets) {
+                for (Ticket ticket : accessibleTickets) {
                     ticketIds.add(ticket.getId());
                 }
                 return ticketIds;
