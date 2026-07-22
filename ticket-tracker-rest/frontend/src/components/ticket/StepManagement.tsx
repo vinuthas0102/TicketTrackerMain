@@ -1240,26 +1240,6 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
   const getStepActions = (step: WorkflowStep): ActionIconDefinition[] => {
     const actions: ActionIconDefinition[] = [];
 
-    // Progress History
-    actions.push({
-      id: 'history',
-      icon: History,
-      label: showProgressHistory.has(step.id) ? 'Hide progress history' : 'Show progress history',
-      action: () => toggleProgressHistory(step.id),
-      category: 'view',
-      color: showProgressHistory.has(step.id) ? 'text-blue-600' : 'text-gray-600'
-    });
-
-    // Upload Documents
-    actions.push({
-      id: 'upload',
-      icon: Upload,
-      label: showDocUpload.has(step.id) ? 'Hide documents' : 'Show documents',
-      action: () => toggleDocUpload(step.id),
-      category: 'document',
-      color: 'text-gray-600'
-    });
-
     // EO: add single/bulk sub-workflows at any eligible depth
     if (canManageWorkflows && canAddSubWorkflow(step)) {
       actions.push({
