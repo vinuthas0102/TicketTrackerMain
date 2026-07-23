@@ -221,8 +221,8 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
     const transitions: Record<string, string[]> = {
       'DRAFT': ['SUBMITTED'],
       'SUBMITTED': ['REVIEWED', 'CANCELLED'],
-      'REVIEWED': ['ACTIVE', 'APPROVED', 'CANCELLED'],
-      'CREATED': ['ACTIVE', 'APPROVED', 'CANCELLED'],
+      'REVIEWED': ['ACTIVE', 'CANCELLED'],
+      'CREATED': ['ACTIVE', 'CANCELLED'],
       'APPROVED': ['ACTIVE', 'CANCELLED'],
       'ACTIVE': ['COMPLETED', 'CANCELLED'],
       'SENT_TO_FINANCE': [],

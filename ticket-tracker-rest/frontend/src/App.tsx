@@ -137,9 +137,12 @@ const Dashboard: React.FC = () => {
 
         return assigneeIds.some(uid => {
           const u = users.find(u => u.id === uid);
-          if (!u || u.role !== 'DO') return false;
-          const isTechnician = TECHNICIAN_DEPARTMENTS.includes(u.department);
-          return activeSubFilter === 'TECHNICIAN' ? isTechnician : !isTechnician;
+          if (!u) return false;
+          if (activeSubFilter === 'TECHNICIAN') {
+            return u.role === 'TECHNICIAN' ||
+              (u.role === 'DO' && TECHNICIAN_DEPARTMENTS.includes(u.department));
+          }
+          return u.role === 'DO' && !TECHNICIAN_DEPARTMENTS.includes(u.department);
         });
       });
     }
