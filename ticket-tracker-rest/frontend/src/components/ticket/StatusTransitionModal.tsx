@@ -174,6 +174,8 @@ const StatusTransitionModal: React.FC<StatusTransitionModalProps> = ({
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
+      'SUBMITTED': 'Mark as Submitted',
+      'REVIEWED': 'Mark as Reviewed',
       'CREATED': 'Submit for Review',
       'APPROVED': 'Approve Ticket',
       'ACTIVE': 'Start Work',
@@ -188,6 +190,8 @@ const StatusTransitionModal: React.FC<StatusTransitionModalProps> = ({
 
   const getStatusDescription = (status: string) => {
     const descriptions: Record<string, string> = {
+      'SUBMITTED': 'Mark this ticket as submitted and awaiting EO review',
+      'REVIEWED': 'Confirm that this ticket has been reviewed by EO',
       'CREATED': 'Submit this ticket for review and assignment',
       'APPROVED': 'Approve this ticket to proceed with work',
       'ACTIVE': 'Begin active work on this ticket',

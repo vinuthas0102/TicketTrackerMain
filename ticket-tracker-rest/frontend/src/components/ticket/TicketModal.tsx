@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, User, AlertTriangle, Clock, CheckCircle, XCircle, FileText, Users, Edit, Trash2 } from 'lucide-react';
+import { X, Calendar, User, AlertTriangle, Clock, CheckCircle, XCircle, FileText, Users, CreditCard as Edit, Trash2 } from 'lucide-react';
 import { Ticket } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTickets } from '../../context/TicketContext';
@@ -68,8 +68,7 @@ const TicketModal: React.FC<TicketModalProps> = ({ ticket, isOpen, onClose, onEd
   const canDelete = () => {
     if (!user) return false;
     if (user.role === 'EO') return true;
-    if (user.role === 'DO') return ticket.department === user.department && ['DRAFT', 'CREATED'].includes(ticket.status);
-    return ticket.createdBy === user.id && ['DRAFT', 'CREATED'].includes(ticket.status);
+    return ticket.createdBy === user.id;
   };
 
   const canChangeStatus = () => {
