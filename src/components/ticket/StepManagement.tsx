@@ -478,7 +478,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       ? users.filter(u => normalizeDept(u.department) === normalizeDept(formData.department) && (isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO'))
       : users.filter(u => isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO');
     const filteredUsers = (() => {
-      if (step?.assignedTo && isAssignedToLocked) {
+      if (step?.assignedTo && ((!isSubTask && isDO) || isTechnician || (isSubTask && isStepWIP))) {
         const assignedUser = users.find(u => u.id === step.assignedTo);
         if (assignedUser && !baseFilteredUsers.some(u => u.id === assignedUser.id)) {
           return [assignedUser, ...baseFilteredUsers];
