@@ -22,17 +22,35 @@ public class WorkflowService {
     private final WorkflowStepDependencyDAO dependencyDAO;
     private final WorkflowStepFileReferenceDAO fileReferenceDAO;
     private final AuditLogDAO auditLogDAO;
+    private final TicketDAO ticketDAO;
 
     public WorkflowService() {
         this.workflowStepDAO = new WorkflowStepDAO();
         this.dependencyDAO = new WorkflowStepDependencyDAO();
         this.fileReferenceDAO = new WorkflowStepFileReferenceDAO();
         this.auditLogDAO = new AuditLogDAO();
+        this.ticketDAO = new TicketDAO();
+    }
+
+    private void ensureTicketReviewed(byte[] ticketId) throws TicketTrackerException {
+        try {
+            Ticket ticket = ticketDAO.findById(ticketId);
+            if (ticket == null) {
+                throw new ValidationException("Ticket not found");
+            }
+            if (!"REVIEWED".equalsIgnoreCase(ticket.getStatus())) {
+                throw new ValidationException(
+                    "Kindly change the status of the ticket to 'Reviewed' before proceeding further.");
+            }
+        } catch (SQLException e) {
+            throw new DatabaseException("Failed to verify ticket status", e);
+        }
     }
 
     public WorkflowStep createWorkflowStep(WorkflowStep step, byte[] currentUserId) throws TicketTrackerException {
         try {
             validateWorkflowStep(step);
+            ensureTicketReviewed(step.getTicketId());
 
             List<WorkflowStep> existingSteps = workflowStepDAO.findByTicketId(step.getTicketId());
             calculateAndSetStepLevels(step, existingSteps);
@@ -81,6 +99,11 @@ public class WorkflowService {
         List<WorkflowStep> createdSteps = new ArrayList<>();
 
         try {
+            if (steps == null || steps.isEmpty()) {
+                return createdSteps;
+            }
+            ensureTicketReviewed(steps.get(0).getTicketId());
+
             List<WorkflowStep> stepSnapshot = null;
 
             for (WorkflowStep step : steps) {
