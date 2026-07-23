@@ -1864,7 +1864,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
         </div>
       )}
 
-      {canManageWorkflows && ticket.status !== 'REVIEWED' && !showAddForm && !editingStep && (
+      {canManageWorkflows && ['CREATED', 'SUBMITTED', 'DRAFT'].includes(ticket.status) && !showAddForm && !editingStep && (
         <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-800">
           <Info className="w-4 h-4 flex-shrink-0" />
           <span>Tasks can be added only once the ticket status is <strong>Reviewed</strong>. Please change the ticket status to Reviewed first.</span>
