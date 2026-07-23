@@ -474,18 +474,6 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       loadDepartments();
     }, []);
     const normalizeDept = (d?: string) => (d || '').trim().toLowerCase();
-    const baseFilteredUsers = formData.department
-      ? users.filter(u => normalizeDept(u.department) === normalizeDept(formData.department) && (isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO'))
-      : users.filter(u => isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO');
-    const filteredUsers = (() => {
-      if (step?.assignedTo && ((!isSubTask && isDO) || isTechnician || (isSubTask && isStepWIP))) {
-        const assignedUser = users.find(u => u.id === step.assignedTo);
-        if (assignedUser && !baseFilteredUsers.some(u => u.id === assignedUser.id)) {
-          return [assignedUser, ...baseFilteredUsers];
-        }
-      }
-      return baseFilteredUsers;
-    })();
     const [availableDependencySteps, setAvailableDependencySteps] = useState<WorkflowStep[]>([]);
     const [fileReferenceTemplates, setFileReferenceTemplates] = useState<FileReferenceTemplate[]>([]);
     const [completionFile, setCompletionFile] = useState<File | null>(null);
@@ -505,6 +493,18 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     const isDepartmentLocked = isDO || isTechnician;
     const isAssignedToLocked = (!isSubTask && isDO) || isTechnician || (isSubTask && isStepWIP);
     const isDependencyLocked = step?.is_dependency_locked || false;
+    const baseFilteredUsers = formData.department
+      ? users.filter(u => normalizeDept(u.department) === normalizeDept(formData.department) && (isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO'))
+      : users.filter(u => isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO');
+    const filteredUsers = (() => {
+      if (step?.assignedTo && ((!isSubTask && isDO) || isTechnician || (isSubTask && isStepWIP))) {
+        const assignedUser = users.find(u => u.id === step.assignedTo);
+        if (assignedUser && !baseFilteredUsers.some(u => u.id === assignedUser.id)) {
+          return [assignedUser, ...baseFilteredUsers];
+        }
+      }
+      return baseFilteredUsers;
+    })();
 
     React.useEffect(() => {
       if (isSubTask && !step && parentStep) {
