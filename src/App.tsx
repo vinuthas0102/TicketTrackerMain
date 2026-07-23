@@ -43,7 +43,7 @@ const Dashboard: React.FC = () => {
   const [copiedAttachmentIds, setCopiedAttachmentIds] = useState<string[]>([]);
   const [showEditForm, setShowEditForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | null>(null);
-  const [activeSubFilter, setActiveSubFilter] = useState<'HOD' | 'TECHNICIAN' | null>(null);
+  const [activeSubFilter, setActiveSubFilter] = useState<'HOD' | 'TECHNICIAN' | 'AWAITING_COMPLETION' | null>(null);
   const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('list');
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -129,22 +129,29 @@ const Dashboard: React.FC = () => {
     }
 
     if (activeSubFilter && statusFilter === 'ACTIVE') {
-      result = result.filter(ticket => {
-        const assigneeIds = [
-          ticket.assignedTo,
-          ...ticket.workflow.map(s => s.assignedTo)
-        ].filter(Boolean) as string[];
+      if (activeSubFilter === 'AWAITING_COMPLETION') {
+        result = result.filter(ticket =>
+          ticket.workflow.length > 0 &&
+          ticket.workflow.every(step => step.status === 'COMPLETED')
+        );
+      } else {
+        result = result.filter(ticket => {
+          const assigneeIds = [
+            ticket.assignedTo,
+            ...ticket.workflow.map(s => s.assignedTo)
+          ].filter(Boolean) as string[];
 
-        return assigneeIds.some(uid => {
-          const u = users.find(u => u.id === uid);
-          if (!u) return false;
-          if (activeSubFilter === 'TECHNICIAN') {
-            return u.role === 'TECHNICIAN' ||
-              (u.role === 'DO' && TECHNICIAN_DEPARTMENTS.includes(u.department));
-          }
-          return u.role === 'DO' && !TECHNICIAN_DEPARTMENTS.includes(u.department);
+          return assigneeIds.some(uid => {
+            const u = users.find(u => u.id === uid);
+            if (!u) return false;
+            if (activeSubFilter === 'TECHNICIAN') {
+              return u.role === 'TECHNICIAN' ||
+                (u.role === 'DO' && TECHNICIAN_DEPARTMENTS.includes(u.department));
+            }
+            return u.role === 'DO' && !TECHNICIAN_DEPARTMENTS.includes(u.department);
+          });
         });
-      });
+      }
     }
 
     return result;

@@ -1,9 +1,9 @@
 import React from 'react';
-import { FileText, Play, CheckCircle, XCircle, Send, Eye, Users, Wrench } from 'lucide-react';
+import { FileText, Play, CheckCircle, XCircle, Send, Eye, Users, Wrench, Hourglass } from 'lucide-react';
 import { TicketStatus, User } from '../../types';
 import { useTickets } from '../../context/TicketContext';
 
-type ActiveSubFilter = 'HOD' | 'TECHNICIAN' | null;
+type ActiveSubFilter = 'HOD' | 'TECHNICIAN' | 'AWAITING_COMPLETION' | null;
 
 interface StatusCardsProps {
   onStatusFilter: (status: TicketStatus | null) => void;
@@ -107,6 +107,11 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
     return ticket.workflow.some(step => step.assignedTo && isTechnicianUser(step.assignedTo));
   }).length;
 
+  const awaitingCompletionCount = activeTickets.filter(ticket =>
+    ticket.workflow.length > 0 &&
+    ticket.workflow.every(step => step.status === 'COMPLETED')
+  ).length;
+
   const showSubFilters = activeFilter === 'ACTIVE';
 
   return (
@@ -139,7 +144,7 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
       </div>
 
       {showSubFilters && (
-        <div className="grid grid-cols-2 gap-1">
+        <div className="grid grid-cols-3 gap-1">
           <button
             onClick={() => onSubFilter(activeSubFilter === 'HOD' ? null : 'HOD')}
             className={`
@@ -164,6 +169,19 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
             <Wrench className="w-3 h-3 text-teal-500 shrink-0" />
             <div className="text-sm font-bold text-teal-700">{technicianCount}</div>
             <div className="text-xs font-medium text-teal-700 truncate">Assigned to Technician</div>
+          </button>
+
+          <button
+            onClick={() => onSubFilter(activeSubFilter === 'AWAITING_COMPLETION' ? null : 'AWAITING_COMPLETION')}
+            className={`
+              cursor-pointer border-l-4 border border-violet-400 rounded-md p-1 min-h-[40px]
+              flex items-center justify-center space-x-1 transition-all duration-150 hover:shadow-md
+              ${activeSubFilter === 'AWAITING_COMPLETION' ? 'bg-violet-100 ring-1 ring-violet-400 shadow-sm' : 'bg-violet-50 hover:bg-violet-100'}
+            `}
+          >
+            <Hourglass className="w-3 h-3 text-violet-500 shrink-0" />
+            <div className="text-sm font-bold text-violet-700">{awaitingCompletionCount}</div>
+            <div className="text-xs font-medium text-violet-700 truncate">Awaiting Completion</div>
           </button>
         </div>
       )}
