@@ -20,6 +20,7 @@ import UserPreferencesPage from './components/admin/UserPreferencesPage';
 import FileReferenceTemplateManager from './components/admin/FileReferenceTemplateManager';
 import MasterDataManagementPage from './components/admin/MasterDataManagementPage';
 import { Ticket, TicketStatus } from './types';
+import { classifyActiveTicket } from './lib/utils';
 
 interface SearchFilters {
   search: string;
@@ -110,8 +111,6 @@ const Dashboard: React.FC = () => {
     };
   }, [showActionsMenu]);
 
-  const TECHNICIAN_DEPARTMENTS = ['Civil Manager', 'Electrical Manager'];
-
   const filteredTickets = useMemo(() => {
     const filters = {
       search: searchFilters.search,
@@ -129,29 +128,9 @@ const Dashboard: React.FC = () => {
     }
 
     if (activeSubFilter && statusFilter === 'ACTIVE') {
-      if (activeSubFilter === 'AWAITING_COMPLETION') {
-        result = result.filter(ticket =>
-          ticket.workflow.length > 0 &&
-          ticket.workflow.every(step => step.status === 'COMPLETED')
-        );
-      } else {
-        result = result.filter(ticket => {
-          const assigneeIds = [
-            ticket.assignedTo,
-            ...ticket.workflow.map(s => s.assignedTo)
-          ].filter(Boolean) as string[];
-
-          return assigneeIds.some(uid => {
-            const u = users.find(u => u.id === uid);
-            if (!u) return false;
-            if (activeSubFilter === 'TECHNICIAN') {
-              return u.role === 'TECHNICIAN' ||
-                (u.role === 'DO' && TECHNICIAN_DEPARTMENTS.includes(u.department));
-            }
-            return u.role === 'DO' && !TECHNICIAN_DEPARTMENTS.includes(u.department);
-          });
-        });
-      }
+      result = result.filter(ticket =>
+        classifyActiveTicket(ticket.workflow, users) === activeSubFilter
+      );
     }
 
     return result;

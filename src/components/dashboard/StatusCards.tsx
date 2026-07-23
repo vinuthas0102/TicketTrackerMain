@@ -2,6 +2,7 @@ import React from 'react';
 import { FileText, Play, CheckCircle, XCircle, Send, Eye, Users, Wrench, Hourglass } from 'lucide-react';
 import { TicketStatus, User } from '../../types';
 import { useTickets } from '../../context/TicketContext';
+import { classifyActiveTicket } from '../../lib/utils';
 
 type ActiveSubFilter = 'HOD' | 'TECHNICIAN' | 'AWAITING_COMPLETION' | null;
 
@@ -13,8 +14,6 @@ interface StatusCardsProps {
   userRole?: User['role'];
   userId?: string;
 }
-
-const TECHNICIAN_DEPARTMENTS = ['Civil Manager', 'Electrical Manager'];
 
 const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter, activeSubFilter, onSubFilter, userRole, userId }) => {
   const { tickets, users } = useTickets();
@@ -84,33 +83,15 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
     }).length;
   };
 
-  const isHODUser = (id: string) => {
-    const u = users.find(u => u.id === id);
-    return u?.role === 'DO' && !TECHNICIAN_DEPARTMENTS.includes(u.department);
-  };
-
-  const isTechnicianUser = (id: string) => {
-    const u = users.find(u => u.id === id);
-    return u?.role === 'TECHNICIAN' ||
-      (u?.role === 'DO' && TECHNICIAN_DEPARTMENTS.includes(u.department));
-  };
-
   const activeTickets = tickets.filter(t => t.status === 'ACTIVE');
 
-  const hodCount = activeTickets.filter(ticket => {
-    if (ticket.assignedTo && isHODUser(ticket.assignedTo)) return true;
-    return ticket.workflow.some(step => step.assignedTo && isHODUser(step.assignedTo));
-  }).length;
+  const classifications = activeTickets.map(ticket =>
+    classifyActiveTicket(ticket.workflow, users)
+  );
 
-  const technicianCount = activeTickets.filter(ticket => {
-    if (ticket.assignedTo && isTechnicianUser(ticket.assignedTo)) return true;
-    return ticket.workflow.some(step => step.assignedTo && isTechnicianUser(step.assignedTo));
-  }).length;
-
-  const awaitingCompletionCount = activeTickets.filter(ticket =>
-    ticket.workflow.length > 0 &&
-    ticket.workflow.every(step => step.status === 'COMPLETED')
-  ).length;
+  const hodCount = classifications.filter(c => c === 'HOD').length;
+  const technicianCount = classifications.filter(c => c === 'TECHNICIAN').length;
+  const awaitingCompletionCount = classifications.filter(c => c === 'AWAITING_COMPLETION').length;
 
   const showSubFilters = activeFilter === 'ACTIVE';
 
