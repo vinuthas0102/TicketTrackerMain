@@ -491,6 +491,11 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     const isProgressComplete = step && formData.progress === 100 && step.status !== 'COMPLETED';
     const requiresFileUpload = (isCompletingStep || isProgressComplete) && !!step;
     const isEO = user?.role === 'EO';
+    const isDO = user?.role === 'DO';
+    const isTechnician = user?.role === 'TECHNICIAN';
+    const isStepWIP = step?.status === 'WIP';
+    const isDepartmentLocked = isDO || isTechnician;
+    const isAssignedToLocked = isDO || isTechnician || (isSubTask && isStepWIP);
     const isDependencyLocked = step?.is_dependency_locked || false;
 
     React.useEffect(() => {
@@ -698,7 +703,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
             <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
             <select
               value={formData.department}
-              disabled={isSubTask}
+              disabled={isSubTask || isDepartmentLocked}
               onChange={(e) => {
                 const newDept = e.target.value;
                 const assignedUser = users.find(u => u.id === formData.assignedTo);
@@ -708,7 +713,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                   assignedTo: (assignedUser && newDept && normalizeDept(assignedUser.department) !== normalizeDept(newDept)) ? '' : formData.assignedTo
                 });
               }}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isSubTask ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${(isSubTask || isDepartmentLocked) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <option value="">All Departments</option>
               {masterDepartments.map(dept => (
@@ -721,8 +726,9 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
             <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
             <select
               value={formData.assignedTo}
+              disabled={isAssignedToLocked}
               onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isAssignedToLocked ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <option value="">Unassigned</option>
               {filteredUsers.map(user => (
