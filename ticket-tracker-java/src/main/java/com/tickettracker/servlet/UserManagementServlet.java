@@ -5,6 +5,7 @@ import com.tickettracker.exception.TicketTrackerException;
 import com.tickettracker.model.User;
 import com.tickettracker.service.UserService;
 import com.tickettracker.util.JsonUtil;
+import com.tickettracker.util.ResponseUtil;
 import com.tickettracker.util.UuidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -274,17 +275,11 @@ public class UserManagementServlet extends HttpServlet {
     }
 
     private void sendJsonResponse(HttpServletResponse response, Object data) throws IOException {
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        objectMapper.writeValue(response.getWriter(), data);
+        ResponseUtil.sendWrappedSuccess(response, data);
     }
 
     private void sendError(HttpServletResponse response, int status, String message) throws IOException {
-        response.setStatus(status);
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        objectMapper.writeValue(response.getWriter(),
-                new ErrorResponse(status, message));
+        ResponseUtil.sendWrappedError(response, status, message);
     }
 
     private void handleException(HttpServletResponse response, TicketTrackerException e)
@@ -306,21 +301,4 @@ public class UserManagementServlet extends HttpServlet {
         return data;
     }
 
-    private static class ErrorResponse {
-        private int status;
-        private String message;
-
-        public ErrorResponse(int status, String message) {
-            this.status = status;
-            this.message = message;
-        }
-
-        public int getStatus() {
-            return status;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-    }
 }

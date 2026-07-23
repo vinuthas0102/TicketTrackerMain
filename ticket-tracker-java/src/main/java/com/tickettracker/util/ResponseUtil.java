@@ -27,6 +27,44 @@ public class ResponseUtil {
         sendJsonResponse(response, HttpServletResponse.SC_OK, data);
     }
 
+    public static void sendWrappedSuccess(HttpServletResponse response, Object data)
+            throws IOException {
+        sendJsonResponse(response, ResponseWrapper.success(data));
+    }
+
+    public static void sendWrappedSuccess(HttpServletResponse response, String message, Object data)
+            throws IOException {
+        sendJsonResponse(response, ResponseWrapper.success(data, message));
+    }
+
+    public static void sendWrappedError(HttpServletResponse response, int status, String errorCode, String message)
+            throws IOException {
+        sendJsonResponse(response, status, ResponseWrapper.error(errorCode, message));
+    }
+
+    public static void sendWrappedError(HttpServletResponse response, int status, String message)
+            throws IOException {
+        sendJsonResponse(response, status, ResponseWrapper.error(statusToCode(status), message));
+    }
+
+    public static String statusToCode(int status) {
+        switch (status) {
+            case 400: return "BAD_REQUEST";
+            case 401: return "UNAUTHORIZED";
+            case 403: return "FORBIDDEN";
+            case 404: return "NOT_FOUND";
+            case 409: return "CONFLICT";
+            case 500: return "INTERNAL_ERROR";
+            default: return "ERROR";
+        }
+    }
+
+    public static void sendWrappedValidationErrors(HttpServletResponse response, Map<String, String> errors)
+            throws IOException {
+        ResponseWrapper<Object> wrapper = ResponseWrapper.error("VALIDATION_FAILED", "Validation failed", errors);
+        sendJsonResponse(response, HttpServletResponse.SC_BAD_REQUEST, wrapper);
+    }
+
     public static void sendSuccessResponse(HttpServletResponse response, String message)
             throws IOException {
         Map<String, Object> responseData = new HashMap<>();

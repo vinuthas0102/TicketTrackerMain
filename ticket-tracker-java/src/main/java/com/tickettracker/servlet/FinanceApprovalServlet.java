@@ -6,6 +6,7 @@ import com.tickettracker.exception.TicketTrackerException;
 import com.tickettracker.model.User;
 import com.tickettracker.service.FinanceApprovalService;
 import com.tickettracker.util.JsonUtil;
+import com.tickettracker.util.ResponseUtil;
 import com.tickettracker.util.UuidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -296,17 +297,11 @@ public class FinanceApprovalServlet extends HttpServlet {
     }
 
     private void sendJsonResponse(HttpServletResponse response, Object data) throws IOException {
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        objectMapper.writeValue(response.getWriter(), data);
+        ResponseUtil.sendWrappedSuccess(response, data);
     }
 
     private void sendError(HttpServletResponse response, int status, String message) throws IOException {
-        response.setStatus(status);
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        objectMapper.writeValue(response.getWriter(),
-                new ErrorResponse(status, message));
+        ResponseUtil.sendWrappedError(response, status, message);
     }
 
     private void handleException(HttpServletResponse response, TicketTrackerException e)
@@ -322,44 +317,4 @@ public class FinanceApprovalServlet extends HttpServlet {
         return UuidUtil.uuidStringToBytes(uuidOrHex);
     }
 
-    private static class ErrorResponse {
-        private int status;
-        private String message;
-        private ErrorDetail error;
-
-        public ErrorResponse(int status, String message) {
-            this.status = status;
-            this.message = message;
-            this.error = new ErrorDetail(message);
-        }
-
-        public int getStatus() {
-            return status;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public ErrorDetail getError() {
-            return error;
-        }
-    }
-
-    private static class ErrorDetail {
-        private String code = "API_ERROR";
-        private String message;
-
-        public ErrorDetail(String message) {
-            this.message = message;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-    }
 }

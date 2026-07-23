@@ -3,6 +3,7 @@ package com.tickettracker.servlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tickettracker.model.User;
 import com.tickettracker.util.JsonUtil;
+import com.tickettracker.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,20 +120,10 @@ public class SessionManagementServlet extends HttpServlet {
     }
 
     private void sendJsonResponse(HttpServletResponse response, Object data) throws IOException {
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        objectMapper.writeValue(response.getWriter(), data);
+        ResponseUtil.sendWrappedSuccess(response, data);
     }
 
     private void sendError(HttpServletResponse response, int status, String message) throws IOException {
-        response.setStatus(status);
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-
-        Map<String, Object> error = new HashMap<>();
-        error.put("status", status);
-        error.put("message", message);
-
-        objectMapper.writeValue(response.getWriter(), error);
+        ResponseUtil.sendWrappedError(response, status, message);
     }
 }
