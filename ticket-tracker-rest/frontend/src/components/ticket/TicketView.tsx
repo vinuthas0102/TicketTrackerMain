@@ -141,6 +141,8 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'DRAFT': return <FileText className="w-4 h-4" />;
+      case 'SUBMITTED': return <Upload className="w-4 h-4" />;
+      case 'REVIEWED': return <CheckCircle className="w-4 h-4" />;
       case 'CREATED': return <Clock className="w-4 h-4" />;
       case 'ACTIVE': return <Users className="w-4 h-4" />;
       case 'SENT_TO_FINANCE': return <IndianRupee className="w-4 h-4" />;
@@ -155,6 +157,8 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'DRAFT': return 'bg-gray-100 text-gray-800';
+      case 'SUBMITTED': return 'bg-blue-100 text-blue-800';
+      case 'REVIEWED': return 'bg-teal-100 text-teal-800';
       case 'CREATED': return 'bg-blue-100 text-blue-800';
       case 'ACTIVE': return 'bg-orange-100 text-orange-800';
       case 'SENT_TO_FINANCE': return 'bg-yellow-100 text-yellow-800';
@@ -189,9 +193,9 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
     if (!user) return false;
     if (ticket.status === 'COMPLETED') return false;
     if (user.role === 'EO') return true;
-    if (user.role === 'DO') return ticket.department === user.department && ['DRAFT', 'SUBMITTED', 'REVIEWED', 'CREATED'].includes(ticket.status);
-    if (user.role === 'VENDOR') return false; // Vendors cannot delete tickets
-    return ticket.createdBy === user.id && ['DRAFT', 'SUBMITTED', 'REVIEWED', 'CREATED'].includes(ticket.status);
+    if (user.role === 'DO') return ticket.department === user.department;
+    if (user.role === 'VENDOR') return false; // Vendors cannot edit tickets directly
+    return ticket.createdBy === user.id;
   };
 
   const canChangeStatus = () => {
@@ -216,7 +220,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
     if (user.role !== 'EO') return [];
 
     const transitions: Record<string, string[]> = {
-      'DRAFT': ['SUBMITTED', 'CREATED'],
+      'DRAFT': ['SUBMITTED'],
       'SUBMITTED': ['REVIEWED', 'CANCELLED'],
       'REVIEWED': ['ACTIVE', 'APPROVED', 'CANCELLED'],
       'CREATED': ['ACTIVE', 'APPROVED', 'CANCELLED'],
@@ -227,7 +231,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
       'REJECTED_BY_FINANCE': ['ACTIVE'],
       'CLOSED': ['ACTIVE'],
       'COMPLETED': [],
-      'CANCELLED': ['CREATED']
+      'CANCELLED': ['SUBMITTED']
     };
 
     let availableTransitions = transitions[ticket.status] || [];
@@ -584,7 +588,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
             {/* Hide workflow section from employees */}
             {user && user.role !== 'EMPLOYEE' && (
               <CollapsibleSection
-                title={`Workflow ${totalWorkflows > 0 ? `(${completedWorkflows}/${totalWorkflows})` : ''}`}
+                title={`Tasks List ${totalWorkflows > 0 ? `(${completedWorkflows}/${totalWorkflows})` : ''}`}
                 defaultExpanded={true}
                 headerContent={
                   totalWorkflows > 0 && (
