@@ -1,10 +1,31 @@
-import React, { useMemo } from 'react';
-import { Calendar, User, AlertTriangle, Clock, CheckCircle, XCircle, FileText, Users, CreditCard as Edit, Check, X, RotateCcw, Eye, Play, IndianRupee, Send, Download } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Calendar, User, AlertTriangle, Clock, CheckCircle, XCircle, FileText, Users, CreditCard as Edit, Check, X, RotateCcw, Eye, Play, IndianRupee, ChevronDown, ChevronUp, Download, Paperclip } from 'lucide-react';
 import { Ticket, User as UserType, ActionIconDefinition } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTickets } from '../../context/TicketContext';
 import { getHierarchyLevel } from '../../lib/hierarchyColors';
 import IconDisplayWrapper from '../iconDisplay/IconDisplayWrapper';
+import { FileService, DocumentMetadata } from '../../services/fileService';
+
+interface ListFieldProps {
+  label: string;
+  value: string;
+  wide?: boolean;
+  muted?: boolean;
+  urgent?: boolean;
+}
+
+const ListField: React.FC<ListFieldProps> = ({ label, value, wide, muted, urgent }) => (
+  <div className={`flex flex-col px-3 py-2 ${wide ? 'flex-1 min-w-0' : 'shrink-0'}`}>
+    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider leading-none mb-1">{label}</span>
+    <span className={`text-sm font-semibold leading-tight ${
+      urgent ? 'text-rose-600' : muted ? 'text-gray-400 italic font-normal' : 'text-gray-800'
+    } ${wide ? 'truncate' : 'whitespace-nowrap'}`} title={value}>
+      {value}
+    </span>
+  </div>
+);
+
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -22,7 +43,7 @@ interface TicketCardProps {
   onSendToFinance?: (ticket: Ticket) => void;
   onView?: (ticket: Ticket) => void;
   isExpanded?: boolean;
-  viewMode?: 'grid' | 'list' | 'compact' | 'table';
+  viewMode?: 'grid' | 'list' | 'table';
 }
 
 const TicketCard: React.FC<TicketCardProps> = ({
@@ -49,7 +70,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'DRAFT': return <FileText className="w-4 h-4" />;
-      case 'SUBMITTED': return <Send className="w-4 h-4" />;
+      case 'SUBMITTED': return <Check className="w-4 h-4" />;
       case 'REVIEWED': return <Eye className="w-4 h-4" />;
       case 'CREATED': return <Clock className="w-4 h-4" />;
       case 'ACTIVE': return <Users className="w-4 h-4" />;
@@ -65,8 +86,8 @@ const TicketCard: React.FC<TicketCardProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'DRAFT': return 'bg-slate-100 text-slate-700 border-slate-300';
-      case 'SUBMITTED': return 'bg-indigo-100 text-indigo-700 border-indigo-300';
-      case 'REVIEWED': return 'bg-cyan-100 text-cyan-700 border-cyan-300';
+      case 'SUBMITTED': return 'bg-blue-100 text-blue-700 border-blue-300';
+      case 'REVIEWED': return 'bg-teal-100 text-teal-700 border-teal-300';
       case 'CREATED': return 'bg-sky-100 text-sky-700 border-sky-300';
       case 'APPROVED': return 'bg-emerald-100 text-emerald-700 border-emerald-300';
       case 'ACTIVE': return 'bg-amber-100 text-amber-700 border-amber-300';
@@ -118,8 +139,8 @@ const TicketCard: React.FC<TicketCardProps> = ({
 
     const statusColors = {
       'DRAFT': { gradient: 'from-slate-300 to-gray-300', bg: 'bg-slate-50', shadow: 'shadow-slate-200/50' },
-      'SUBMITTED': { gradient: 'from-indigo-300 to-blue-300', bg: 'bg-indigo-50', shadow: 'shadow-indigo-200/50' },
-      'REVIEWED': { gradient: 'from-cyan-300 to-teal-300', bg: 'bg-cyan-50', shadow: 'shadow-cyan-200/50' },
+      'SUBMITTED': { gradient: 'from-blue-300 to-indigo-300', bg: 'bg-blue-50', shadow: 'shadow-blue-200/50' },
+      'REVIEWED': { gradient: 'from-teal-300 to-cyan-300', bg: 'bg-teal-50', shadow: 'shadow-teal-200/50' },
       'CREATED': { gradient: 'from-sky-300 to-blue-300', bg: 'bg-sky-50', shadow: 'shadow-sky-200/50' },
       'APPROVED': { gradient: 'from-emerald-300 to-teal-300', bg: 'bg-emerald-50', shadow: 'shadow-emerald-200/50' },
       'ACTIVE': { gradient: 'from-amber-300 to-yellow-300', bg: 'bg-amber-50', shadow: 'shadow-amber-200/50' },
@@ -131,7 +152,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
       'CANCELLED': { gradient: 'from-rose-300 to-pink-300', bg: 'bg-rose-50', shadow: 'shadow-rose-200/50' }
     };
 
-    return statusColors[status] || statusColors['DRAFT'];
+    return statusColors[status as keyof typeof statusColors] || statusColors['DRAFT'];
   };
 
   const formatDate = (date?: Date | null): string => {
@@ -161,6 +182,27 @@ const TicketCard: React.FC<TicketCardProps> = ({
     ticket.status !== 'CANCELLED';
   const completedWorkflows = ticket.workflow.filter(step => step.status === 'COMPLETED').length;
   const totalWorkflows = ticket.workflow.length;
+
+  const [ticketAttachments, setTicketAttachments] = useState<DocumentMetadata[]>([]);
+  const [loadingAttachments, setLoadingAttachments] = useState(false);
+
+  useEffect(() => {
+    if (!isExpanded) return;
+    let cancelled = false;
+    const fetchAttachments = async () => {
+      setLoadingAttachments(true);
+      try {
+        const attachments = await FileService.getTicketAttachments(ticket.id);
+        if (!cancelled) setTicketAttachments(attachments);
+      } catch (error) {
+        console.error('Error fetching ticket attachments:', error);
+      } finally {
+        if (!cancelled) setLoadingAttachments(false);
+      }
+    };
+    fetchAttachments();
+    return () => { cancelled = true; };
+  }, [isExpanded, ticket.id]);
 
   const myAssignedTasks = user?.role === 'DO'
     ? ticket.workflow.filter(step => step.assignedTo === user.id).length
@@ -356,6 +398,168 @@ const TicketCard: React.FC<TicketCardProps> = ({
 
   const accentColor = getTicketAccentColor(ticket.status, ticket.priority);
 
+  if (viewMode === 'list') {
+    const priorityBorderColor =
+      ticket.priority === 'CRITICAL' ? '#f43f5e'
+      : ticket.priority === 'HIGH' ? '#f97316'
+      : ticket.priority === 'MEDIUM' ? '#eab308'
+      : '#10b981';
+
+    return (
+      <div
+        className={`bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-150 overflow-hidden border-l-4 ${
+          isOverdue ? 'border-l-rose-500' : ''
+        }`}
+        style={{ borderLeftColor: isOverdue ? undefined : priorityBorderColor }}
+      >
+        {/* Header row */}
+        <div
+          className="flex items-center justify-between px-4 pt-3 pb-1.5 cursor-pointer"
+          onClick={onClick}
+        >
+          <span className="text-xs font-bold text-gray-500 font-mono tracking-wide">{ticket.ticketNumber}</span>
+          <div className="flex items-center gap-2">
+            {isOverdue && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded bg-rose-500 text-white">
+                <AlertTriangle className="w-3 h-3" />OVERDUE
+              </span>
+            )}
+            <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full border ${getStatusColor(ticket.status)}`}>
+              {getStatusIcon(ticket.status)}
+              <span>{ticket.status.replace(/_/g, ' ')}</span>
+            </span>
+            {totalWorkflows > 0 && (
+              <span className="inline-flex items-center gap-1.5" title={`${completedWorkflows}/${totalWorkflows} workflow steps completed`}>
+                <span className="relative w-16 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                  <span
+                    className="absolute top-0 left-0 h-1.5 rounded-full bg-blue-500 transition-all duration-500"
+                    style={{ width: `${(completedWorkflows / totalWorkflows) * 100}%` }}
+                  />
+                </span>
+                <span className="text-[10px] font-semibold text-gray-500">{completedWorkflows}/{totalWorkflows}</span>
+              </span>
+            )}
+            <button
+              className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
+              title={isExpanded ? 'Collapse' : 'Expand'}
+              onClick={e => { e.stopPropagation(); onExpand?.(ticket); }}
+            >
+              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Label-data fields row */}
+        <div className="px-4 pb-2 cursor-pointer" onClick={onClick}>
+          <div className="flex flex-wrap divide-x divide-gray-100">
+            <ListField label="TITLE" value={ticket.title} wide />
+            <ListField label="PROPERTY ID" value={ticket.propertyId || '—'} />
+            <ListField label="LOCATION" value={ticket.propertyLocation || '—'} />
+            <ListField label="CATEGORY" value={ticket.category || '—'} />
+            <ListField label="DEPT" value={ticket.department} />
+            <ListField label="PRIORITY" value={ticket.priority} />
+            <ListField label="RAISED BY" value={createdByUser?.name || '—'} />
+            <ListField label="SAP ID" value={createdByUser?.sapId || '—'} />
+            <ListField label="RAISED ON" value={formatDate(ticket.createdAt)} />
+            <ListField
+              label="DUE DATE"
+              value={ticket.dueDate ? formatDate(ticket.dueDate) : formatDate(ticket.createdAt)}
+              urgent={!!isOverdue}
+            />
+          </div>
+        </div>
+
+        {/* Expanded details panel */}
+        {isExpanded && (
+          <div className="mx-4 mb-3 rounded-md bg-gray-50 border border-gray-100 px-4 py-3 space-y-3">
+            {ticket.description && (
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Description</p>
+                <p className="text-sm text-gray-700 leading-relaxed">{ticket.description}</p>
+              </div>
+            )}
+            {user?.role !== 'EMPLOYEE' && (
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Assigned To</p>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  {assignedToUser ? (
+                    <span className="flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-gray-400" />
+                      {assignedToUser.name}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 italic">Unassigned</span>
+                  )}
+                </p>
+              </div>
+            )}
+            {totalWorkflows > 0 && (
+              <div>
+                <div className="flex justify-between items-center text-xs text-gray-600 mb-1.5">
+                  <span className="font-semibold text-[10px] uppercase tracking-wider text-gray-400">Workflow Progress</span>
+                  <span className="font-semibold text-gray-700">{completedWorkflows}/{totalWorkflows} steps</span>
+                </div>
+                <div className="relative w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-1.5 rounded-full bg-blue-500 transition-all duration-500"
+                    style={{ width: `${(completedWorkflows / totalWorkflows) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            <div>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <Paperclip className="w-3 h-3" />
+                Attachments
+              </p>
+              {loadingAttachments ? (
+                <p className="text-xs text-gray-400 italic">Loading attachments...</p>
+              ) : ticketAttachments.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {ticketAttachments.map((att) => (
+                    <li key={att.id} className="flex items-center gap-2 text-sm">
+                      <FileText className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span className="text-gray-700 truncate flex-1">{att.name}</span>
+                      <span className="text-xs text-gray-400 shrink-0">{FileService.formatFileSize(att.size)}</span>
+                      <button
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          try {
+                            await FileService.downloadFile(att.id, att.name);
+                          } catch (err) {
+                            console.error('Error downloading file:', err);
+                          }
+                        }}
+                        className="text-blue-600 hover:text-blue-800 shrink-0"
+                        title="Download"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-gray-400 italic">No documents attached</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Actions row */}
+        <div
+          className="flex items-center justify-end gap-1 px-3 py-1.5 bg-gray-50 border-t border-gray-100"
+          onClick={e => e.stopPropagation()}
+        >
+          <IconDisplayWrapper
+            actions={ticketActions}
+            preferences={displayPreferences ?? undefined}
+            loading={!displayPreferences && !!user}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div
@@ -432,11 +636,6 @@ const TicketCard: React.FC<TicketCardProps> = ({
                 <span className="font-medium truncate max-w-24" title={createdByUser?.name}>
                   {createdByUser?.name?.split(' ')[0] || 'Unknown'}
                 </span>
-                {createdByUser?.sapId && (
-                  <span className="text-[10px] text-gray-400 font-mono" title="SAP ID">
-                    ({createdByUser.sapId})
-                  </span>
-                )}
               </div>
             </div>
             <div className={`flex items-center gap-1 font-medium ${isOverdue ? 'text-rose-600' : ''}`}>
