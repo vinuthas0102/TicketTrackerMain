@@ -475,9 +475,18 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       loadDepartments();
     }, []);
     const normalizeDept = (d?: string) => (d || '').trim().toLowerCase();
-    const filteredUsers = formData.department
+    const baseFilteredUsers = formData.department
       ? users.filter(u => normalizeDept(u.department) === normalizeDept(formData.department) && (isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO'))
       : users.filter(u => isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO');
+    const filteredUsers = (() => {
+      if (step?.assignedTo && isAssignedToLocked) {
+        const assignedUser = users.find(u => u.id === step.assignedTo);
+        if (assignedUser && !baseFilteredUsers.some(u => u.id === assignedUser.id)) {
+          return [assignedUser, ...baseFilteredUsers];
+        }
+      }
+      return baseFilteredUsers;
+    })();
     const [availableDependencySteps, setAvailableDependencySteps] = useState<WorkflowStep[]>([]);
     const [fileReferenceTemplates, setFileReferenceTemplates] = useState<FileReferenceTemplate[]>([]);
     const [completionFile, setCompletionFile] = useState<File | null>(null);
@@ -627,7 +636,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       <form onSubmit={handleSubmit} className="border border-gray-300 rounded-lg p-4 bg-gray-50 space-y-4">
         <div className="flex justify-between items-center">
           <h4 className="text-lg font-medium text-gray-900">
-            {step ? 'Edit Task' : parentStep ? `Add Sub-task to ${getHierarchicalWorkflowNumber(parentStep)}` : 'Add New Task'}
+            {step ? (isSubTask ? 'Edit Sub-task' : 'Edit Task') : parentStep ? `Add Sub-task to ${getHierarchicalWorkflowNumber(parentStep)}` : 'Add New Task'}
           </h4>
           {parentStep && (
             <span className="text-sm text-gray-600 bg-blue-100 px-3 py-1 rounded-full">
