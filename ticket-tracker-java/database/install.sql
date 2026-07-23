@@ -150,6 +150,14 @@ SELECT '========================================================================
 SELECT 'Parity columns and tables added!' FROM DUAL;
 SELECT '' FROM DUAL;
 
+-- Step 12b: Add performance optimization indexes
+SELECT '==================================================================================' FROM DUAL;
+SELECT 'STEP 11b: Adding performance optimization indexes...' FROM DUAL;
+SELECT '==================================================================================' FROM DUAL;
+@20-oracle-performance-indexes.sql
+SELECT 'Performance indexes created!' FROM DUAL;
+SELECT '' FROM DUAL;
+
 -- Step 13: Verification
 SELECT '==================================================================================' FROM DUAL;
 SELECT 'INSTALLATION VERIFICATION' FROM DUAL;

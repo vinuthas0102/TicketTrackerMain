@@ -16,6 +16,8 @@ import java.util.List;
  */
 public class UserDAO extends BaseDAO {
 
+    private final UserCache userCache = new UserCache();
+
     /**
      * Find user by email
      *
@@ -24,6 +26,12 @@ public class UserDAO extends BaseDAO {
      * @throws SQLException if database error occurs
      */
     public User findByEmail(String email) throws SQLException {
+        User cached = userCache.getByEmail(email);
+        if (cached != null) {
+            logger.debug("User cache hit for email: {}", email);
+            return cached;
+        }
+
         String sql = "SELECT id, username, name, email, role, department, sap_id, password_hash, password_salt, " +
                 "avatar, active, created_at, updated_at, last_login FROM users WHERE email = ? AND active = 1";
 
@@ -39,7 +47,9 @@ public class UserDAO extends BaseDAO {
             rs = stmt.executeQuery();
 
             if (rs.next()) {
-                return mapResultSetToUser(rs);
+                User user = mapResultSetToUser(rs);
+                userCache.put(user);
+                return user;
             }
             return null;
         } finally {
@@ -55,6 +65,12 @@ public class UserDAO extends BaseDAO {
      * @throws SQLException if database error occurs
      */
     public User findById(byte[] id) throws SQLException {
+        User cached = userCache.getById(id);
+        if (cached != null) {
+            logger.debug("User cache hit for ID: {}", UuidUtil.bytesToUuidString(id));
+            return cached;
+        }
+
         String sql = "SELECT id, username, name, email, role, department, sap_id, password_hash, password_salt, " +
                 "avatar, active, created_at, updated_at, last_login FROM users WHERE id = ?";
 
@@ -70,7 +86,9 @@ public class UserDAO extends BaseDAO {
             rs = stmt.executeQuery();
 
             if (rs.next()) {
-                return mapResultSetToUser(rs);
+                User user = mapResultSetToUser(rs);
+                userCache.put(user);
+                return user;
             }
             return null;
         } finally {
@@ -258,7 +276,10 @@ public class UserDAO extends BaseDAO {
             stmt.setBytes(9, user.getId());
 
             int rowsAffected = stmt.executeUpdate();
-            logger.info("User updated: {}", user.getEmail());
+            if (rowsAffected > 0) {
+                userCache.invalidate(user);
+                logger.info("User updated: {}", user.getEmail());
+            }
             return rowsAffected > 0;
         } finally {
             closeResources(conn, stmt, null);
@@ -289,7 +310,10 @@ public class UserDAO extends BaseDAO {
             stmt.setBytes(3, userId);
 
             int rowsAffected = stmt.executeUpdate();
-            logger.info("Password updated for user ID: {}", UuidUtil.bytesToUuidString(userId));
+            if (rowsAffected > 0) {
+                userCache.invalidateById(userId);
+                logger.info("Password updated for user ID: {}", UuidUtil.bytesToUuidString(userId));
+            }
             return rowsAffected > 0;
         } finally {
             closeResources(conn, stmt, null);
