@@ -495,7 +495,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     const isTechnician = user?.role === 'TECHNICIAN';
     const isStepWIP = step?.status === 'WIP';
     const isDepartmentLocked = isDO || isTechnician;
-    const isAssignedToLocked = isDO || isTechnician || (isSubTask && isStepWIP);
+    const isAssignedToLocked = (!isSubTask && isDO) || isTechnician || (isSubTask && isStepWIP);
     const isDependencyLocked = step?.is_dependency_locked || false;
 
     React.useEffect(() => {
