@@ -302,6 +302,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
   const { selectedModule, user, displayPreferences } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingStep, setEditingStep] = useState<WorkflowStep | null>(null);
+  const [editingParentStep, setEditingParentStep] = useState<WorkflowStep | null>(null);
   const [viewingStep, setViewingStep] = useState<WorkflowStep | null>(null);
   const [parentStepForNewStep, setParentStepForNewStep] = useState<WorkflowStep | null>(null);
   const [addingSubTaskForStepId, setAddingSubTaskForStepId] = useState<string | null>(null);
@@ -1210,6 +1211,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
 
       const updatedStepId = editingStep.id;
       setEditingStep(null);
+      setEditingParentStep(null);
       setStepRefreshKeys(prev => {
         const next = new Map(prev);
         next.set(updatedStepId, (next.get(updatedStepId) || 0) + 1);
@@ -1302,6 +1304,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
         label: 'Edit workflow',
         action: () => {
           setEditingStep(step);
+          setEditingParentStep(step.parentStepId ? ticket.workflow.find(s => s.id === step.parentStepId) || null : null);
           setAddingSubTaskForStepId(null);
         },
         category: 'edit',
@@ -1345,8 +1348,9 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
         {editingStep?.id === step.id && canManageWorkflow(step) ? (
           <WorkflowForm
             step={step}
+            parentStep={editingParentStep}
             onSubmit={handleUpdateWorkflow}
-            onCancel={() => setEditingStep(null)}
+            onCancel={() => { setEditingStep(null); setEditingParentStep(null); }}
           />
         ) : (
           <>
@@ -1495,6 +1499,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditingStep(step);
+                          setEditingParentStep(step.parentStepId ? ticket.workflow.find(s => s.id === step.parentStepId) || null : null);
                           setViewingStep(null);
                           setAddingSubTaskForStepId(null);
                         }}
