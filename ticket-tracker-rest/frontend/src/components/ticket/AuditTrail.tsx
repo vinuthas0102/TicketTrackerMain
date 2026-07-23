@@ -346,7 +346,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
           >
             <option value="">All Actions</option>
             <option value="ticket_action">Ticket Actions</option>
-            {!isEmployee && <option value="workflow_action">Workflow Actions</option>}
+            {!isEmployee && <option value="workflow_action">Task Actions</option>}
             {!isEmployee && <option value="document_action">Document Actions</option>}
             <option value="status_change">Status Changes</option>
             {!isEmployee && <option value="assignment_change">Assignments</option>}
@@ -441,7 +441,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
                               </span>
                             )}
                             <span className={`px-1.5 py-0.5 text-xs font-medium rounded border ${getActionColor(entry.action)}`}>
-                              {entry.action}
+                              {getActionLabel(entry.action)}
                             </span>
                             {entry.actionCategory && (
                               <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
