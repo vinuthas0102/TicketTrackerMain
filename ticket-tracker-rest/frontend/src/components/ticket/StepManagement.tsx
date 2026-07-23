@@ -56,7 +56,7 @@ const FileReferenceInfoDisplay: React.FC<{ stepId: string; ticketId: string; sho
       setUploadingRefId(reference.id);
       setError(null);
 
-      await FileService.uploadStepDocument({
+      const uploadedDoc = await FileService.uploadStepDocument({
         file,
         stepId,
         ticketId,
@@ -64,6 +64,12 @@ const FileReferenceInfoDisplay: React.FC<{ stepId: string; ticketId: string; sho
         isMandatory: reference.isMandatory,
         isCompletionCertificate: false,
         fileReferenceId: reference.id,
+      });
+
+      await FileReferenceService.updateStepFileReference(reference.id, {
+        documentId: uploadedDoc.id,
+        uploadedBy: user.id,
+        uploadedAt: new Date(),
       });
 
       // Reload file references after upload
@@ -138,7 +144,7 @@ const FileReferenceInfoDisplay: React.FC<{ stepId: string; ticketId: string; sho
             <div className="flex-1">
               <h4 className="text-sm font-semibold text-blue-900 mb-1">File References Required</h4>
               <p className="text-xs text-blue-700 mb-2">
-                This workflow step has {fileReferences.length} file reference(s) that need to be uploaded.
+                This task has {fileReferences.length} file reference(s) that need to be uploaded.
                 {mandatoryCount > 0 && ` ${mandatoryCount} are mandatory and must be uploaded before completion.`}
               </p>
               <div className="flex items-center space-x-2 text-xs">
@@ -270,7 +276,7 @@ const FileReferenceInfoDisplay: React.FC<{ stepId: string; ticketId: string; sho
         <div className="flex-1">
           <h4 className="text-sm font-semibold text-blue-900 mb-1">File References Attached</h4>
           <p className="text-xs text-blue-700 mb-2">
-            This workflow step has {fileReferences.length} file reference(s) that need to be uploaded.
+            This task has {fileReferences.length} file reference(s) that need to be uploaded.
             {mandatoryCount > 0 && ` ${mandatoryCount} are mandatory.`}
           </p>
           <div className="space-y-1">
@@ -616,7 +622,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       <form onSubmit={handleSubmit} className="border border-gray-300 rounded-lg p-4 bg-gray-50 space-y-4">
         <div className="flex justify-between items-center">
           <h4 className="text-lg font-medium text-gray-900">
-            {step ? 'Edit Workflow' : parentStep ? `Add Sub-workflow to ${getHierarchicalWorkflowNumber(parentStep)}` : 'Add New Workflow'}
+            {step ? 'Edit Task' : parentStep ? `Add Sub-task to ${getHierarchicalWorkflowNumber(parentStep)}` : 'Add New Task'}
           </h4>
           {parentStep && (
             <span className="text-sm text-gray-600 bg-blue-100 px-3 py-1 rounded-full">
@@ -630,8 +636,9 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           <input
             type="text"
             value={formData.title}
+            readOnly={!!step}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${step ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             required
           />
         </div>
@@ -640,11 +647,28 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea
             value={formData.description}
+            readOnly={!!step}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${step ? 'bg-gray-100 cursor-not-allowed' : ''}`}
           />
         </div>
+
+        {!isSubTask && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Remarks {user?.role !== 'EO' && <span className="text-xs text-gray-500">(EO only)</span>}
+            </label>
+            <textarea
+              value={formData.remarks}
+              onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+              rows={2}
+              disabled={user?.role !== 'EO'}
+              placeholder="Remarks visible to Manager and EO"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${user?.role !== 'EO' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            />
+          </div>
+        )}
 
         {isSubTask && (
           <div>
@@ -1008,7 +1032,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
               type="submit"
               className={`px-4 py-2 text-white rounded-md transition-colors duration-200 ${isProgressComplete ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
             >
-              {isProgressComplete ? 'Complete Task' : step ? 'Update Workflow' : 'Add Workflow'}
+              {isProgressComplete ? 'Complete Task' : step ? 'Update Task' : 'Add Task'}
             </button>
           </div>
         </div>
@@ -1136,7 +1160,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           const incompleteRefs = await FileReferenceService.getIncompleteReferences(editingStep.id);
           if (incompleteRefs.length > 0) {
             const refList = incompleteRefs.map(ref => `- ${ref.referenceName}`).join('\n');
-            alert(`Cannot complete this workflow. Please upload all required file references first:\n\n${refList}\n\nUse the "File References (Template-Based)" section in the Upload Documents panel to upload each required document.`);
+            alert(`Cannot complete this task. Please upload all required file references first:\n\n${refList}\n\nUse the "File References (Template-Based)" section in the Upload Documents panel to upload each required document.`);
             return;
           }
         }
@@ -1536,6 +1560,12 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                         <p className="text-sm text-gray-700 leading-relaxed">{step.description}</p>
                       </div>
                     )}
+                    {step.remarks && (
+                      <div className="sm:col-span-2">
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Remarks</p>
+                        <p className="text-sm text-gray-700 leading-relaxed bg-amber-50 border border-amber-200 rounded-md p-2">{step.remarks}</p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Assigned To</p>
                       {assignedUser ? (
@@ -1788,7 +1818,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     <div className="space-y-2">
       {canManageWorkflows && (
         <div className="flex justify-between items-center">
-          <h3 className="text-base font-medium text-gray-900">Workflow</h3>
+          <h3 className="text-base font-medium text-gray-900">Tasks List</h3>
           {!showAddForm && !editingStep && (
             <div className="flex items-center space-x-2">
               <button
@@ -1837,7 +1867,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search workflows..."
+                  placeholder="Search tasks..."
                   className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
                 <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
@@ -1906,12 +1936,12 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       <div className="space-y-2">
         {filteredRootSteps.length === 0 && hasActiveFilters ? (
           <div className="text-center py-8 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-gray-500">No workflows match your search criteria.</p>
+            <p className="text-gray-500">No tasks match your search criteria.</p>
             <button
               onClick={clearAllFilters}
               className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
             >
-              Clear filters to see all workflows
+              Clear filters to see all tasks
             </button>
           </div>
         ) : (
