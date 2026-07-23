@@ -31,7 +31,8 @@ interface SearchFilters {
 
 const Dashboard: React.FC = () => {
   const { user, selectedModule, availableModules } = useAuth();
-  const { tickets, loading, error, getFilteredTickets } = useTickets();
+  const { tickets, loading, error, getFilteredTickets, deleteTicket, users } = useTickets();
+  const [errorDismissed, setErrorDismissed] = useState(false);
 
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [showTicketView, setShowTicketView] = useState(false);
@@ -42,6 +43,7 @@ const Dashboard: React.FC = () => {
   const [copiedAttachmentIds, setCopiedAttachmentIds] = useState<string[]>([]);
   const [showEditForm, setShowEditForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | null>(null);
+  const [activeSubFilter, setActiveSubFilter] = useState<'HOD' | 'TECHNICIAN' | null>(null);
   const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'compact' | 'table'>('list');
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -68,6 +70,9 @@ const Dashboard: React.FC = () => {
       ...prev,
       status: statusFilter || ''
     }));
+    if (statusFilter !== 'ACTIVE') {
+      setActiveSubFilter(null);
+    }
   }, [statusFilter]);
 
   // EO, DO, and TECHNICIAN auto-land on ACTIVE filter on first login
@@ -105,6 +110,8 @@ const Dashboard: React.FC = () => {
     };
   }, [showActionsMenu]);
 
+  const TECHNICIAN_DEPARTMENTS = ['Civil Manager', 'Electrical Manager'];
+
   const filteredTickets = useMemo(() => {
     const filters = {
       search: searchFilters.search,
@@ -116,13 +123,29 @@ const Dashboard: React.FC = () => {
 
     // Handle unassigned filter specially
     let result = getFilteredTickets(filters);
-    
+
     if (searchFilters.assignedTo === 'unassigned') {
       result = result.filter(ticket => !ticket.assignedTo);
     }
 
+    if (activeSubFilter && statusFilter === 'ACTIVE') {
+      result = result.filter(ticket => {
+        const assigneeIds = [
+          ticket.assignedTo,
+          ...ticket.workflow.map(s => s.assignedTo)
+        ].filter(Boolean) as string[];
+
+        return assigneeIds.some(uid => {
+          const u = users.find(u => u.id === uid);
+          if (!u || u.role !== 'DO') return false;
+          const isTechnician = TECHNICIAN_DEPARTMENTS.includes(u.department);
+          return activeSubFilter === 'TECHNICIAN' ? isTechnician : !isTechnician;
+        });
+      });
+    }
+
     return result;
-  }, [tickets, searchFilters, getFilteredTickets]);
+  }, [tickets, searchFilters, getFilteredTickets, activeSubFilter, statusFilter, users]);
 
   const handleTicketClick = (ticket: Ticket) => {
     setSelectedTicket(ticket);
@@ -136,8 +159,9 @@ const Dashboard: React.FC = () => {
   };
 
   const handleDeleteTicket = async (ticketId: string) => {
-    // In real app, this would call the delete function
-    // await deleteTicket(ticketId);
+    await deleteTicket(ticketId);
+    setShowTicketView(false);
+    setSelectedTicket(null);
   };
 
   const handleToggleExpand = (ticketId: string) => {
@@ -178,18 +202,7 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <Header />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-lg">
-            <p className="text-red-800 font-medium">{error}</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
+
 
   // Show user management
   if (showUserManagement && user?.role === 'EO') {
@@ -322,6 +335,17 @@ const Dashboard: React.FC = () => {
       <Header />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        {error && !errorDismissed && (
+          <div className="mb-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 flex items-center justify-between">
+            <p className="text-amber-800 text-sm font-medium">{error}</p>
+            <button
+              onClick={() => setErrorDismissed(true)}
+              className="text-amber-600 hover:text-amber-800 text-xs ml-4 underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         <div className="mb-2 bg-white bg-opacity-60 backdrop-blur-sm rounded-xl p-3 shadow-lg border border-white border-opacity-20 relative z-50">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -524,6 +548,8 @@ const Dashboard: React.FC = () => {
         <StatusCards
           onStatusFilter={setStatusFilter}
           activeFilter={statusFilter}
+          activeSubFilter={activeSubFilter}
+          onSubFilter={setActiveSubFilter}
           userRole={user?.role}
           userId={user?.id}
         />
