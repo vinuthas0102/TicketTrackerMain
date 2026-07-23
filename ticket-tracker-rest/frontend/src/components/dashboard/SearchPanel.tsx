@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, X, Grid3x3 as Grid3X3, List, LayoutGrid, Table } from 'lucide-react';
+import { Search, Filter, X, Grid3x3 as Grid3X3, List, Table } from 'lucide-react';
 import { TicketStatus } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTickets } from '../../context/TicketContext';
@@ -16,8 +16,8 @@ interface SearchFilters {
 interface SearchPanelProps {
   filters: SearchFilters;
   onFiltersChange: (filters: SearchFilters) => void;
-  viewMode: 'grid' | 'list' | 'compact' | 'table';
-  onViewModeChange: (mode: 'grid' | 'list' | 'compact' | 'table') => void;
+  viewMode: 'grid' | 'list' | 'table';
+  onViewModeChange: (mode: 'grid' | 'list' | 'table') => void;
 }
 
 const SearchPanel: React.FC<SearchPanelProps> = ({ filters, onFiltersChange, viewMode, onViewModeChange }) => {
@@ -105,17 +105,6 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, onFiltersChange, vie
               title="List View"
             >
               <List className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => onViewModeChange('compact')}
-              className={`p-1.5 transition-colors duration-200 ${
-                viewMode === 'compact'
-                  ? 'bg-blue-500 text-white shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-              title="Compact View"
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => onViewModeChange('table')}
