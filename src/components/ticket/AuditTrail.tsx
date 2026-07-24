@@ -64,7 +64,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
     switch (entry.action) {
       case 'CREATED':
         return 'Ticket created';
-      case 'STATUS_CHANGE':
+      case 'STATUS_CHANGED':
         return `Status changed from ${entry.oldValue} to ${entry.newValue}`;
       case 'UPDATED':
         return 'Ticket updated';
@@ -77,8 +77,10 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
 
   const filteredAuditTrail = useMemo(() => {
     return ticket.auditTrail.filter(entry => {
-      if (!reviewByEORequired && entry.action === 'STATUS_CHANGE') {
-        const isReviewRelated = entry.oldValue === 'REVIEWED' || entry.newValue === 'REVIEWED';
+      if (!reviewByEORequired && entry.action === 'STATUS_CHANGED') {
+        const oldVal = (entry.oldValue || '').toUpperCase();
+        const newVal = (entry.newValue || '').toUpperCase();
+        const isReviewRelated = oldVal === 'REVIEWED' || newVal === 'REVIEWED';
         if (isReviewRelated) return false;
       }
 

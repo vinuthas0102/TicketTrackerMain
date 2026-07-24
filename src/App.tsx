@@ -540,6 +540,7 @@ const Dashboard: React.FC = () => {
           onSubFilter={setActiveSubFilter}
           userRole={user?.role}
           userId={user?.id}
+          reviewByEORequired={selectedModule?.config?.reviewByEORequired ?? true}
         />
 
         <SearchPanel 

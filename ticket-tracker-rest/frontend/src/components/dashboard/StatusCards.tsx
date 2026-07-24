@@ -13,12 +13,15 @@ interface StatusCardsProps {
   onSubFilter: (sub: ActiveSubFilter) => void;
   userRole?: User['role'];
   userId?: string;
+  reviewByEORequired?: boolean;
 }
 
-const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter, activeSubFilter, onSubFilter, userRole, userId }) => {
+const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter, activeSubFilter, onSubFilter, userRole, userId, reviewByEORequired = true }) => {
   const { tickets, users } = useTickets();
 
-  const creatorStatuses: TicketStatus[] = ['DRAFT', 'REVIEWED', 'SUBMITTED'];
+  const creatorStatuses: TicketStatus[] = reviewByEORequired
+    ? ['DRAFT', 'REVIEWED', 'SUBMITTED']
+    : ['DRAFT', 'SUBMITTED'];
   const assigneeStatuses: TicketStatus[] = ['ACTIVE', 'COMPLETED', 'CANCELLED'];
   const isRoleAware = userRole === 'DO' || userRole === 'TECHNICIAN';
 
@@ -97,8 +100,8 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
 
   return (
     <div className="flex flex-col gap-2 mb-2">
-      <div className="grid grid-cols-4 md:grid-cols-6 gap-1">
-        {statusConfig.map((config) => {
+      <div className={`grid gap-1 ${reviewByEORequired ? 'grid-cols-4 md:grid-cols-6' : 'grid-cols-4 md:grid-cols-5'}`}>
+        {statusConfig.filter(config => reviewByEORequired || config.status !== 'REVIEWED').map((config) => {
           const count = getStatusCount(config.status);
           const isActive = activeFilter === config.status;
           const IconComponent = config.icon;
