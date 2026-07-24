@@ -611,7 +611,14 @@ const Dashboard: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  const [showLanding, setShowLanding] = useState(true);
+  const [showLanding, setShowLanding] = useState(() => {
+    return localStorage.getItem('hasSeenLanding') !== 'true';
+  });
+
+  const handleGetStarted = () => {
+    localStorage.setItem('hasSeenLanding', 'true');
+    setShowLanding(false);
+  };
 
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -623,7 +630,7 @@ const App: React.FC = () => {
   }, []);
 
   if (showLanding) {
-    return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+    return <LandingPage onGetStarted={handleGetStarted} />;
   }
 
   return (

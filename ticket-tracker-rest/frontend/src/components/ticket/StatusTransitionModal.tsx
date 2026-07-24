@@ -156,7 +156,6 @@ const StatusTransitionModal: React.FC<StatusTransitionModalProps> = ({
       });
 
       onClose();
-      window.location.reload();
     } catch (error) {
       console.error('Status change error:', error);
       if (error instanceof Error) {
