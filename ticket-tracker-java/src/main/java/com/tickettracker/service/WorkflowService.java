@@ -38,7 +38,8 @@ public class WorkflowService {
             if (ticket == null) {
                 throw new ValidationException("Ticket not found");
             }
-            if (!"REVIEWED".equalsIgnoreCase(ticket.getStatus())) {
+            String status = ticket.getStatus() == null ? "" : ticket.getStatus().toUpperCase();
+            if (!TASK_ELIGIBLE_STATUSES.contains(status)) {
                 throw new ValidationException(
                     "Kindly change the status of the ticket to 'Reviewed' before proceeding further.");
             }
@@ -46,6 +47,11 @@ public class WorkflowService {
             throw new DatabaseException("Failed to verify ticket status", e);
         }
     }
+
+    private static final java.util.Set<String> TASK_ELIGIBLE_STATUSES = java.util.Set.of(
+        "REVIEWED", "APPROVED", "ACTIVE", "SENT_TO_FINANCE",
+        "APPROVED_BY_FINANCE", "REJECTED_BY_FINANCE", "COMPLETED", "CLOSED"
+    );
 
     public WorkflowStep createWorkflowStep(WorkflowStep step, byte[] currentUserId) throws TicketTrackerException {
         try {

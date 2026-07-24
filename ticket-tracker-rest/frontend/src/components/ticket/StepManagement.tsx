@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, CheckCircle, Clock, Users, Trash2, CreditCard as Edit, Eye, X, ChevronDown, ChevronRight, FileText, Upload, Layers, Search, Filter, XCircle, Workflow, ArrowRight, History, ExternalLink, AlertCircle, Calendar, ChevronUp, Lock, MessageSquare, Info } from 'lucide-react';
 import { Ticket, WorkflowStep, WorkflowStepStatus, ActionIconDefinition, FileReferenceTemplate } from '../../types';
+import { canAddTasksToTicket } from '../../lib/utils';
 import { FileReferenceService } from '../../services/fileReferenceService';
 import FileReferenceUpload from './FileReferenceUpload';
 import FileReferenceSelector, { SelectedFileReference } from './FileReferenceSelector';
@@ -1297,8 +1298,8 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
   const getStepActions = (step: WorkflowStep): ActionIconDefinition[] => {
     const actions: ActionIconDefinition[] = [];
 
-    // EO: add single/bulk sub-workflows at any eligible depth (only when ticket is Reviewed)
-    if (canManageWorkflows && canAddSubWorkflow(step) && step.status !== 'COMPLETED' && ticket.status === 'REVIEWED') {
+    // EO: add single/bulk sub-workflows at any eligible depth (when ticket is Reviewed or further along)
+    if (canManageWorkflows && canAddSubWorkflow(step) && step.status !== 'COMPLETED' && canAddTasksToTicket(ticket.status)) {
       actions.push({
         id: 'addSingle',
         icon: Plus,
@@ -1319,8 +1320,8 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       });
     }
 
-    // DO: add single/bulk sub-tasks (Level 2 only) on assigned Level 1 steps (only when ticket is Reviewed)
-    if (canAddSubTaskAsManager(step) && step.status !== 'COMPLETED' && ticket.status === 'REVIEWED') {
+    // DO: add single/bulk sub-tasks (Level 2 only) on assigned Level 1 steps (when ticket is Reviewed or further along)
+    if (canAddSubTaskAsManager(step) && step.status !== 'COMPLETED' && canAddTasksToTicket(ticket.status)) {
       actions.push({
         id: 'addSingle',
         icon: Plus,
@@ -1839,7 +1840,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       {canManageWorkflows && (
         <div className="flex justify-between items-center">
           <h3 className="text-base font-medium text-gray-900">Tasks List</h3>
-          {ticket.status === 'REVIEWED' && !showAddForm && !editingStep && (
+          {canAddTasksToTicket(ticket.status) && !showAddForm && !editingStep && (
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => {

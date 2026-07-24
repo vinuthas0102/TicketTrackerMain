@@ -42,6 +42,21 @@ export function validateUUID(uuid: string, fieldName: string = 'UUID'): void {
   }
 }
 
+export const TASK_ELIGIBLE_STATUSES = [
+  'REVIEWED',
+  'APPROVED',
+  'ACTIVE',
+  'SENT_TO_FINANCE',
+  'APPROVED_BY_FINANCE',
+  'REJECTED_BY_FINANCE',
+  'COMPLETED',
+  'CLOSED',
+];
+
+export function canAddTasksToTicket(status: string): boolean {
+  return TASK_ELIGIBLE_STATUSES.includes(status);
+}
+
 export const TECHNICIAN_DEPARTMENTS = ['Civil Manager', 'Electrical Manager'];
 
 export type ActiveSubCategory = 'AWAITING_COMPLETION' | 'TECHNICIAN' | 'HOD';
