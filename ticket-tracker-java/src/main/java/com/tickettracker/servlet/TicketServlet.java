@@ -1,10 +1,12 @@
 package com.tickettracker.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tickettracker.dao.ModuleDAO;
 import com.tickettracker.exception.TicketTrackerException;
 import com.tickettracker.model.BulkTicketCreateRequest;
 import com.tickettracker.model.BulkTicketOperationResult;
 import com.tickettracker.model.Document;
+import com.tickettracker.model.Module;
 import com.tickettracker.model.Ticket;
 import com.tickettracker.model.User;
 import com.tickettracker.service.DocumentService;
@@ -32,6 +34,7 @@ public class TicketServlet extends HttpServlet {
     private TicketService ticketService;
     private DocumentService documentService;
     private ObjectMapper objectMapper;
+    private ModuleDAO moduleDAO;
 
     @Override
     public void init() throws ServletException {
@@ -39,6 +42,7 @@ public class TicketServlet extends HttpServlet {
         this.ticketService = new TicketService();
         this.documentService = new DocumentService();
         this.objectMapper = JsonUtil.getObjectMapper();
+        this.moduleDAO = new ModuleDAO();
     }
 
     @Override
@@ -403,13 +407,49 @@ public class TicketServlet extends HttpServlet {
         }
 
         if (statusRequest.remarks == null || statusRequest.remarks.trim().isEmpty()) {
-            sendError(response, 400, "Remarks are required for status change");
-            return;
-        }
-
-        if (statusRequest.remarks.trim().length() < 10) {
-            sendError(response, 400, "Remarks must be at least 10 characters");
-            return;
+            boolean isRemarksOptional = false;
+            try {
+                Ticket existingTicketForCheck = ticketService.getTicket(ByteArrayUtil.hexToBytes(ticketIdHex));
+                if (existingTicketForCheck != null && existingTicketForCheck.getModuleId() != null) {
+                    Module module = moduleDAO.findById(existingTicketForCheck.getModuleId());
+                    if (module != null && module.getConfig() != null) {
+                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        com.fasterxml.jackson.databind.JsonNode configNode = mapper.readTree(module.getConfig());
+                        boolean reviewByEORequired = configNode.has("reviewByEORequired") ? configNode.get("reviewByEORequired").asBoolean() : true;
+                        if (!reviewByEORequired && "active".equalsIgnoreCase(statusRequest.newStatus.trim())) {
+                            isRemarksOptional = true;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("Error checking module config for remarks validation: {}", e.getMessage());
+            }
+            if (!isRemarksOptional) {
+                sendError(response, 400, "Remarks are required for status change");
+                return;
+            }
+        } else if (statusRequest.remarks.trim().length() < 10) {
+            boolean isRemarksOptional = false;
+            try {
+                Ticket existingTicketForCheck = ticketService.getTicket(ByteArrayUtil.hexToBytes(ticketIdHex));
+                if (existingTicketForCheck != null && existingTicketForCheck.getModuleId() != null) {
+                    Module module = moduleDAO.findById(existingTicketForCheck.getModuleId());
+                    if (module != null && module.getConfig() != null) {
+                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        com.fasterxml.jackson.databind.JsonNode configNode = mapper.readTree(module.getConfig());
+                        boolean reviewByEORequired = configNode.has("reviewByEORequired") ? configNode.get("reviewByEORequired").asBoolean() : true;
+                        if (!reviewByEORequired && "active".equalsIgnoreCase(statusRequest.newStatus.trim())) {
+                            isRemarksOptional = true;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("Error checking module config for remarks validation: {}", e.getMessage());
+            }
+            if (!isRemarksOptional) {
+                sendError(response, 400, "Remarks must be at least 10 characters");
+                return;
+            }
         }
 
         byte[] ticketId = ByteArrayUtil.hexToBytes(ticketIdHex);

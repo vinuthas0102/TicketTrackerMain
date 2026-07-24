@@ -53,8 +53,20 @@ export const TASK_ELIGIBLE_STATUSES = [
   'CLOSED',
 ];
 
-export function canAddTasksToTicket(status: string): boolean {
-  return TASK_ELIGIBLE_STATUSES.includes(status);
+export const TASK_ELIGIBLE_STATUSES_NO_REVIEW = [
+  'ACTIVE',
+  'SENT_TO_FINANCE',
+  'APPROVED_BY_FINANCE',
+  'REJECTED_BY_FINANCE',
+  'COMPLETED',
+  'CLOSED',
+];
+
+export function canAddTasksToTicket(status: string, reviewByEORequired: boolean = true): boolean {
+  if (reviewByEORequired) {
+    return TASK_ELIGIBLE_STATUSES.includes(status);
+  }
+  return TASK_ELIGIBLE_STATUSES_NO_REVIEW.includes(status);
 }
 
 export const TECHNICIAN_DEPARTMENTS = ['Civil Manager', 'Electrical Manager'];

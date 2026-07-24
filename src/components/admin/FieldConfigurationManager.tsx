@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Module, ModuleFieldConfiguration, FieldDropdownOption, FieldContext, User } from '../../types';
 import { FieldConfigService } from '../../services/fieldConfigService';
-import { Settings, Plus, Edit, Trash2, GripVertical, IndianRupee } from 'lucide-react';
+import { Settings, Plus, CreditCard as Edit, Trash2, GripVertical, IndianRupee, ClipboardCheck } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { FieldEditorModal } from './FieldEditorModal';
 import { supabase } from '../../lib/supabase';
@@ -168,6 +168,10 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
         {selectedModule && (
           <FinanceApprovalToggle module={selectedModule} onUpdated={(updated) => setSelectedModule(updated)} />
         )}
+
+        {selectedModule && (
+          <ReviewByEORequiredToggle module={selectedModule} onUpdated={(updated) => setSelectedModule(updated)} />
+        )}
       </div>
 
       {selectedModule && (
@@ -328,6 +332,81 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
 };
 
 export default FieldConfigurationManager;
+
+interface ReviewByEORequiredToggleProps {
+  module: Module;
+  onUpdated: (module: Module) => void;
+}
+
+const ReviewByEORequiredToggle: React.FC<ReviewByEORequiredToggleProps> = ({ module, onUpdated }) => {
+  const [enabled, setEnabled] = useState<boolean>(module.config?.reviewByEORequired ?? false);
+  const [saving, setSaving] = useState(false);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
+
+  const handleToggle = async (value: boolean) => {
+    setEnabled(value);
+    setSaving(true);
+    setSavedMessage(null);
+    try {
+      const updatedConfig = { ...(module.config || {}), reviewByEORequired: value };
+      const { error } = await supabase
+        .from('modules')
+        .update({ config: updatedConfig })
+        .eq('id', module.id);
+      if (error) throw error;
+      onUpdated({ ...module, config: updatedConfig });
+      setSavedMessage(value ? 'Review by EO enabled for this module' : 'Review by EO disabled for this module');
+      setTimeout(() => setSavedMessage(null), 3000);
+    } catch (err) {
+      console.error('Error updating review by EO setting:', err);
+      setEnabled(!value);
+      setSavedMessage('Failed to update setting. Please try again.');
+      setTimeout(() => setSavedMessage(null), 3000);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-center w-10 h-10 bg-teal-50 rounded-lg">
+            <ClipboardCheck className="w-5 h-5 text-teal-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">Review by EO Required</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              When enabled, tickets must go through the Reviewed status before tasks can be added. When disabled (default), tasks can be added once the ticket is Active, the Reviewed status is hidden from the summary, and remarks are optional when starting work.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-3">
+          {savedMessage && (
+            <span className="text-xs text-gray-500">{savedMessage}</span>
+          )}
+          <label className="inline-flex items-center cursor-pointer">
+            <span className="relative">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={enabled}
+                onChange={(e) => handleToggle(e.target.checked)}
+                disabled={saving}
+              />
+              <div className={`w-11 h-6 rounded-full transition-colors duration-200 ${enabled ? 'bg-teal-500' : 'bg-gray-300'}`}>
+                <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform duration-200 ${enabled ? 'translate-x-5' : ''}`} />
+              </div>
+            </span>
+            <span className="ml-2 text-sm font-medium text-gray-700">
+              {enabled ? 'Yes' : 'No'}
+            </span>
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface FinanceApprovalToggleProps {
   module: Module;

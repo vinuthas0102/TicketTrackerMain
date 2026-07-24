@@ -218,9 +218,11 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
     // Only EO can change ticket status
     if (user.role !== 'EO') return [];
 
+    const reviewByEORequired = selectedModule?.config?.reviewByEORequired ?? true;
+
     const transitions: Record<string, string[]> = {
       'DRAFT': ['SUBMITTED'],
-      'SUBMITTED': ['REVIEWED', 'CANCELLED'],
+      'SUBMITTED': reviewByEORequired ? ['REVIEWED', 'CANCELLED'] : ['ACTIVE', 'CANCELLED'],
       'REVIEWED': ['ACTIVE', 'CANCELLED'],
       'CREATED': ['ACTIVE', 'CANCELLED'],
       'APPROVED': ['ACTIVE', 'CANCELLED'],

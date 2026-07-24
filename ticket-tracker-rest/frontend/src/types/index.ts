@@ -26,6 +26,7 @@ export interface Module {
     categories: string[];
     requestTypes?: RequestType[];
     requiresFinanceApproval?: boolean;
+    reviewByEORequired?: boolean;
   };
   active: boolean;
   created_at: Date;

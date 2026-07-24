@@ -321,6 +321,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
   const [stepRefreshKeys, setStepRefreshKeys] = useState<Map<string, number>>(new Map());
   const { addStep, updateStep, deleteStep, users } = useTickets();
 
+  const reviewByEORequired = selectedModule?.config?.reviewByEORequired ?? true;
   const canManageWorkflows = user?.role === 'EO';
 
   const canManageWorkflow = (step: WorkflowStep): boolean => {
@@ -1258,7 +1259,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     const actions: ActionIconDefinition[] = [];
 
     // EO: add single/bulk sub-workflows at any eligible depth (when ticket is Reviewed or further along)
-    if (canManageWorkflows && canAddSubWorkflow(step) && step.status !== 'COMPLETED' && canAddTasksToTicket(ticket.status)) {
+    if (canManageWorkflows && canAddSubWorkflow(step) && step.status !== 'COMPLETED' && canAddTasksToTicket(ticket.status, reviewByEORequired)) {
       actions.push({
         id: 'addSingle',
         icon: Plus,
@@ -1278,7 +1279,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
     }
 
     // DO: add single/bulk sub-tasks (Level 2 only) on assigned Level 1 steps (when ticket is Reviewed or further along)
-    if (canAddSubTaskAsManager(step) && step.status !== 'COMPLETED' && canAddTasksToTicket(ticket.status)) {
+    if (canAddSubTaskAsManager(step) && step.status !== 'COMPLETED' && canAddTasksToTicket(ticket.status, reviewByEORequired)) {
       actions.push({
         id: 'addSingle',
         icon: Plus,
@@ -1797,7 +1798,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       {canManageWorkflows && (
         <div className="flex justify-between items-center">
           <h3 className="text-base font-medium text-gray-900">Tasks List</h3>
-          {canAddTasksToTicket(ticket.status) && !showAddForm && !editingStep && (
+          {canAddTasksToTicket(ticket.status, reviewByEORequired) && !showAddForm && !editingStep && (
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => {
@@ -1822,10 +1823,10 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
         </div>
       )}
 
-      {canManageWorkflows && ['CREATED', 'SUBMITTED', 'DRAFT'].includes(ticket.status) && !showAddForm && !editingStep && (
+      {canManageWorkflows && !canAddTasksToTicket(ticket.status, reviewByEORequired) && !showAddForm && !editingStep && (
         <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-800">
           <Info className="w-4 h-4 flex-shrink-0" />
-          <span>Tasks can be added only once the ticket status is <strong>Reviewed</strong>. Please change the ticket status to Reviewed first.</span>
+          <span>Tasks can be added only once the ticket status is <strong>{reviewByEORequired ? 'Reviewed' : 'Active'}</strong>. Please change the ticket status to {reviewByEORequired ? 'Reviewed' : 'Start to work'} first.</span>
         </div>
       )}
 

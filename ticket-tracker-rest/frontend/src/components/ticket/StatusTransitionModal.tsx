@@ -29,6 +29,9 @@ const StatusTransitionModal: React.FC<StatusTransitionModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { changeTicketStatus } = useTickets();
   const { user, selectedModule } = useAuth();
+  const reviewByEORequired = selectedModule?.config?.reviewByEORequired ?? true;
+  const isRemarksOptional = !reviewByEORequired && selectedStatus === 'ACTIVE';
+  const isRemarksRequired = !isRemarksOptional;
 
   const [financeOfficers, setFinanceOfficers] = useState<Array<{ id: string; name: string; email: string; department: string }>>([]);
   const [financeData, setFinanceData] = useState<{
@@ -91,7 +94,7 @@ const StatusTransitionModal: React.FC<StatusTransitionModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedStatus || remarks.trim().length < 10) {
+    if (!selectedStatus || (isRemarksRequired && remarks.trim().length < 10)) {
       alert('Please select a status and provide remarks (minimum 10 characters)');
       return;
     }
@@ -340,20 +343,22 @@ const StatusTransitionModal: React.FC<StatusTransitionModalProps> = ({
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Remarks *
+                Remarks {isRemarksRequired ? '*' : '(optional)'}
               </label>
               <textarea
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
-                placeholder={selectedStatus === 'SENT_TO_FINANCE' ? 'Provide details about the work, reason for cost, and any other relevant information (minimum 10 characters)...' : 'Please provide remarks for this status change (minimum 10 characters)...'}
-                required
-                minLength={10}
+                placeholder={selectedStatus === 'SENT_TO_FINANCE' ? 'Provide details about the work, reason for cost, and any other relevant information (minimum 10 characters)...' : isRemarksOptional ? 'Remarks are optional for this status change...' : 'Please provide remarks for this status change (minimum 10 characters)...'}
+                required={isRemarksRequired}
+                minLength={isRemarksRequired ? 10 : undefined}
               />
-              <p className={`text-xs mt-1 ${remarks.length >= 10 ? 'text-green-600' : 'text-red-500'}`}>
-                {remarks.length}/10 characters minimum
-              </p>
+              {isRemarksRequired && (
+                <p className={`text-xs mt-1 ${remarks.length >= 10 ? 'text-green-600' : 'text-red-500'}`}>
+                  {remarks.length}/10 characters minimum
+                </p>
+              )}
             </div>
 
             {requiresCompletionCertificate() && (
@@ -435,7 +440,7 @@ const StatusTransitionModal: React.FC<StatusTransitionModalProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={loading || !selectedStatus || remarks.trim().length < 10 || (requiresCompletionCertificate() && !completionFile)}
+                disabled={loading || !selectedStatus || (isRemarksRequired && remarks.trim().length < 10) || (requiresCompletionCertificate() && !completionFile)}
                 className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
                 {loading ? 'Changing...' : 'Change Status'}

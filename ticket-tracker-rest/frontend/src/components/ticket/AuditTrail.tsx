@@ -17,7 +17,8 @@ interface AuditTrailProps {
 
 const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onCloseDocument, onViewProgressDocument, viewingChat, onCloseChat }) => {
   const { users } = useTickets();
-  const { user } = useAuth();
+  const { user, selectedModule } = useAuth();
+  const reviewByEORequired = selectedModule?.config?.reviewByEORequired ?? true;
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<AuditActionCategory | ''>('');
   const [filterUserRole, setFilterUserRole] = useState<'EO' | 'DO' | ''>('');
@@ -88,6 +89,11 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
 
   const filteredAuditTrail = useMemo(() => {
     return ticket.auditTrail.filter(entry => {
+      if (!reviewByEORequired && entry.action === 'STATUS_CHANGE') {
+        const isReviewRelated = entry.oldValue === 'REVIEWED' || entry.newValue === 'REVIEWED';
+        if (isReviewRelated) return false;
+      }
+
       if (isEmployee) {
         const cat = entry.actionCategory;
         const isTicketLevel = cat === 'ticket_action' || cat === 'status_change' || !entry.stepId;
@@ -130,7 +136,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
 
       return true;
     });
-  }, [ticket.auditTrail, searchQuery, filterCategory, filterUserRole, filterWithDocuments, users, isEmployee]);
+  }, [ticket.auditTrail, searchQuery, filterCategory, filterUserRole, filterWithDocuments, users, isEmployee, reviewByEORequired]);
 
   const sortedAuditTrail = useMemo(() => {
     return [...filteredAuditTrail].sort((a, b) =>

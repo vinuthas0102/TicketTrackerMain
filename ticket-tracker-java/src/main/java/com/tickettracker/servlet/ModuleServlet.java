@@ -137,6 +137,10 @@ public class ModuleServlet extends HttpServlet {
                 configNode.put("requiresFinanceApproval", configUpdate.get("requiresFinanceApproval").asBoolean());
             }
 
+            if (configUpdate.has("reviewByEORequired")) {
+                configNode.put("reviewByEORequired", configUpdate.get("reviewByEORequired").asBoolean());
+            }
+
             module.setConfig(objectMapper.writeValueAsString(configNode));
             Module updatedModule = moduleService.updateModule(module);
 

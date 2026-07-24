@@ -23,6 +23,7 @@ public class WorkflowService {
     private final WorkflowStepFileReferenceDAO fileReferenceDAO;
     private final AuditLogDAO auditLogDAO;
     private final TicketDAO ticketDAO;
+    private final ModuleDAO moduleDAO;
 
     public WorkflowService() {
         this.workflowStepDAO = new WorkflowStepDAO();
@@ -30,6 +31,7 @@ public class WorkflowService {
         this.fileReferenceDAO = new WorkflowStepFileReferenceDAO();
         this.auditLogDAO = new AuditLogDAO();
         this.ticketDAO = new TicketDAO();
+        this.moduleDAO = new ModuleDAO();
     }
 
     private void ensureTicketReviewed(byte[] ticketId) throws TicketTrackerException {
@@ -39,9 +41,32 @@ public class WorkflowService {
                 throw new ValidationException("Ticket not found");
             }
             String status = ticket.getStatus() == null ? "" : ticket.getStatus().toUpperCase();
-            if (!TASK_ELIGIBLE_STATUSES.contains(status)) {
+
+            boolean reviewByEORequired = true;
+            if (ticket.getModuleId() != null) {
+                Module module = moduleDAO.findById(ticket.getModuleId());
+                if (module != null && module.getConfig() != null) {
+                    try {
+                        com.fasterxml.jackson.databind.JsonNode configNode =
+                            new com.fasterxml.jackson.databind.ObjectMapper().readTree(module.getConfig());
+                        reviewByEORequired = configNode.has("reviewByEORequired")
+                            ? configNode.get("reviewByEORequired").asBoolean()
+                            : true;
+                    } catch (Exception e) {
+                        logger.warn("Error parsing module config for reviewByEORequired: {}", e.getMessage());
+                    }
+                }
+            }
+
+            java.util.Set<String> eligibleStatuses = reviewByEORequired
+                ? TASK_ELIGIBLE_STATUSES
+                : TASK_ELIGIBLE_STATUSES_NO_REVIEW;
+
+            if (!eligibleStatuses.contains(status)) {
                 throw new ValidationException(
-                    "Kindly change the status of the ticket to 'Reviewed' before proceeding further.");
+                    reviewByEORequired
+                        ? "Kindly change the status of the ticket to 'Reviewed' before proceeding further."
+                        : "Kindly change the status of the ticket to 'Active' before proceeding further.");
             }
         } catch (SQLException e) {
             throw new DatabaseException("Failed to verify ticket status", e);
@@ -50,6 +75,11 @@ public class WorkflowService {
 
     private static final java.util.Set<String> TASK_ELIGIBLE_STATUSES = java.util.Set.of(
         "REVIEWED", "APPROVED", "ACTIVE", "SENT_TO_FINANCE",
+        "APPROVED_BY_FINANCE", "REJECTED_BY_FINANCE", "COMPLETED", "CLOSED"
+    );
+
+    private static final java.util.Set<String> TASK_ELIGIBLE_STATUSES_NO_REVIEW = java.util.Set.of(
+        "ACTIVE", "SENT_TO_FINANCE",
         "APPROVED_BY_FINANCE", "REJECTED_BY_FINANCE", "COMPLETED", "CLOSED"
     );
 

@@ -158,6 +158,14 @@ SELECT '========================================================================
 SELECT 'Performance indexes created!' FROM DUAL;
 SELECT '' FROM DUAL;
 
+-- Step 12b: Add reviewByEORequired flag to module configs
+SELECT '==================================================================================' FROM DUAL;
+SELECT 'STEP 12b: Adding reviewByEORequired flag to module configs...' FROM DUAL;
+SELECT '==================================================================================' FROM DUAL;
+@21-oracle-add-review-by-eo-required.sql
+SELECT 'reviewByEORequired flag added!' FROM DUAL;
+SELECT '' FROM DUAL;
+
 -- Step 13: Verification
 SELECT '==================================================================================' FROM DUAL;
 SELECT 'INSTALLATION VERIFICATION' FROM DUAL;

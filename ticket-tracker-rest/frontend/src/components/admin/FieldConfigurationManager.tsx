@@ -3,7 +3,7 @@ import { Module, ModuleFieldConfiguration, FieldDropdownOption, FieldContext, Us
 import { FieldConfigService } from '../../services/fieldConfigService';
 import { apiClient } from '../../lib/apiClient';
 import { API_ENDPOINTS } from '../../lib/apiEndpoints';
-import { Settings, Plus, Edit, Trash2, GripVertical, IndianRupee, CheckCircle, XCircle } from 'lucide-react';
+import { Settings, Plus, CreditCard as Edit, Trash2, GripVertical, IndianRupee, CheckCircle, XCircle, ClipboardCheck } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { FieldEditorModal } from './FieldEditorModal';
 
@@ -22,11 +22,14 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
   const [showAddModal, setShowAddModal] = useState(false);
   const [financeApprovalEnabled, setFinanceApprovalEnabled] = useState<boolean>(false);
   const [updatingFinanceApproval, setUpdatingFinanceApproval] = useState(false);
+  const [reviewByEOEnabled, setReviewByEOEnabled] = useState<boolean>(false);
+  const [updatingReviewByEO, setUpdatingReviewByEO] = useState(false);
 
   useEffect(() => {
     if (selectedModule) {
       loadFields();
       setFinanceApprovalEnabled(selectedModule.config?.requiresFinanceApproval === true);
+      setReviewByEOEnabled(selectedModule.config?.reviewByEORequired === true);
     }
   }, [selectedModule, selectedContext]);
 
@@ -130,6 +133,25 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
     }
   };
 
+  const handleToggleReviewByEO = async (enabled: boolean) => {
+    if (!selectedModule) return;
+    setUpdatingReviewByEO(true);
+    try {
+      await apiClient.put(API_ENDPOINTS.MODULES.UPDATE_CONFIG(selectedModule.id), {
+        reviewByEORequired: enabled,
+      });
+      setReviewByEOEnabled(enabled);
+      setSelectedModule({
+        ...selectedModule,
+        config: { ...selectedModule.config, reviewByEORequired: enabled },
+      });
+    } catch (err) {
+      alert('Failed to update review by EO setting: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    } finally {
+      setUpdatingReviewByEO(false);
+    }
+  };
+
   if (user.role !== 'EO') {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
@@ -219,6 +241,37 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
           </div>
         )}
       </div>
+
+      {selectedModule && (
+        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <ClipboardCheck className="w-5 h-5 text-teal-600" />
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">Review by EO Required</h3>
+                <p className="text-xs text-gray-500 mt-0.5">When enabled, tickets must go through the Reviewed status before tasks can be added. When disabled (default), tasks can be added once the ticket is Active, the Reviewed status is hidden from the summary, and remarks are optional when starting work.</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              {updatingReviewByEO && (
+                <span className="text-xs text-gray-400">Updating...</span>
+              )}
+              <button
+                onClick={() => handleToggleReviewByEO(!reviewByEOEnabled)}
+                disabled={updatingReviewByEO}
+                className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  reviewByEOEnabled
+                    ? 'bg-teal-100 text-teal-700 hover:bg-teal-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {reviewByEOEnabled ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                <span>{reviewByEOEnabled ? 'Yes' : 'No'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedModule && (
         <div className="bg-white rounded-lg shadow-md p-6">
