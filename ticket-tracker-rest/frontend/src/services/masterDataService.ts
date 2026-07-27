@@ -16,12 +16,13 @@ export interface MasterConfig {
   description: string;
 }
 
-export type MasterDataType = 'categories' | 'departments' | 'locations';
+export type MasterDataType = 'categories' | 'departments' | 'locations' | 'properties';
 
 const ENDPOINT_MAP: Record<MasterDataType, string> = {
   categories: API_ENDPOINTS.MASTER_DATA.CATEGORIES,
   departments: API_ENDPOINTS.MASTER_DATA.DEPARTMENTS,
   locations: API_ENDPOINTS.MASTER_DATA.LOCATIONS,
+  properties: API_ENDPOINTS.MASTER_DATA.PROPERTIES,
 };
 
 const FALLBACK_CATEGORIES = [
@@ -40,25 +41,34 @@ const FALLBACK_CATEGORIES = [
 ];
 
 const FALLBACK_LOCATIONS = ['Location01', 'Location02'];
+const FALLBACK_PROPERTIES = ['PROP001', 'PROP002'];
 
 export class MasterDataService {
-  static async getAll(type: MasterDataType): Promise<MasterItem[]> {
+  static async getAll(type: MasterDataType, moduleId?: string): Promise<MasterItem[]> {
     try {
-      return await apiClient.get<MasterItem[]>(ENDPOINT_MAP[type]);
+      let url = ENDPOINT_MAP[type];
+      if (moduleId && type === 'categories') {
+        url += `?moduleId=${encodeURIComponent(moduleId)}`;
+      }
+      return await apiClient.get<MasterItem[]>(url);
     } catch (error) {
       console.error(`Error fetching master ${type}:`, error);
       return this.getFallback(type);
     }
   }
 
-  static async getActive(type: MasterDataType): Promise<string[]> {
-    const items = await this.getAll(type);
+  static async getActive(type: MasterDataType, moduleId?: string): Promise<string[]> {
+    const items = await this.getAll(type, moduleId);
     return items.filter(i => i.is_active).map(i => i.name);
   }
 
-  static async add(type: MasterDataType, name: string): Promise<MasterItem | null> {
+  static async add(type: MasterDataType, name: string, moduleId?: string): Promise<MasterItem | null> {
     try {
-      return await apiClient.post<MasterItem>(ENDPOINT_MAP[type], { name });
+      const payload: Record<string, unknown> = { name };
+      if (moduleId && type === 'categories') {
+        payload.moduleId = moduleId;
+      }
+      return await apiClient.post<MasterItem>(ENDPOINT_MAP[type], payload);
     } catch (error) {
       console.error(`Error adding master ${type}:`, error);
       throw error;
@@ -138,6 +148,7 @@ export class MasterDataService {
     let names: string[] = [];
     if (type === 'categories') names = FALLBACK_CATEGORIES;
     else if (type === 'locations') names = FALLBACK_LOCATIONS;
+    else if (type === 'properties') names = FALLBACK_PROPERTIES;
 
     return names.map((name, i) => ({
       id: `fallback-${type}-${i}`,

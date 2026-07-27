@@ -12,8 +12,18 @@ public class MasterDataDAO extends BaseDAO {
     private static final Logger logger = LoggerFactory.getLogger(MasterDataDAO.class);
 
     public List<MapItem> findAll(String tableName) throws SQLException {
-        String sql = String.format(
-            "SELECT id, name, is_active, display_order, created_at, updated_at FROM %s ORDER BY display_order ASC", tableName);
+        return findAll(tableName, null);
+    }
+
+    public List<MapItem> findAll(String tableName, byte[] moduleId) throws SQLException {
+        String sql;
+        if (moduleId != null && "master_categories".equals(tableName)) {
+            sql = String.format(
+                "SELECT id, name, is_active, display_order, created_at, updated_at FROM %s WHERE module_id = ? ORDER BY display_order ASC", tableName);
+        } else {
+            sql = String.format(
+                "SELECT id, name, is_active, display_order, created_at, updated_at FROM %s ORDER BY display_order ASC", tableName);
+        }
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -21,6 +31,9 @@ public class MasterDataDAO extends BaseDAO {
         try {
             conn = getConnection();
             stmt = conn.prepareStatement(sql);
+            if (moduleId != null && "master_categories".equals(tableName)) {
+                stmt.setBytes(1, moduleId);
+            }
             rs = stmt.executeQuery();
             while (rs.next()) {
                 MapItem item = new MapItem();
@@ -39,9 +52,20 @@ public class MasterDataDAO extends BaseDAO {
     }
 
     public MapItem findByName(String tableName, String name) throws SQLException {
-        String sql = String.format(
-            "SELECT id, name, is_active, display_order, created_at, updated_at FROM %s WHERE LOWER(name) = LOWER(?)",
-            tableName);
+        return findByName(tableName, name, null);
+    }
+
+    public MapItem findByName(String tableName, String name, byte[] moduleId) throws SQLException {
+        String sql;
+        if (moduleId != null && "master_categories".equals(tableName)) {
+            sql = String.format(
+                "SELECT id, name, is_active, display_order, created_at, updated_at FROM %s WHERE LOWER(name) = LOWER(?) AND module_id = ?",
+                tableName);
+        } else {
+            sql = String.format(
+                "SELECT id, name, is_active, display_order, created_at, updated_at FROM %s WHERE LOWER(name) = LOWER(?)",
+                tableName);
+        }
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -49,6 +73,9 @@ public class MasterDataDAO extends BaseDAO {
             conn = getConnection();
             stmt = conn.prepareStatement(sql);
             stmt.setString(1, name);
+            if (moduleId != null && "master_categories".equals(tableName)) {
+                stmt.setBytes(2, moduleId);
+            }
             rs = stmt.executeQuery();
             if (rs.next()) {
                 MapItem item = new MapItem();
@@ -67,6 +94,10 @@ public class MasterDataDAO extends BaseDAO {
     }
 
     public MapItem add(String tableName, String name) throws SQLException {
+        return add(tableName, name, null);
+    }
+
+    public MapItem add(String tableName, String name, byte[] moduleId) throws SQLException {
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -74,8 +105,16 @@ public class MasterDataDAO extends BaseDAO {
             conn = getConnection();
 
             int maxOrder = 0;
-            String orderSql = String.format("SELECT MAX(display_order) AS max_order FROM %s", tableName);
+            String orderSql;
+            if (moduleId != null && "master_categories".equals(tableName)) {
+                orderSql = String.format("SELECT MAX(display_order) AS max_order FROM %s WHERE module_id = ?", tableName);
+            } else {
+                orderSql = String.format("SELECT MAX(display_order) AS max_order FROM %s", tableName);
+            }
             stmt = conn.prepareStatement(orderSql);
+            if (moduleId != null && "master_categories".equals(tableName)) {
+                stmt.setBytes(1, moduleId);
+            }
             rs = stmt.executeQuery();
             if (rs.next()) {
                 maxOrder = rs.getInt("max_order");
@@ -83,16 +122,26 @@ public class MasterDataDAO extends BaseDAO {
             rs.close();
             stmt.close();
 
-            String insertSql = String.format(
-                "INSERT INTO %s (id, name, is_active, display_order, created_at, updated_at) " +
-                "VALUES (SYS_GUID(), ?, 1, ?, SYSTIMESTAMP, SYSTIMESTAMP)", tableName);
+            String insertSql;
+            if (moduleId != null && "master_categories".equals(tableName)) {
+                insertSql = String.format(
+                    "INSERT INTO %s (id, name, is_active, display_order, created_at, updated_at, module_id) " +
+                    "VALUES (SYS_GUID(), ?, 1, ?, SYSTIMESTAMP, SYSTIMESTAMP, ?)", tableName);
+            } else {
+                insertSql = String.format(
+                    "INSERT INTO %s (id, name, is_active, display_order, created_at, updated_at) " +
+                    "VALUES (SYS_GUID(), ?, 1, ?, SYSTIMESTAMP, SYSTIMESTAMP)", tableName);
+            }
             stmt = conn.prepareStatement(insertSql);
             stmt.setString(1, name);
             stmt.setInt(2, maxOrder + 1);
+            if (moduleId != null && "master_categories".equals(tableName)) {
+                stmt.setBytes(3, moduleId);
+            }
             stmt.executeUpdate();
             stmt.close();
 
-            return findByName(tableName, name);
+            return findByName(tableName, name, moduleId);
         } finally {
             closeResources(conn, stmt, rs);
         }
@@ -285,8 +334,18 @@ public class MasterDataDAO extends BaseDAO {
     }
 
     public List<String> findActiveNames(String tableName) throws SQLException {
-        String sql = String.format(
-            "SELECT name FROM %s WHERE is_active = 1 ORDER BY display_order ASC", tableName);
+        return findActiveNames(tableName, null);
+    }
+
+    public List<String> findActiveNames(String tableName, byte[] moduleId) throws SQLException {
+        String sql;
+        if (moduleId != null && "master_categories".equals(tableName)) {
+            sql = String.format(
+                "SELECT name FROM %s WHERE is_active = 1 AND module_id = ? ORDER BY display_order ASC", tableName);
+        } else {
+            sql = String.format(
+                "SELECT name FROM %s WHERE is_active = 1 ORDER BY display_order ASC", tableName);
+        }
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -294,6 +353,9 @@ public class MasterDataDAO extends BaseDAO {
         try {
             conn = getConnection();
             stmt = conn.prepareStatement(sql);
+            if (moduleId != null && "master_categories".equals(tableName)) {
+                stmt.setBytes(1, moduleId);
+            }
             rs = stmt.executeQuery();
             while (rs.next()) {
                 names.add(rs.getString("name"));

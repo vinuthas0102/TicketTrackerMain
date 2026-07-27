@@ -50,7 +50,7 @@ public class MasterDataServlet extends HttpServlet {
             }
 
             if (pathInfo == null || pathInfo.equals("/")) {
-                sendError(response, 400, "Path required: /categories, /departments, /locations, /config");
+                sendError(response, 400, "Path required: /categories, /departments, /locations, /properties, /config");
                 return;
             }
 
@@ -88,7 +88,16 @@ public class MasterDataServlet extends HttpServlet {
                     return;
                 }
 
-                List<MasterDataService_item> items = convertItems(masterDataService.getAll(type));
+                // Categories support optional module filtering via ?moduleId=
+                byte[] moduleIdFilter = null;
+                if ("categories".equals(type)) {
+                    String moduleIdParam = request.getParameter("moduleId");
+                    if (moduleIdParam != null && !moduleIdParam.isEmpty()) {
+                        moduleIdFilter = UuidUtil.uuidStringToBytes(moduleIdParam);
+                    }
+                }
+
+                List<MasterDataService_item> items = convertItems(masterDataService.getAll(type, moduleIdFilter));
                 sendJsonResponse(response, items);
                 return;
             }
@@ -165,7 +174,12 @@ public class MasterDataServlet extends HttpServlet {
                 }
 
                 String name = (String) body.get("name");
-                com.tickettracker.dao.MasterDataDAO.MapItem item = masterDataService.add(type, name);
+                String moduleIdParam = (String) body.get("moduleId");
+                byte[] moduleId = null;
+                if (moduleIdParam != null && !moduleIdParam.isEmpty() && "categories".equals(type)) {
+                    moduleId = UuidUtil.uuidStringToBytes(moduleIdParam);
+                }
+                com.tickettracker.dao.MasterDataDAO.MapItem item = masterDataService.add(type, name, moduleId);
                 sendJsonResponse(response, convertItem(item));
                 return;
             }

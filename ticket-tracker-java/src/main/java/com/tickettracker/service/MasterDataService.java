@@ -18,22 +18,30 @@ public class MasterDataService {
     }
 
     public List<MasterDataDAO.MapItem> getAll(String type) throws Exception {
+        return getAll(type, null);
+    }
+
+    public List<MasterDataDAO.MapItem> getAll(String type, byte[] moduleId) throws Exception {
         String tableName = getTableName(type);
-        return masterDataDAO.findAll(tableName);
+        return masterDataDAO.findAll(tableName, moduleId);
     }
 
     public MasterDataDAO.MapItem add(String type, String name) throws Exception {
+        return add(type, name, null);
+    }
+
+    public MasterDataDAO.MapItem add(String type, String name, byte[] moduleId) throws Exception {
         if (name == null || name.trim().isEmpty()) {
             throw new ValidationException("Name is required");
         }
         String trimmed = name.trim();
         String tableName = getTableName(type);
-        MasterDataDAO.MapItem existing = masterDataDAO.findByName(tableName, trimmed);
+        MasterDataDAO.MapItem existing = masterDataDAO.findByName(tableName, trimmed, moduleId);
         if (existing != null) {
             throw new ValidationException("\"" + trimmed + "\" already exists");
         }
         logger.info("Adding master {} item: {}", type, trimmed);
-        return masterDataDAO.add(tableName, trimmed);
+        return masterDataDAO.add(tableName, trimmed, moduleId);
     }
 
     public void remove(String type, byte[] id) throws Exception {
@@ -69,6 +77,14 @@ public class MasterDataService {
         return masterDataDAO.findActiveNames("master_locations");
     }
 
+    public List<String> getActivePropertyNames() throws Exception {
+        return masterDataDAO.findActiveNames("master_properties");
+    }
+
+    public List<String> getActiveCategoryNames(byte[] moduleId) throws Exception {
+        return masterDataDAO.findActiveNames("master_categories", moduleId);
+    }
+
     public String generateTicketNumber(String locationPrefix, String moduleCode) throws Exception {
         String companyCode = masterDataDAO.getConfigValue("company_code");
         if (companyCode == null || companyCode.isEmpty()) {
@@ -97,6 +113,7 @@ public class MasterDataService {
             case "categories": return "master_categories";
             case "departments": return "master_departments";
             case "locations": return "master_locations";
+            case "properties": return "master_properties";
             default:
                 throw new ValidationException("Invalid master data type: " + type);
         }

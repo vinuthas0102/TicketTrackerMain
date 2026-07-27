@@ -15,12 +15,13 @@ export interface MasterConfig {
   description: string;
 }
 
-export type MasterDataType = 'categories' | 'departments' | 'locations';
+export type MasterDataType = 'categories' | 'departments' | 'locations' | 'properties';
 
 const TABLE_MAP: Record<MasterDataType, string> = {
   categories: 'master_categories',
   departments: 'master_departments',
   locations: 'master_locations',
+  properties: 'master_properties',
 };
 
 const FALLBACK_CATEGORIES = [
@@ -39,20 +40,22 @@ const FALLBACK_CATEGORIES = [
 ];
 
 const FALLBACK_LOCATIONS = ['Location01', 'Location02'];
+const FALLBACK_PROPERTIES = ['PROP001', 'PROP002'];
 
 const FALLBACK_DEPARTMENTS: string[] = [];
 
 export class MasterDataService {
-  static async getAll(type: MasterDataType): Promise<MasterItem[]> {
+  static async getAll(type: MasterDataType, moduleId?: string): Promise<MasterItem[]> {
     if (!isSupabaseAvailable()) {
       return this.getFallback(type);
     }
     try {
       const table = TABLE_MAP[type];
-      const { data, error } = await supabase
-        .from(table)
-        .select('*')
-        .order('display_order', { ascending: true });
+      let query = supabase.from(table).select('*');
+      if (moduleId && type === 'categories') {
+        query = query.eq('module_id', moduleId);
+      }
+      const { data, error } = await query.order('display_order', { ascending: true });
 
       if (error) throw error;
       return (data || []) as MasterItem[];
@@ -62,35 +65,38 @@ export class MasterDataService {
     }
   }
 
-  static async getActive(type: MasterDataType): Promise<string[]> {
-    const items = await this.getAll(type);
+  static async getActive(type: MasterDataType, moduleId?: string): Promise<string[]> {
+    const items = await this.getAll(type, moduleId);
     return items.filter(i => i.is_active).map(i => i.name);
   }
 
-  static async add(type: MasterDataType, name: string): Promise<MasterItem | null> {
+  static async add(type: MasterDataType, name: string, moduleId?: string): Promise<MasterItem | null> {
     if (!isSupabaseAvailable()) return null;
     try {
       const table = TABLE_MAP[type];
-      const { data: existing } = await supabase
-        .from(table)
-        .select('id')
-        .ilike('name', name)
-        .maybeSingle();
+      let existingQuery = supabase.from(table).select('id').ilike('name', name);
+      if (moduleId && type === 'categories') {
+        existingQuery = existingQuery.eq('module_id', moduleId);
+      }
+      const { data: existing } = await existingQuery.maybeSingle();
 
       if (existing) throw new Error(`"${name}" already exists`);
 
-      const { data: maxOrder } = await supabase
-        .from(table)
-        .select('display_order')
-        .order('display_order', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      let maxOrderQuery = supabase.from(table).select('display_order');
+      if (moduleId && type === 'categories') {
+        maxOrderQuery = maxOrderQuery.eq('module_id', moduleId);
+      }
+      const { data: maxOrder } = await maxOrderQuery.order('display_order', { ascending: false }).limit(1).maybeSingle();
 
       const nextOrder = (maxOrder?.display_order || 0) + 1;
 
+      const insertRow: Record<string, unknown> = { name, is_active: true, display_order: nextOrder };
+      if (moduleId && type === 'categories') {
+        insertRow.module_id = moduleId;
+      }
       const { data, error } = await supabase
         .from(table)
-        .insert([{ name, is_active: true, display_order: nextOrder }])
+        .insert([insertRow])
         .select()
         .single();
 
@@ -252,7 +258,7 @@ export class MasterDataService {
     let names: string[] = [];
     if (type === 'categories') names = FALLBACK_CATEGORIES;
     else if (type === 'locations') names = FALLBACK_LOCATIONS;
-    else names = FALLBACK_DEPARTMENTS;
+    else if (type === 'properties') names = FALLBACK_PROPERTIES;
 
     return names.map((name, i) => ({
       id: `fallback-${type}-${i}`,

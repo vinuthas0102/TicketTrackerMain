@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Database, Plus, Trash2, Settings, Tag, Building2, MapPin, AlertCircle, CheckCircle } from 'lucide-react';
+import { Database, Plus, Trash2, Settings, Tag, Building2, MapPin, Home, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { MasterDataService, MasterItem, MasterDataType } from '../../services/masterDataService';
 import { apiClient } from '../../lib/apiClient';
 import { API_ENDPOINTS } from '../../lib/apiEndpoints';
 import LoadingSpinner from '../common/LoadingSpinner';
 
-type TabType = 'categories' | 'departments' | 'locations' | 'config';
+type TabType = 'categories' | 'departments' | 'locations' | 'properties' | 'config';
 
 interface ModuleInfo {
   id: string;
@@ -28,12 +28,13 @@ const MasterDataManagementPage: React.FC = () => {
   const [configSaved, setConfigSaved] = useState(false);
   const [modules, setModules] = useState<ModuleInfo[]>([]);
   const [moduleCodeUpdates, setModuleCodeUpdates] = useState<Record<string, string>>({});
+  const [categoryModuleId, setCategoryModuleId] = useState<string>('');
 
-  const loadItems = useCallback(async (type: MasterDataType) => {
+  const loadItems = useCallback(async (type: MasterDataType, moduleId?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await MasterDataService.getAll(type);
+      const data = await MasterDataService.getAll(type, moduleId);
       setItems(data);
     } catch (err) {
       setError('Failed to load data');
@@ -68,13 +69,25 @@ const MasterDataManagementPage: React.FC = () => {
     }
   }, []);
 
+  const loadModules = useCallback(async () => {
+    try {
+      const moduleData = await apiClient.get<ModuleInfo[]>(API_ENDPOINTS.MODULES.LIST);
+      setModules(moduleData || []);
+    } catch {
+      setModules([]);
+    }
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'config') {
       loadConfig();
+    } else if (activeTab === 'categories') {
+      loadModules();
+      loadItems('categories', categoryModuleId || undefined);
     } else {
       loadItems(activeTab as MasterDataType);
     }
-  }, [activeTab, loadItems, loadConfig]);
+  }, [activeTab, categoryModuleId, loadItems, loadConfig, loadModules]);
 
   const handleAdd = async () => {
     const trimmed = newItemName.trim();
@@ -82,9 +95,14 @@ const MasterDataManagementPage: React.FC = () => {
     setAdding(true);
     setError(null);
     try {
-      await MasterDataService.add(activeTab as MasterDataType, trimmed);
+      const moduleIdForAdd = activeTab === 'categories' ? (categoryModuleId || undefined) : undefined;
+      await MasterDataService.add(activeTab as MasterDataType, trimmed, moduleIdForAdd);
       setNewItemName('');
-      await loadItems(activeTab as MasterDataType);
+      if (activeTab === 'categories') {
+        await loadItems('categories', categoryModuleId || undefined);
+      } else {
+        await loadItems(activeTab as MasterDataType);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add item');
     } finally {
@@ -96,7 +114,11 @@ const MasterDataManagementPage: React.FC = () => {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
     try {
       await MasterDataService.remove(activeTab as MasterDataType, id);
-      await loadItems(activeTab as MasterDataType);
+      if (activeTab === 'categories') {
+        await loadItems('categories', categoryModuleId || undefined);
+      } else {
+        await loadItems(activeTab as MasterDataType);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete item');
     }
@@ -105,7 +127,11 @@ const MasterDataManagementPage: React.FC = () => {
   const handleToggleActive = async (item: MasterItem) => {
     try {
       await MasterDataService.toggleActive(activeTab as MasterDataType, item.id, !item.is_active);
-      await loadItems(activeTab as MasterDataType);
+      if (activeTab === 'categories') {
+        await loadItems('categories', categoryModuleId || undefined);
+      } else {
+        await loadItems(activeTab as MasterDataType);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update item');
     }
@@ -149,6 +175,7 @@ const MasterDataManagementPage: React.FC = () => {
     { key: 'categories', label: 'Categories', icon: <Tag className="w-4 h-4" /> },
     { key: 'departments', label: 'Departments', icon: <Building2 className="w-4 h-4" /> },
     { key: 'locations', label: 'Locations', icon: <MapPin className="w-4 h-4" /> },
+    { key: 'properties', label: 'Properties', icon: <Home className="w-4 h-4" /> },
     { key: 'config', label: 'System Config', icon: <Settings className="w-4 h-4" /> },
   ];
 
@@ -197,13 +224,31 @@ const MasterDataManagementPage: React.FC = () => {
 
         {activeTab !== 'config' && !loading && (
           <>
+            {activeTab === 'categories' && (
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Module
+                </label>
+                <select
+                  value={categoryModuleId}
+                  onChange={(e) => setCategoryModuleId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                >
+                  <option value="">All modules (legacy)</option>
+                  {modules.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Select a module to view and add its specific categories.</p>
+              </div>
+            )}
             <div className="flex gap-3 mb-6">
               <input
                 type="text"
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                placeholder={`Add new ${activeTab === 'categories' ? 'category' : activeTab === 'departments' ? 'department' : 'location'}...`}
+                placeholder={`Add new ${activeTab === 'categories' ? 'category' : activeTab === 'departments' ? 'department' : activeTab === 'locations' ? 'location' : 'property'}...`}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
               <button

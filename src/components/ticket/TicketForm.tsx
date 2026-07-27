@@ -26,16 +26,36 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
   const [validationError, setValidationError] = useState<string | null>(null);
   const [masterCategories, setMasterCategories] = useState<string[]>([]);
   const [masterLocations, setMasterLocations] = useState<string[]>([]);
+  const [masterProperties, setMasterProperties] = useState<string[]>([]);
 
   useEffect(() => {
-    MasterDataService.getActive('categories').then(setMasterCategories).catch(() => setMasterCategories([]));
     MasterDataService.getActive('locations').then((locs) => {
       setMasterLocations(locs);
       if (!ticket && !copiedTicket && locs.length > 0) {
         setFormData(prev => ({ ...prev, propertyLocation: locs[0] }));
       }
     }).catch(() => setMasterLocations([]));
+    MasterDataService.getActive('properties').then((props) => {
+      setMasterProperties(props);
+      if (!ticket && !copiedTicket && props.length > 0) {
+        setFormData(prev => ({ ...prev, propertyId: props[0] }));
+      }
+    }).catch(() => setMasterProperties([]));
   }, []);
+
+  useEffect(() => {
+    const moduleId = selectedModule?.id;
+    if (moduleId) {
+      MasterDataService.getActive('categories', moduleId).then((cats) => {
+        setMasterCategories(cats);
+        if (!ticket && !copiedTicket && cats.length > 0) {
+          setFormData(prev => ({ ...prev, category: prev.category && cats.includes(prev.category) ? prev.category : cats[0] }));
+        }
+      }).catch(() => setMasterCategories([]));
+    } else {
+      MasterDataService.getActive('categories').then(setMasterCategories).catch(() => setMasterCategories([]));
+    }
+  }, [selectedModule]);
   
   // Get module-specific ticket prefix
   const getTicketPrefix = (moduleId: string): string => {
@@ -327,6 +347,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
         'Street Lighting',
         'Utility Services',
       ]);
+  const availableProperties = masterProperties.length > 0 ? masterProperties : ['PROP001', 'PROP002'];
   const availableRequestTypes = selectedModule?.config?.requestTypes || [];
   const selectedRequestType = availableRequestTypes.find(rt => rt.value === formData.requestType);
   const showCEInspectionNotice = selectedRequestType?.requiresCEInspection === true;
@@ -495,8 +516,12 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                       onChange={(e) => setFormData({ ...formData, propertyId: e.target.value })}
                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="PROP001">PROP001</option>
-                      <option value="PROP002">PROP002</option>
+                      {availableProperties.map(prop => (
+                        <option key={prop} value={prop}>{prop}</option>
+                      ))}
+                      {formData.propertyId && availableProperties.length > 0 && !availableProperties.includes(formData.propertyId) && (
+                        <option value={formData.propertyId}>{formData.propertyId} (inactive)</option>
+                      )}
                     </select>
                   </div>
 
