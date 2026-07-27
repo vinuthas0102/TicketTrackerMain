@@ -174,10 +174,8 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
         setValidationError('Description is required to submit.');
         return false;
       }
-      if (user?.role === 'EMPLOYEE') {
-        if (!formData.propertyId) { setValidationError('Property ID is required to submit.'); return false; }
-        if (!formData.propertyLocation) { setValidationError('Property Location is required to submit.'); return false; }
-      }
+      if (!formData.propertyId) { setValidationError('Property ID is required to submit.'); return false; }
+      if (!formData.propertyLocation) { setValidationError('Property Location is required to submit.'); return false; }
       if (availableRequestTypes.length > 0 && !formData.requestType) {
         setValidationError('Request Type is required to submit.'); return false;
       }
@@ -504,9 +502,8 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                 />
               </div>
 
-              {/* Property ID and Property Location - Only for Employees */}
-              {user?.role === 'EMPLOYEE' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Property ID and Property Location */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Property ID *
@@ -543,7 +540,6 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                     </select>
                   </div>
                 </div>
-              )}
 
               {/* Priority and Category */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
