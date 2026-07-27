@@ -653,9 +653,9 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           <input
             type="text"
             value={formData.title}
-            readOnly={!!step}
+            readOnly
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${step ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed"
             required
           />
         </div>
@@ -664,10 +664,10 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea
             value={formData.description}
-            readOnly={!!step}
+            readOnly
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
-            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${step ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed"
           />
         </div>
 
