@@ -405,7 +405,7 @@ public class TicketDAO extends BaseDAO {
     public List<Ticket> findAccessibleTickets(byte[] userId, String userRole) throws SQLException {
         String sql;
 
-        if ("Admin".equalsIgnoreCase(userRole) || "Finance".equalsIgnoreCase(userRole)) {
+        if ("Admin".equalsIgnoreCase(userRole) || "Finance".equalsIgnoreCase(userRole) || "eo".equalsIgnoreCase(userRole)) {
             sql = "SELECT * FROM tickets ORDER BY created_at DESC";
 
             Connection conn = null;
@@ -495,7 +495,7 @@ public class TicketDAO extends BaseDAO {
         try {
             conn = getConnection();
 
-            if ("Admin".equalsIgnoreCase(userRole) || "Finance".equalsIgnoreCase(userRole)) {
+            if ("Admin".equalsIgnoreCase(userRole) || "Finance".equalsIgnoreCase(userRole) || "eo".equalsIgnoreCase(userRole)) {
                 sql = "SELECT * FROM tickets WHERE module_id = ? ORDER BY created_at DESC";
                 stmt = conn.prepareStatement(sql);
                 stmt.setBytes(1, moduleId);
