@@ -24,6 +24,7 @@ public class WorkflowService {
     private final AuditLogDAO auditLogDAO;
     private final TicketDAO ticketDAO;
     private final ModuleDAO moduleDAO;
+    private final DocumentDAO documentDAO;
 
     public WorkflowService() {
         this.workflowStepDAO = new WorkflowStepDAO();
@@ -32,6 +33,17 @@ public class WorkflowService {
         this.auditLogDAO = new AuditLogDAO();
         this.ticketDAO = new TicketDAO();
         this.moduleDAO = new ModuleDAO();
+        this.documentDAO = new DocumentDAO();
+    }
+
+    private boolean hasCompletionCertificate(byte[] stepId) throws SQLException {
+        List<Document> stepDocs = documentDAO.findByStepId(stepId);
+        for (Document doc : stepDocs) {
+            if (doc.isCompletionCertificate()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void ensureTicketReviewed(byte[] ticketId) throws TicketTrackerException {
@@ -256,6 +268,10 @@ public class WorkflowService {
                     throw new ValidationException("Cannot complete step: All mandatory file references must be uploaded");
                 }
 
+                if (existingStep.isCompletionCertificateRequired() && !hasCompletionCertificate(updateRequest.getId())) {
+                    throw new ValidationException("Cannot complete step: A completion certificate must be uploaded before marking this task as completed");
+                }
+
                 if (updateRequest.getCompletedAt() == null) {
                     updateRequest.setCompletedAt(new Timestamp(System.currentTimeMillis()));
                 }
@@ -316,6 +332,10 @@ public class WorkflowService {
             }
 
             boolean isCompletion = progress >= 100;
+            if (isCompletion && step.isCompletionCertificateRequired() && !hasCompletionCertificate(stepId)) {
+                throw new ValidationException("Cannot complete step: A completion certificate must be uploaded before marking this task as completed");
+            }
+
             String description;
             String actionName;
             String actionCategory;
@@ -358,6 +378,9 @@ public class WorkflowService {
             updateRequest.setStatus(newStatus);
 
             if ("completed".equals(newStatus)) {
+                if (step.isCompletionCertificateRequired() && !hasCompletionCertificate(stepId)) {
+                    throw new ValidationException("Cannot complete step: A completion certificate must be uploaded before marking this task as completed");
+                }
                 updateRequest.setCompletedAt(new Timestamp(System.currentTimeMillis()));
                 updateRequest.setProgress(new BigDecimal("100"));
             }

@@ -471,6 +471,29 @@ public class TicketServlet extends HttpServlet {
         }
 
         String normalizedStatus = statusRequest.newStatus.toLowerCase().trim();
+
+        if ("completed".equals(normalizedStatus) && existingTicket != null
+                && existingTicket.isCompletionDocumentsRequired()) {
+            boolean hasCompletionCert = false;
+            try {
+                List<Document> ticketDocs = documentService.getDocumentsByTicketId(ticketId);
+                for (Document doc : ticketDocs) {
+                    if (doc.isCompletionCertificate()) {
+                        hasCompletionCert = true;
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("Error checking completion certificate for ticket {}: {}",
+                        ticketIdHex, e.getMessage());
+            }
+            if (!hasCompletionCert) {
+                sendError(response, 400,
+                        "Completion certificate is required. Please upload evidence/completion document before marking this ticket as completed.");
+                return;
+            }
+        }
+
         ticketService.updateTicketStatus(ticketId, normalizedStatus, currentUser.getId());
 
         logger.info("Ticket status changed: {} to {} by user: {}",

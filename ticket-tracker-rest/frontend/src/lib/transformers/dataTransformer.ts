@@ -138,7 +138,7 @@ export const transformTicketFromBackend = (ticket: any): any => {
     updatedAt: updatedAt || new Date(),
     dueDate: safeParseDate(ticket.dueDate),
     startDate: safeParseDate(ticket.startDate),
-    department: ticket.data?.department || '',
+    department: ticket.department || ticket.data?.department || '',
     category: ticket.data?.category || ticket.category || 'General',
     propertyId: ticket.propertyId || 'PROP001',
     propertyLocation: ticket.propertyLocation || '',

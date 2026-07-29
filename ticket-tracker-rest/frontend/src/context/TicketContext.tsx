@@ -275,9 +275,12 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
       }
     }
 
-    // Apply assignee filter
+    // Apply assignee filter - match both ticket-level and workflow-step-level assignments
     if (filters.assignedTo) {
-      filtered = filtered.filter(ticket => ticket.assignedTo === filters.assignedTo);
+      filtered = filtered.filter(ticket =>
+        ticket.assignedTo === filters.assignedTo ||
+        (ticket.workflow && ticket.workflow.some((step: any) => step.assignedTo === filters.assignedTo))
+      );
     }
 
     // Apply department filter
