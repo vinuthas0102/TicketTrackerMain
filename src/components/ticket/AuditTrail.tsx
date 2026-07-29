@@ -61,6 +61,10 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
   };
 
   const getActionDescription = (entry: any) => {
+    const stepTitle = entry.stepId
+      ? ticket.workflow.find(s => s.id === entry.stepId)?.title
+      : undefined;
+
     switch (entry.action) {
       case 'CREATED':
         return 'Ticket created';
@@ -68,8 +72,27 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
         return `Status changed from ${entry.oldValue} to ${entry.newValue}`;
       case 'UPDATED':
         return 'Ticket updated';
+      case 'WORKFLOW_UPDATED': {
+        const desc = entry.remarks || '';
+        if (desc) return desc;
+        return stepTitle ? `Task "${stepTitle}" updated` : 'Task updated';
+      }
+      case 'WORKFLOW_ADDED':
+        return stepTitle ? `Task "${stepTitle}" added` : 'Task added';
+      case 'WORKFLOW_DELETED':
+        return stepTitle ? `Task "${stepTitle}" deleted` : 'Task deleted';
+      case 'PROGRESS_UPDATED': {
+        const desc = entry.remarks || '';
+        if (desc) return desc;
+        return stepTitle ? `Progress updated on task "${stepTitle}"` : 'Progress updated';
+      }
+      case 'PROGRESS_DOCUMENTS_UPLOADED': {
+        const desc = entry.remarks || '';
+        if (desc) return desc;
+        return stepTitle ? `Progress documents uploaded to task "${stepTitle}"` : 'Progress documents uploaded';
+      }
       default:
-        return entry.action;
+        return entry.remarks || entry.action;
     }
   };
 
@@ -87,7 +110,8 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
       if (isEmployee) {
         const cat = entry.actionCategory;
         const isTicketLevel = cat === 'ticket_action' || cat === 'status_change' || !entry.stepId;
-        if (!isTicketLevel) return false;
+        const hasDocs = (entry.progressDocs || []).length > 0;
+        if (!isTicketLevel && !hasDocs) return false;
       }
 
       const entryUser = users.find(u => u.id === entry.userId);

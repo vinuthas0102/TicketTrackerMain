@@ -1,9 +1,11 @@
 package com.tickettracker.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tickettracker.dao.AuditLogDAO;
 import com.tickettracker.dao.WorkflowStepFileReferenceDAO;
 import com.tickettracker.dao.WorkflowStepProgressDocumentDAO.ProgressDocument;
 import com.tickettracker.exception.TicketTrackerException;
+import com.tickettracker.model.AuditLog;
 import com.tickettracker.model.Document;
 import com.tickettracker.model.User;
 import com.tickettracker.service.DocumentService;
@@ -42,6 +44,7 @@ public class FileServlet extends HttpServlet {
     private DocumentService documentService;
     private WorkflowStepProgressDocumentService progressDocumentService;
     private WorkflowStepFileReferenceDAO fileReferenceDAO;
+    private AuditLogDAO auditLogDAO;
     private ObjectMapper objectMapper;
 
     @Override
@@ -50,6 +53,7 @@ public class FileServlet extends HttpServlet {
         this.documentService = new DocumentService();
         this.progressDocumentService = new WorkflowStepProgressDocumentService();
         this.fileReferenceDAO = new WorkflowStepFileReferenceDAO();
+        this.auditLogDAO = new AuditLogDAO();
         this.objectMapper = JsonUtil.getObjectMapper();
     }
 
@@ -244,8 +248,29 @@ public class FileServlet extends HttpServlet {
         progressDoc.setTicketId(ByteArrayUtil.hexToBytes(ticketIdStr));
         progressDoc.setUploadedBy(currentUser.getId());
 
+        byte[] auditLogId = null;
         if (isValidParameter(auditLogIdStr)) {
-            progressDoc.setAuditLogId(ByteArrayUtil.hexToBytes(auditLogIdStr));
+            auditLogId = ByteArrayUtil.hexToBytes(auditLogIdStr);
+        } else {
+            // No audit log provided - create one so the document is linked to the audit trail
+            try {
+                AuditLog auditLog = new AuditLog();
+                auditLog.setTicketId(ByteArrayUtil.hexToBytes(ticketIdStr));
+                auditLog.setStepId(ByteArrayUtil.hexToBytes(stepIdStr));
+                auditLog.setPerformedBy(currentUser.getId());
+                auditLog.setAction("PROGRESS_DOCUMENTS_UPLOADED");
+                auditLog.setActionCategory("document_action");
+                auditLog.setDescription("Progress document uploaded: " + fileName);
+                auditLog.setMetadata("{\"fileName\":\"" + fileName.replace("\"", "\\\"") + "\",\"autoCreated\":true}");
+                AuditLog created = auditLogDAO.create(auditLog);
+                auditLogId = created.getId();
+                logger.info("Auto-created audit log {} for progress document upload", ByteArrayUtil.bytesToHex(auditLogId));
+            } catch (Exception e) {
+                logger.error("Failed to auto-create audit log for progress document upload", e);
+            }
+        }
+        if (auditLogId != null) {
+            progressDoc.setAuditLogId(auditLogId);
         }
 
         try (InputStream fileContent = filePart.getInputStream()) {

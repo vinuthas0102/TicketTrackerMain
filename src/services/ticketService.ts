@@ -889,11 +889,17 @@ export class TicketService {
       if (updates.status !== undefined) {
         updateData.status = updates.status.toLowerCase();
         actionCategory = 'status_change';
-        actionDescription = `Workflow status changed to ${updates.status}`;
+        const stepTitle = updates.title || '';
         if (updates.status === 'COMPLETED') {
           updateData.completed_at = new Date().toISOString();
           updateData.actual_completed_at = new Date().toISOString();
           updateData.progress = 100;
+          const completedAt = new Date().toLocaleString();
+          actionDescription = stepTitle
+            ? `Task "${stepTitle}" marked as completed on ${completedAt}`
+            : `Task marked as completed on ${completedAt}`;
+        } else {
+          actionDescription = `Workflow status changed to ${updates.status}`;
         }
         if (updates.status === 'WIP' && !updates.startDate) {
           updateData.start_date = new Date().toISOString();

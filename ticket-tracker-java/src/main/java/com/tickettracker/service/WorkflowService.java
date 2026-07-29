@@ -272,7 +272,7 @@ public class WorkflowService {
 
             WorkflowStep updatedStep = workflowStepDAO.updateSelective(updateRequest);
 
-            String changes = buildUpdateChangeDescription(updateRequest);
+            String changes = buildUpdateChangeDescription(updateRequest, existingStep);
             String actionCategory = determineActionCategory(updateRequest);
             String newData = updateRequest.getProgress() != null ? updateRequest.getProgress().toPlainString() : null;
             String oldData = oldProgress != null ? oldProgress.toPlainString() : null;
@@ -345,8 +345,13 @@ public class WorkflowService {
 
             workflowStepDAO.updateSelective(updateRequest);
 
-            String description = String.format("Status changed from '%s' to '%s'",
-                    oldStatus, newStatus);
+            String description;
+            if ("completed".equals(newStatus)) {
+                String completedAt = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date());
+                description = String.format("Task \"%s\" marked as completed on %s", step.getTitle(), completedAt);
+            } else {
+                description = String.format("Status changed from '%s' to '%s'", oldStatus, newStatus);
+            }
             createAuditLog(step.getTicketId(), stepId, currentUserId,
                     "Step status changed", description, "status_change");
 
@@ -719,7 +724,7 @@ public class WorkflowService {
         return hasField || (remarks != null && !remarks.trim().isEmpty()) ? sb.toString() : null;
     }
 
-    private String buildUpdateChangeDescription(WorkflowStepUpdateRequest updateRequest) {
+    private String buildUpdateChangeDescription(WorkflowStepUpdateRequest updateRequest, WorkflowStep existingStep) {
         StringBuilder changes = new StringBuilder();
 
         if (updateRequest.getTitle() != null) {
@@ -729,7 +734,15 @@ public class WorkflowService {
             changes.append("Description updated; ");
         }
         if (updateRequest.getStatus() != null) {
-            changes.append(String.format("Status changed to '%s'; ", updateRequest.getStatus()));
+            if ("completed".equals(updateRequest.getStatus())) {
+                String completedAt = updateRequest.getCompletedAt() != null
+                        ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(updateRequest.getCompletedAt())
+                        : new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date());
+                String stepTitle = existingStep != null ? existingStep.getTitle() : "task";
+                changes.append(String.format("Task \"%s\" marked as completed on %s; ", stepTitle, completedAt));
+            } else {
+                changes.append(String.format("Status changed to '%s'; ", updateRequest.getStatus()));
+            }
         }
         if (updateRequest.getAssignedTo() != null) {
             changes.append("Assignment changed; ");
@@ -742,6 +755,9 @@ public class WorkflowService {
         }
         if (updateRequest.getStartDate() != null) {
             changes.append("Start date updated; ");
+        }
+        if (updateRequest.getRemarks() != null && !updateRequest.getRemarks().trim().isEmpty()) {
+            changes.append(String.format("Remarks: %s; ", updateRequest.getRemarks().trim()));
         }
 
         return changes.length() > 0 ? changes.toString() : "Minor updates";

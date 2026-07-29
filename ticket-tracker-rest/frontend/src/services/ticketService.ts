@@ -626,16 +626,35 @@ export class TicketService {
     files?: File[]
   ): Promise<void> {
     try {
+      const actionDescription = files && files.length > 0
+        ? `Progress updated to ${progress}%. ${files.length} document(s) attached. ${progressComment ? `Comment: ${progressComment}` : ''}`
+        : `Progress updated to ${progress}%. ${progressComment ? `Comment: ${progressComment}` : ''}`;
+
+      const auditLogId = await this.createAuditLog({
+        ticketId,
+        stepId,
+        action: 'PROGRESS_UPDATED',
+        actionCategory: 'progress_update' as AuditActionCategory,
+        description: actionDescription,
+        performedBy: userId,
+        newData: JSON.stringify({ progress }),
+        metadata: {
+          progress,
+          comment: progressComment || null,
+          fileCount: files?.length || 0,
+        },
+      });
+
       if (files && files.length > 0) {
         for (const file of files) {
           await apiClient.uploadFile(
-            API_ENDPOINTS.WORKFLOW_STEPS.PROGRESS(stepId),
+            API_ENDPOINTS.FILES.PROGRESS_DOCS,
             file,
             {
-              progress,
-              comment: progressComment,
-              userId,
+              stepId,
               ticketId,
+              userId,
+              auditLogId: auditLogId || '',
             }
           );
         }
