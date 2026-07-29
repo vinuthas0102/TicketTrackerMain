@@ -317,7 +317,6 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<WorkflowStepStatus | ''>('');
   const [filterAssignedTo, setFilterAssignedTo] = useState('');
-  const [filterHierarchyLevel, setFilterHierarchyLevel] = useState<'1' | '2' | '3' | ''>('');
   const [showFilters, setShowFilters] = useState(false);
   const [stepRefreshKeys, setStepRefreshKeys] = useState<Map<string, number>>(new Map());
   const { addStep, updateStep, deleteStep, users } = useTickets();
@@ -1791,13 +1790,6 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       return false;
     }
 
-    if (filterHierarchyLevel) {
-      const level = getHierarchyLevel(step.level_1, step.level_2, step.level_3);
-      if (level.toString() !== filterHierarchyLevel) {
-        return false;
-      }
-    }
-
     return true;
   };
 
@@ -1813,19 +1805,18 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
 
   const rootSteps = ticket.workflow.filter(step => !step.parentStepId);
   const filteredRootSteps = useMemo(() => {
-    if (!searchQuery && !filterStatus && !filterAssignedTo && !filterHierarchyLevel) {
+    if (!searchQuery && !filterStatus && !filterAssignedTo) {
       return rootSteps;
     }
     return filterWorkflowsRecursive(rootSteps);
-  }, [rootSteps, searchQuery, filterStatus, filterAssignedTo, filterHierarchyLevel]);
+  }, [rootSteps, searchQuery, filterStatus, filterAssignedTo]);
 
-  const hasActiveFilters = searchQuery || filterStatus || filterAssignedTo || filterHierarchyLevel;
+  const hasActiveFilters = searchQuery || filterStatus || filterAssignedTo;
 
   const clearAllFilters = () => {
     setSearchQuery('');
     setFilterStatus('');
     setFilterAssignedTo('');
-    setFilterHierarchyLevel('');
   };
 
   if (ticket.workflow.length === 0 && !canManage) {
@@ -1923,17 +1914,6 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                 {users.map(u => (
                   <option key={u.id} value={u.id}>{u.name}</option>
                 ))}
-              </select>
-
-              <select
-                value={filterHierarchyLevel}
-                onChange={(e) => setFilterHierarchyLevel(e.target.value as '1' | '2' | '3' | '')}
-                className="px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="">All Levels</option>
-                <option value="1">Level 1</option>
-                <option value="2">Level 2</option>
-                <option value="3">Level 3</option>
               </select>
 
               {hasActiveFilters && (

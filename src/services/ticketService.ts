@@ -912,6 +912,9 @@ export class TicketService {
         updateData.progress = updates.progress;
         actionDescription = `Progress updated to ${updates.progress}%`;
         progressChanged = true;
+        if (actionCategory === 'workflow_action') {
+          actionCategory = 'progress_update';
+        }
       }
       if (updates.dependency_mode !== undefined) updateData.dependency_mode = updates.dependency_mode;
       if (updates.mandatory_documents !== undefined) updateData.mandatory_documents = updates.mandatory_documents;
