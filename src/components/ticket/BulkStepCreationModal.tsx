@@ -86,6 +86,18 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
     if (!row.title || row.title.trim() === '') {
       errors.title = 'Title is required';
     }
+    if (!row.assignedTo) {
+      errors.assignedTo = 'Assigned To is required';
+    }
+    if (!row.department) {
+      errors.department = 'Department is required';
+    }
+    if (!row.startDate) {
+      errors.startDate = 'Start Date is required';
+    }
+    if (isEO && !row.dueDate) {
+      errors.dueDate = 'Due Date is required';
+    }
 
     row.errors = errors;
     return Object.keys(errors).length === 0;
@@ -382,7 +394,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Department
+                      Department <span className="text-red-600">*</span>
                     </label>
                     <select
                       value={row.department || ''}
@@ -394,23 +406,26 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
                           updateRow(row.rowId, 'assignedTo', '');
                         }
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3 py-2 border ${row.errors?.department ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     >
                       <option value="">All Departments</option>
                       {uniqueDepartments.map(dept => (
                         <option key={dept} value={dept}>{dept}</option>
                       ))}
                     </select>
+                    {row.errors?.department && (
+                      <p className="text-red-600 text-xs mt-1">{row.errors.department}</p>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Assigned To
+                      Assigned To <span className="text-red-600">*</span>
                     </label>
                     <select
                       value={row.assignedTo}
                       onChange={(e) => updateRow(row.rowId, 'assignedTo', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3 py-2 border ${row.errors?.assignedTo ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     >
                       <option value="">Unassigned</option>
                       {(row.department ? users.filter(u => u.department === row.department && (parentStep ? u.role === 'TECHNICIAN' : u.role === 'DO')) : users.filter(u => parentStep ? u.role === 'TECHNICIAN' : u.role === 'DO')).map(user => (
@@ -419,32 +434,41 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
                         </option>
                       ))}
                     </select>
+                    {row.errors?.assignedTo && (
+                      <p className="text-red-600 text-xs mt-1">{row.errors.assignedTo}</p>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Start Date
+                      Start Date <span className="text-red-600">*</span>
                     </label>
                     <input
                       type="date"
                       value={row.startDate ? new Date(row.startDate).toISOString().split('T')[0] : ''}
                       onChange={(e) => updateRow(row.rowId, 'startDate', e.target.value ? new Date(e.target.value) : undefined)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3 py-2 border ${row.errors?.startDate ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    {row.errors?.startDate && (
+                      <p className="text-red-600 text-xs mt-1">{row.errors.startDate}</p>
+                    )}
                   </div>
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Estimated Date (Due Date) {!isEO && <span className="text-xs text-gray-500">(EO Only)</span>}
+                      Estimated Date (Due Date) {isEO ? <span className="text-red-600">*</span> : <span className="text-xs text-gray-500">(EO Only)</span>}
                     </label>
                     <input
                       type="date"
                       value={row.dueDate ? new Date(row.dueDate).toISOString().split('T')[0] : ''}
                       onChange={(e) => updateRow(row.rowId, 'dueDate', e.target.value ? new Date(e.target.value) : undefined)}
                       min={row.startDate ? new Date(row.startDate).toISOString().split('T')[0] : undefined}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3 py-2 border ${row.errors?.dueDate ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                       disabled={!isEO}
                     />
+                    {row.errors?.dueDate && (
+                      <p className="text-red-600 text-xs mt-1">{row.errors.dueDate}</p>
+                    )}
                   </div>
 
                   <div className="md:col-span-3">

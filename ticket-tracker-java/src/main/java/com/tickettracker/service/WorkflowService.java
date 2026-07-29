@@ -149,6 +149,15 @@ public class WorkflowService {
                 if (step.getTicketId() == null) {
                     throw new ValidationException("Ticket ID is required for all steps");
                 }
+                if (step.getAssignedTo() == null) {
+                    throw new ValidationException("Assigned To is required for all steps");
+                }
+                if (step.getStartDate() == null) {
+                    throw new ValidationException("Start Date is required for all steps");
+                }
+                if (step.getDueDate() == null) {
+                    throw new ValidationException("Due Date is required for all steps");
+                }
 
                 if (stepSnapshot == null) {
                     stepSnapshot = new ArrayList<>(workflowStepDAO.findByTicketId(step.getTicketId()));
@@ -633,6 +642,18 @@ public class WorkflowService {
 
         if (step.getStepNumber() == null || step.getStepNumber().trim().isEmpty()) {
             validation.addError("Step number is required");
+        }
+
+        if (step.getAssignedTo() == null) {
+            validation.addError("Assigned To is required");
+        }
+
+        if (step.getStartDate() == null) {
+            validation.addError("Start Date is required");
+        }
+
+        if (step.getDueDate() == null) {
+            validation.addError("Due Date is required");
         }
 
         if (validation.getValidationErrors().size() > 0) {

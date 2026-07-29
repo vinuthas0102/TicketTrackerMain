@@ -594,8 +594,32 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       }
     };
 
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+    const validateFormFields = (): boolean => {
+      const errors: Record<string, string> = {};
+      if (!formData.assignedTo) {
+        errors.assignedTo = 'Assigned To is required';
+      }
+      if (!formData.department) {
+        errors.department = 'Department is required';
+      }
+      if (!formData.startDate) {
+        errors.startDate = 'Start Date is required';
+      }
+      if (isEO && !formData.dueDate) {
+        errors.dueDate = 'Due Date is required';
+      }
+      setFormErrors(errors);
+      return Object.keys(errors).length === 0;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
+
+      if (!validateFormFields()) {
+        return;
+      }
 
       if (requiresFileUpload && !completionFile) {
         const hasExistingCert = await checkCompletionCertificate(step!.id);
@@ -711,7 +735,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Department <span className="text-red-500">*</span></label>
             <select
               value={formData.department}
               disabled={isSubTask || isDepartmentLocked}
@@ -724,28 +748,30 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                   assignedTo: (assignedUser && newDept && normalizeDept(assignedUser.department) !== normalizeDept(newDept)) ? '' : formData.assignedTo
                 });
               }}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${(isSubTask || isDepartmentLocked) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              className={`w-full px-3 py-2 border ${formErrors.department ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${(isSubTask || isDepartmentLocked) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <option value="">All Departments</option>
               {masterDepartments.map(dept => (
                 <option key={dept} value={dept}>{dept}</option>
               ))}
             </select>
+            {formErrors.department && <p className="text-xs text-red-600 mt-1">{formErrors.department}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To <span className="text-red-500">*</span></label>
             <select
               value={formData.assignedTo}
               disabled={isAssignedToLocked}
               onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isAssignedToLocked ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              className={`w-full px-3 py-2 border ${formErrors.assignedTo ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isAssignedToLocked ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <option value="">Unassigned</option>
               {filteredUsers.map(user => (
                 <option key={user.id} value={user.id}>{user.name}</option>
               ))}
             </select>
+            {formErrors.assignedTo && <p className="text-xs text-red-600 mt-1">{formErrors.assignedTo}</p>}
           </div>
         </div>
 
@@ -772,25 +798,27 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date <span className="text-red-500">*</span></label>
             <input
               type="date"
               value={formData.startDate}
               onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border ${formErrors.startDate ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
             />
+            {formErrors.startDate && <p className="text-xs text-red-600 mt-1">{formErrors.startDate}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date {!isEO && <span className="text-xs text-gray-500">(EO Only)</span>}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date {isEO ? <span className="text-red-500">*</span> : <span className="text-xs text-gray-500">(EO Only)</span>}</label>
             <input
               type="date"
               value={formData.dueDate}
               onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${(isSubTask || !isEO) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              className={`w-full px-3 py-2 border ${formErrors.dueDate ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${(isSubTask || !isEO) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               min={formData.startDate || getCurrentDateISOString()}
               disabled={isSubTask || !isEO}
             />
+            {formErrors.dueDate && <p className="text-xs text-red-600 mt-1">{formErrors.dueDate}</p>}
           </div>
         </div>
 
