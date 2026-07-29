@@ -17,6 +17,7 @@ interface TicketContextType {
   deleteTicket: (id: string) => Promise<void>;
   getTicketById: (id: string) => Ticket | undefined;
   getFilteredTickets: (filters: TicketFilters) => Ticket[];
+  refreshTicketAuditTrail: (ticketId: string) => Promise<void>;
   addStep: (ticketId: string, step: Omit<WorkflowStep, 'id' | 'createdAt' | 'comments' | 'attachments'>) => Promise<void>;
   updateStep: (ticketId: string, stepId: string, updates: Partial<WorkflowStep>, remarks?: string) => Promise<void>;
   deleteStep: (ticketId: string, stepId: string) => Promise<void>;
@@ -292,6 +293,17 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
     return filtered;
   };
 
+  const refreshTicketAuditTrail = async (ticketId: string) => {
+    try {
+      const auditTrail = await TicketService.getTicketAuditTrail(ticketId);
+      setTickets(prev => prev.map(t =>
+        t.id === ticketId ? { ...t, auditTrail } : t
+      ));
+    } catch (err) {
+      console.error('Error refreshing audit trail:', err);
+    }
+  };
+
   const addStep = async (ticketId: string, stepData: Omit<WorkflowStep, 'id' | 'createdAt' | 'comments' | 'attachments'>) => {
     try {
       if (!user) throw new Error('User not authenticated');
@@ -397,6 +409,7 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
     deleteTicket,
     getTicketById,
     getFilteredTickets,
+    refreshTicketAuditTrail,
     addStep,
     updateStep,
     deleteStep,

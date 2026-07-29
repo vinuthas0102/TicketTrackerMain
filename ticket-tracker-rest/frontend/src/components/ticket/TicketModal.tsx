@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar, User, AlertTriangle, Clock, CheckCircle, XCircle, FileText, Users, CreditCard as Edit, Trash2 } from 'lucide-react';
 import { Ticket } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -18,8 +18,14 @@ interface TicketModalProps {
 
 const TicketModal: React.FC<TicketModalProps> = ({ ticket, isOpen, onClose, onEdit, onDelete }) => {
   const { user } = useAuth();
-  const { users } = useTickets();
+  const { users, refreshTicketAuditTrail } = useTickets();
   const [showStatusModal, setShowStatusModal] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && ticket) {
+      refreshTicketAuditTrail(ticket.id);
+    }
+  }, [isOpen, ticket?.id]);
 
   if (!isOpen || !ticket) return null;
 

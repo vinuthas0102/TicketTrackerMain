@@ -1,6 +1,8 @@
 package com.tickettracker.dao;
 
+import com.tickettracker.model.AuditLog;
 import com.tickettracker.model.Ticket;
+import com.tickettracker.model.WorkflowStep;
 import oracle.sql.RAW;
 
 import java.sql.*;
@@ -10,6 +12,7 @@ import java.util.List;
 public class TicketDAO extends BaseDAO {
 	WorkflowStepDAO wflDao = new WorkflowStepDAO();
 	AuditLogDAO		logDao = new AuditLogDAO();
+	WorkflowStepProgressDocumentDAO progressDocDao = new WorkflowStepProgressDocumentDAO();
 	
     public Ticket create(Ticket ticket) throws SQLException {
         String sql = "INSERT INTO tickets (id, ticket_number, module_id, title, description, status, " +
@@ -569,7 +572,35 @@ public class TicketDAO extends BaseDAO {
         ticket.setUpdatedAt(rs.getTimestamp("updated_at"));
         ticket.setWorkflow(wflDao.findByTicketId(rs.getBytes("id")));
         ticket.setAuditLog(logDao.findByTicketId(rs.getBytes("id")));
+        enrichAuditLogsWithProgressDocs(ticket);
         return ticket;
+    }
+
+    private void enrichAuditLogsWithProgressDocs(Ticket ticket) throws SQLException {
+        if (ticket.getAuditLog() == null || ticket.getAuditLog().isEmpty()) return;
+        for (AuditLog al : ticket.getAuditLog()) {
+            if (al.getId() == null) continue;
+            List<WorkflowStepProgressDocumentDAO.ProgressDocument> docs =
+                    progressDocDao.findByAuditLogId(al.getId());
+            if (docs == null || docs.isEmpty()) continue;
+            List<AuditLog.ProgressDocInfo> docInfos = new ArrayList<>();
+            for (WorkflowStepProgressDocumentDAO.ProgressDocument doc : docs) {
+                AuditLog.ProgressDocInfo info = new AuditLog.ProgressDocInfo();
+                info.setId(bytesToHex(doc.getId()));
+                info.setStepId(doc.getStepId() != null ? bytesToHex(doc.getStepId()) : null);
+                info.setTicketId(doc.getTicketId() != null ? bytesToHex(doc.getTicketId()) : null);
+                info.setAuditLogId(doc.getAuditLogId() != null ? bytesToHex(doc.getAuditLogId()) : null);
+                info.setFileName(doc.getFileName());
+                info.setFilePath(doc.getFilePath());
+                info.setFileSize(doc.getFileSize());
+                info.setFileType(doc.getFileType());
+                info.setUploadedBy(doc.getUploadedBy() != null ? bytesToHex(doc.getUploadedBy()) : null);
+                info.setUploadedAt(doc.getUploadedAt());
+                info.setDeleted(doc.isDeleted());
+                docInfos.add(info);
+            }
+            al.setProgressDocs(docInfos);
+        }
     }
 
     private byte[] generateUUID() throws SQLException {

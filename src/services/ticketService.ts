@@ -125,7 +125,7 @@ export class TicketService {
             .from('audit_logs')
             .select(`
               *,
-              progress_docs:workflow_step_progress_documents(
+              progress_docs:workflow_step_progress_documents!audit_log_id(
                 id,
                 step_id,
                 ticket_id,

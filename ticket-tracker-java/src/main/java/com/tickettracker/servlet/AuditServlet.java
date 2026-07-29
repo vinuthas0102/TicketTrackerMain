@@ -49,18 +49,18 @@ public class AuditServlet extends HttpServlet {
             if (ticketIdParam != null) {
                 byte[] ticketId = hexToBytes(ticketIdParam);
                 List<AuditLog> logs = auditLogDAO.findByTicketId(ticketId);
-                if (currentUser != null && "EMPLOYEE".equalsIgnoreCase(currentUser.getRole())) {
-                    logs = filterForEmployee(logs);
-                }
                 List<AuditLogResponse> enrichedLogs = enrichLogsWithProgressDocs(logs);
+                if (currentUser != null && "EMPLOYEE".equalsIgnoreCase(currentUser.getRole())) {
+                    enrichedLogs = filterForEmployeeEnriched(enrichedLogs);
+                }
                 sendJsonResponse(response, enrichedLogs);
             } else if (stepIdParam != null) {
                 byte[] stepId = hexToBytes(stepIdParam);
                 List<AuditLog> logs = auditLogDAO.findByStepId(stepId);
-                if (currentUser != null && "EMPLOYEE".equalsIgnoreCase(currentUser.getRole())) {
-                    logs = filterForEmployee(logs);
-                }
                 List<AuditLogResponse> enrichedLogs = enrichLogsWithProgressDocs(logs);
+                if (currentUser != null && "EMPLOYEE".equalsIgnoreCase(currentUser.getRole())) {
+                    enrichedLogs = filterForEmployeeEnriched(enrichedLogs);
+                }
                 sendJsonResponse(response, enrichedLogs);
             } else {
                 sendError(response, 400, "ticketId or stepId parameter required");
@@ -180,6 +180,22 @@ public class AuditServlet extends HttpServlet {
                     || "status_change".equalsIgnoreCase(category)
                     || log.getStepId() == null;
             if (isTicketLevel) {
+                filtered.add(log);
+            }
+        }
+        return filtered;
+    }
+
+    private List<AuditLogResponse> filterForEmployeeEnriched(List<AuditLogResponse> logs) {
+        List<AuditLogResponse> filtered = new ArrayList<>();
+        for (AuditLogResponse log : logs) {
+            AuditLog al = log.getAuditLog();
+            String category = al.getActionCategory();
+            boolean isTicketLevel = "ticket_action".equalsIgnoreCase(category)
+                    || "status_change".equalsIgnoreCase(category)
+                    || al.getStepId() == null;
+            boolean hasDocs = log.getProgressDocs() != null && !log.getProgressDocs().isEmpty();
+            if (isTicketLevel || hasDocs) {
                 filtered.add(log);
             }
         }
