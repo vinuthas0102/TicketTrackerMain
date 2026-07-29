@@ -173,7 +173,7 @@ export class TicketService {
             dueDate: ticket.due_date ? new Date(ticket.due_date) : undefined,
             startDate: ticket.start_date ? new Date(ticket.start_date) : undefined,
             department: ticket.data?.department || '',
-            category: ticket.data?.category || '',
+            category: ticket.data?.category || 'General',
             propertyId: ticket.property_id || 'PROP001',
             propertyLocation: ticket.property_location || '',
             completionDocumentsRequired: ticket.completion_documents_required !== false,
@@ -297,7 +297,10 @@ export class TicketService {
             due_date: ticketData.dueDate,
             property_id: ticketData.propertyId || 'PROP001',
             property_location: ticketData.propertyLocation || '',
-            data: ticketData.data || {},
+            data: {
+              category: ticketData.category || 'General',
+              department: ticketData.department || '',
+            },
             requires_finance_approval: ticketData.requiresFinanceApproval !== undefined ? ticketData.requiresFinanceApproval : false,
             request_type: ticketData.requestType || null,
           },
@@ -371,7 +374,10 @@ export class TicketService {
               due_date: ticketInput.dueDate || null,
               property_id: ticketInput.propertyId,
               property_location: ticketInput.propertyLocation,
-              data: { department: ticketInput.department },
+              data: {
+                category: ticketInput.category || 'General',
+                department: ticketInput.department || '',
+              },
             },
           ])
           .select()
@@ -413,6 +419,20 @@ export class TicketService {
       if (updates.priority !== undefined) updateData.priority = updates.priority;
       if (updates.assignedTo !== undefined) updateData.assigned_to = updates.assignedTo;
       if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate;
+
+      if (updates.category !== undefined || updates.department !== undefined) {
+        const { data: currentData } = await supabase
+          .from('tickets')
+          .select('data')
+          .eq('id', id)
+          .single();
+
+        updateData.data = {
+          ...(currentData?.data || {}),
+          ...(updates.category !== undefined ? { category: updates.category } : {}),
+          ...(updates.department !== undefined ? { department: updates.department } : {}),
+        };
+      }
 
       const { error } = await supabase
         .from('tickets')

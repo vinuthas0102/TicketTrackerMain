@@ -21,7 +21,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
   const reviewByEORequired = selectedModule?.config?.reviewByEORequired ?? true;
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<AuditActionCategory | ''>('');
-  const [filterUserRole, setFilterUserRole] = useState<'EO' | 'DO' | ''>('');
+  const [filterUserRole, setFilterUserRole] = useState<'EO' | 'DO' | 'TECHNICIAN' | ''>('');
   const [filterWithDocuments, setFilterWithDocuments] = useState(false);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [loadingUrl, setLoadingUrl] = useState(false);
@@ -121,7 +121,8 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
       if (filterUserRole) {
         const userRole = entryUser?.role?.toUpperCase();
         if (filterUserRole === 'EO' && userRole !== 'EO') return false;
-        if (filterUserRole === 'DO' && userRole !== 'DEPT_OFFICER') return false;
+        if (filterUserRole === 'DO' && userRole !== 'DO') return false;
+        if (filterUserRole === 'TECHNICIAN' && userRole !== 'TECHNICIAN') return false;
       }
 
       return true;
@@ -361,6 +362,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
             <option value="">All Users</option>
             <option value="EO">EO Actions</option>
             <option value="DO">Manager Actions</option>
+            <option value="TECHNICIAN">Technician Actions</option>
           </select>
           <label className="flex items-center space-x-1 text-xs text-gray-700 cursor-pointer">
             <input

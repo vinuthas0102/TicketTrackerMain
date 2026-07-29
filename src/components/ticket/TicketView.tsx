@@ -417,11 +417,6 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-0.5">Department</label>
-                      <span className="text-sm text-gray-900">{ticket.department}</span>
-                    </div>
-
-                    <div>
                       <label className="block text-xs font-medium text-gray-500 mb-0.5">Category</label>
                       <span className="text-sm text-gray-900">{ticket.category}</span>
                     </div>
@@ -441,14 +436,6 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
 
                   <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                     <h3 className="text-sm font-medium text-gray-900 mb-2">Assignment & Dates</h3>
-
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-0.5">Assigned To</label>
-                      <div className="flex items-center space-x-1.5">
-                        <Users className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="text-sm text-gray-900">{assignedToUser?.name || 'Unassigned'}</span>
-                      </div>
-                    </div>
 
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-0.5">Created</label>
