@@ -1890,7 +1890,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           </div>
 
           <div className="bg-white border border-gray-200 rounded-lg p-2">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="relative flex-1 min-w-[200px]">
                 <input
                   type="text"
@@ -1939,7 +1939,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
               {hasActiveFilters && (
                 <button
                   onClick={clearAllFilters}
-                  className="flex items-center gap-1 px-2 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors whitespace-nowrap"
+                  className="flex items-center gap-1 px-2 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors whitespace-nowrap ml-auto"
                   title="Clear all filters"
                 >
                   <XCircle className="w-3.5 h-3.5" />
