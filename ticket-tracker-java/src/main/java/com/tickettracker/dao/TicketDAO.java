@@ -1,6 +1,7 @@
 package com.tickettracker.dao;
 
 import com.tickettracker.model.AuditLog;
+import com.tickettracker.model.Document;
 import com.tickettracker.model.Ticket;
 import com.tickettracker.model.WorkflowStep;
 import oracle.sql.RAW;
@@ -13,6 +14,7 @@ public class TicketDAO extends BaseDAO {
 	WorkflowStepDAO wflDao = new WorkflowStepDAO();
 	AuditLogDAO		logDao = new AuditLogDAO();
 	WorkflowStepProgressDocumentDAO progressDocDao = new WorkflowStepProgressDocumentDAO();
+	DocumentDAO documentDao = new DocumentDAO();
 	
     public Ticket create(Ticket ticket) throws SQLException {
         String sql = "INSERT INTO tickets (id, ticket_number, module_id, title, description, status, " +
@@ -582,24 +584,47 @@ public class TicketDAO extends BaseDAO {
             if (al.getId() == null) continue;
             List<WorkflowStepProgressDocumentDAO.ProgressDocument> docs =
                     progressDocDao.findByAuditLogId(al.getId());
-            if (docs == null || docs.isEmpty()) continue;
-            List<AuditLog.ProgressDocInfo> docInfos = new ArrayList<>();
-            for (WorkflowStepProgressDocumentDAO.ProgressDocument doc : docs) {
-                AuditLog.ProgressDocInfo info = new AuditLog.ProgressDocInfo();
-                info.setId(bytesToHex(doc.getId()));
-                info.setStepId(doc.getStepId() != null ? bytesToHex(doc.getStepId()) : null);
-                info.setTicketId(doc.getTicketId() != null ? bytesToHex(doc.getTicketId()) : null);
-                info.setAuditLogId(doc.getAuditLogId() != null ? bytesToHex(doc.getAuditLogId()) : null);
-                info.setFileName(doc.getFileName());
-                info.setFilePath(doc.getFilePath());
-                info.setFileSize(doc.getFileSize());
-                info.setFileType(doc.getFileType());
-                info.setUploadedBy(doc.getUploadedBy() != null ? bytesToHex(doc.getUploadedBy()) : null);
-                info.setUploadedAt(doc.getUploadedAt());
-                info.setDeleted(doc.isDeleted());
-                docInfos.add(info);
+            if (docs != null && !docs.isEmpty()) {
+                List<AuditLog.ProgressDocInfo> docInfos = new ArrayList<>();
+                for (WorkflowStepProgressDocumentDAO.ProgressDocument doc : docs) {
+                    AuditLog.ProgressDocInfo info = new AuditLog.ProgressDocInfo();
+                    info.setId(bytesToHex(doc.getId()));
+                    info.setStepId(doc.getStepId() != null ? bytesToHex(doc.getStepId()) : null);
+                    info.setTicketId(doc.getTicketId() != null ? bytesToHex(doc.getTicketId()) : null);
+                    info.setAuditLogId(doc.getAuditLogId() != null ? bytesToHex(doc.getAuditLogId()) : null);
+                    info.setFileName(doc.getFileName());
+                    info.setFilePath(doc.getFilePath());
+                    info.setFileSize(doc.getFileSize());
+                    info.setFileType(doc.getFileType());
+                    info.setUploadedBy(doc.getUploadedBy() != null ? bytesToHex(doc.getUploadedBy()) : null);
+                    info.setUploadedAt(doc.getUploadedAt());
+                    info.setDeleted(doc.isDeleted());
+                    docInfos.add(info);
+                }
+                al.setProgressDocs(docInfos);
             }
-            al.setProgressDocs(docInfos);
+            List<Document> stepDocs = documentDao.findByAuditLogId(al.getId());
+            if (stepDocs != null && !stepDocs.isEmpty()) {
+                List<AuditLog.StepDocInfo> stepDocInfos = new ArrayList<>();
+                for (Document doc : stepDocs) {
+                    AuditLog.StepDocInfo info = new AuditLog.StepDocInfo();
+                    info.setId(bytesToHex(doc.getId()));
+                    info.setStepId(doc.getStepId() != null ? bytesToHex(doc.getStepId()) : null);
+                    info.setTicketId(doc.getTicketId() != null ? bytesToHex(doc.getTicketId()) : null);
+                    info.setAuditLogId(doc.getAuditLogId() != null ? bytesToHex(doc.getAuditLogId()) : null);
+                    info.setFileName(doc.getName());
+                    info.setFileType(doc.getType());
+                    info.setFileSize(doc.getSize());
+                    info.setUrl(doc.getUrl());
+                    info.setStoragePath(doc.getStoragePath());
+                    info.setUploadedBy(doc.getUploadedBy() != null ? bytesToHex(doc.getUploadedBy()) : null);
+                    info.setUploadedAt(doc.getUploadedAt());
+                    info.setMandatory(doc.isMandatory());
+                    info.setCompletionCertificate(doc.isCompletionCertificate());
+                    stepDocInfos.add(info);
+                }
+                al.setStepDocs(stepDocInfos);
+            }
         }
     }
 

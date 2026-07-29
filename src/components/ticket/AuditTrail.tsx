@@ -110,12 +110,13 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
       if (isEmployee) {
         const cat = entry.actionCategory;
         const isTicketLevel = cat === 'ticket_action' || cat === 'status_change' || !entry.stepId;
-        const hasDocs = (entry.progressDocs || []).length > 0;
-        if (!isTicketLevel && !hasDocs) return false;
+        const hasProgressDocs = (entry.progressDocs || []).length > 0;
+        const hasStepDocs = (entry.stepDocs || []).length > 0;
+        if (!isTicketLevel && !hasProgressDocs && !hasStepDocs) return false;
       }
 
       const entryUser = users.find(u => u.id === entry.userId);
-      const entryDocs = entry.progressDocs || [];
+      const entryDocs = [...(entry.progressDocs || []), ...(entry.stepDocs || [])];
 
       if (filterWithDocuments && entryDocs.length === 0) {
         return false;
@@ -127,7 +128,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
         const action = entry.action.toLowerCase();
         const description = getActionDescription(entry).toLowerCase();
         const remarks = entry.remarks?.toLowerCase() || '';
-        const docNames = entryDocs.map(d => d.fileName.toLowerCase()).join(' ');
+        const docNames = entryDocs.map(d => (d as any).fileName || (d as any).name || '').toLowerCase().join(' ');
 
         const matchesSearch = userName.includes(query) ||
                action.includes(query) ||
@@ -430,7 +431,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
             {sortedAuditTrail.map((entry, index) => {
               const entryUser = users.find(u => u.id === entry.userId);
               const isLast = index === sortedAuditTrail.length - 1;
-              const entryDocs = entry.progressDocs || [];
+              const entryDocs = [...(entry.progressDocs || []), ...(entry.stepDocs || [])];
               const hasDocuments = entryDocs.length > 0;
               const isExpanded = expandedEntries.has(entry.id);
 
@@ -523,17 +524,33 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
                               </button>
                               {isExpanded && (
                                 <div className="mt-2 space-y-1.5">
-                                  {entryDocs.map((doc) => (
+                                  {entryDocs.map((doc) => {
+                                    const isStepDoc = 'storagePath' in doc && !('filePath' in doc);
+                                    const fileName = (doc as any).fileName || '';
+                                    const fileSize = (doc as any).fileSize || 0;
+                                    const uploadedAt = (doc as any).uploadedAt || new Date();
+                                    const fileType = (doc as any).fileType || '';
+                                    const docId = (doc as any).id || '';
+                                    const docStepId = (doc as any).stepId;
+                                    const docStoragePath = (doc as any).filePath || (doc as any).storagePath || '';
+                                    const isCompletionCert = isStepDoc && (doc as any).isCompletionCertificate;
+
+                                    return (
                                     <div
-                                      key={doc.id}
-                                      className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200 hover:bg-blue-100 transition-colors"
+                                      key={docId}
+                                      className={`flex items-center justify-between p-2 rounded border hover:transition-colors ${isCompletionCert ? 'bg-green-50 border-green-200 hover:bg-green-100' : 'bg-blue-50 border-blue-200 hover:bg-blue-100'}`}
                                     >
                                       <div className="flex items-center space-x-2 flex-1 min-w-0">
-                                        <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                        <FileText className={`w-4 h-4 flex-shrink-0 ${isCompletionCert ? 'text-green-600' : 'text-blue-600'}`} />
                                         <div className="flex-1 min-w-0">
-                                          <p className="text-xs font-medium text-gray-900 truncate">{doc.fileName}</p>
+                                          <p className="text-xs font-medium text-gray-900 truncate">
+                                            {fileName}
+                                            {isCompletionCert && (
+                                              <span className="ml-1 px-1 py-0.5 text-xs bg-green-100 text-green-700 rounded">Completion Cert</span>
+                                            )}
+                                          </p>
                                           <p className="text-xs text-gray-500">
-                                            {FileService.formatFileSize(doc.fileSize)} • {formatDate(doc.uploadedAt)}
+                                            {FileService.formatFileSize(fileSize)} • {formatDate(uploadedAt)}
                                           </p>
                                         </div>
                                       </div>
@@ -542,25 +559,27 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
                                           onClick={async () => {
                                             try {
                                               if (onViewProgressDocument) {
-                                                const workflowStep = ticket.workflow.find(s => s.id === doc.stepId);
+                                                const workflowStep = ticket.workflow.find(s => s.id === docStepId);
                                                 const workflowTitle = workflowStep?.title || 'Unknown Step';
 
                                                 const documentMetadata: DocumentMetadata = {
-                                                  id: doc.id,
-                                                  name: doc.fileName,
-                                                  type: doc.fileType,
-                                                  size: doc.fileSize,
+                                                  id: docId,
+                                                  name: fileName,
+                                                  type: fileType,
+                                                  size: fileSize,
                                                   url: null,
-                                                  storagePath: doc.filePath,
-                                                  uploadedBy: doc.uploadedBy,
-                                                  uploadedAt: doc.uploadedAt,
-                                                  isMandatory: false,
-                                                  stepId: doc.stepId,
+                                                  storagePath: docStoragePath,
+                                                  uploadedBy: (doc as any).uploadedBy,
+                                                  uploadedAt: uploadedAt,
+                                                  isMandatory: (doc as any).isMandatory || false,
+                                                  stepId: docStepId,
                                                 };
 
                                                 onViewProgressDocument(documentMetadata, workflowTitle);
                                               } else {
-                                                const url = await FileService.getProgressDocumentUrl(doc.filePath);
+                                                const url = isStepDoc
+                                                  ? await FileService.getFileUrl(docStoragePath)
+                                                  : await FileService.getProgressDocumentUrl(docStoragePath);
                                                 window.open(url, '_blank');
                                               }
                                             } catch (error) {
@@ -575,10 +594,12 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
                                         <button
                                           onClick={async () => {
                                             try {
-                                              const url = await FileService.getProgressDocumentUrl(doc.filePath);
+                                              const url = isStepDoc
+                                                ? await FileService.getFileUrl(docStoragePath)
+                                                : await FileService.getProgressDocumentUrl(docStoragePath);
                                               const link = document.createElement('a');
                                               link.href = url;
-                                              link.download = doc.fileName;
+                                              link.download = fileName;
                                               document.body.appendChild(link);
                                               link.click();
                                               document.body.removeChild(link);
@@ -593,7 +614,8 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
                                         </button>
                                       </div>
                                     </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>

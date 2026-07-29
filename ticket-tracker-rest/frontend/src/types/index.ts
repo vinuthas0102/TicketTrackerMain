@@ -149,6 +149,22 @@ export interface ProgressDocumentInfo {
   deleteReason?: string;
 }
 
+export interface StepDocumentInfo {
+  id: string;
+  stepId?: string;
+  ticketId?: string;
+  auditLogId?: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  url?: string;
+  storagePath?: string;
+  uploadedBy: string;
+  uploadedAt: Date;
+  isMandatory: boolean;
+  isCompletionCertificate: boolean;
+}
+
 export interface AuditEntry {
   id: string;
   ticketId: string;
@@ -162,6 +178,7 @@ export interface AuditEntry {
   metadata?: Record<string, any>;
   timestamp: Date;
   progressDocs?: ProgressDocumentInfo[];
+  stepDocs?: StepDocumentInfo[];
 }
 
 export interface StatusTransitionRequest {

@@ -2,9 +2,11 @@ package com.tickettracker.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tickettracker.dao.AuditLogDAO;
+import com.tickettracker.dao.DocumentDAO;
 import com.tickettracker.dao.WorkflowStepProgressDocumentDAO;
 import com.tickettracker.exception.TicketTrackerException;
 import com.tickettracker.model.AuditLog;
+import com.tickettracker.model.Document;
 import com.tickettracker.model.User;
 import com.tickettracker.util.JsonUtil;
 import com.tickettracker.util.ResponseUtil;
@@ -28,6 +30,7 @@ public class AuditServlet extends HttpServlet {
     private static final Logger logger = LoggerFactory.getLogger(AuditServlet.class);
     private AuditLogDAO auditLogDAO;
     private WorkflowStepProgressDocumentDAO progressDocDAO;
+    private DocumentDAO documentDAO;
     private ObjectMapper objectMapper;
 
     @Override
@@ -35,6 +38,7 @@ public class AuditServlet extends HttpServlet {
         super.init();
         this.auditLogDAO = new AuditLogDAO();
         this.progressDocDAO = new WorkflowStepProgressDocumentDAO();
+        this.documentDAO = new DocumentDAO();
         this.objectMapper = JsonUtil.getObjectMapper();
     }
 
@@ -159,7 +163,8 @@ public class AuditServlet extends HttpServlet {
         for (AuditLog log : logs) {
             List<WorkflowStepProgressDocumentDAO.ProgressDocument> progressDocs =
                 progressDocDAO.findByAuditLogId(log.getId());
-            enrichedLogs.add(new AuditLogResponse(log, progressDocs));
+            List<Document> stepDocs = documentDAO.findByAuditLogId(log.getId());
+            enrichedLogs.add(new AuditLogResponse(log, progressDocs, stepDocs));
         }
         return enrichedLogs;
     }
@@ -194,8 +199,9 @@ public class AuditServlet extends HttpServlet {
             boolean isTicketLevel = "ticket_action".equalsIgnoreCase(category)
                     || "status_change".equalsIgnoreCase(category)
                     || al.getStepId() == null;
-            boolean hasDocs = log.getProgressDocs() != null && !log.getProgressDocs().isEmpty();
-            if (isTicketLevel || hasDocs) {
+            boolean hasProgressDocs = log.getProgressDocs() != null && !log.getProgressDocs().isEmpty();
+            boolean hasStepDocs = log.getStepDocs() != null && !log.getStepDocs().isEmpty();
+            if (isTicketLevel || hasProgressDocs || hasStepDocs) {
                 filtered.add(log);
             }
         }
@@ -226,10 +232,14 @@ public class AuditServlet extends HttpServlet {
     private static class AuditLogResponse {
         private AuditLog auditLog;
         private List<WorkflowStepProgressDocumentDAO.ProgressDocument> progressDocs;
+        private List<Document> stepDocs;
 
-        public AuditLogResponse(AuditLog auditLog, List<WorkflowStepProgressDocumentDAO.ProgressDocument> progressDocs) {
+        public AuditLogResponse(AuditLog auditLog,
+                List<WorkflowStepProgressDocumentDAO.ProgressDocument> progressDocs,
+                List<Document> stepDocs) {
             this.auditLog = auditLog;
             this.progressDocs = progressDocs;
+            this.stepDocs = stepDocs;
         }
 
         public AuditLog getAuditLog() {
@@ -246,6 +256,14 @@ public class AuditServlet extends HttpServlet {
 
         public void setProgressDocs(List<WorkflowStepProgressDocumentDAO.ProgressDocument> progressDocs) {
             this.progressDocs = progressDocs;
+        }
+
+        public List<Document> getStepDocs() {
+            return stepDocs;
+        }
+
+        public void setStepDocs(List<Document> stepDocs) {
+            this.stepDocs = stepDocs;
         }
     }
 

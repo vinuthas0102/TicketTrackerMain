@@ -116,7 +116,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
       if (isEmployee) {
         const cat = entry.actionCategory;
         const isTicketLevel = cat === 'ticket_action' || cat === 'status_change' || !entry.stepId;
-        const hasDocs = (entry.progressDocs || []).length > 0;
+        const hasDocs = (entry.progressDocs || []).length > 0 || (entry.stepDocs || []).length > 0;
         if (!isTicketLevel && !hasDocs) return false;
       }
 
@@ -133,7 +133,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
         const action = entry.action.toLowerCase();
         const description = getActionDescription(entry).toLowerCase();
         const remarks = entry.remarks?.toLowerCase() || '';
-        const docNames = entryDocs.map(d => d.fileName.toLowerCase()).join(' ');
+        const docNames = entryDocs.map(d => (d as any).fileName || '').toLowerCase().join(' ');
 
         const matchesSearch = userName.includes(query) ||
                action.includes(query) ||
@@ -431,7 +431,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
             {sortedAuditTrail.map((entry, index) => {
               const entryUser = users.find(u => u.id === entry.userId);
               const isLast = index === sortedAuditTrail.length - 1;
-              const entryDocs = entry.progressDocs || [];
+              const entryDocs = [...(entry.progressDocs || []), ...(entry.stepDocs || [])];
               const hasDocuments = entryDocs.length > 0;
               const isExpanded = expandedEntries.has(entry.id);
 

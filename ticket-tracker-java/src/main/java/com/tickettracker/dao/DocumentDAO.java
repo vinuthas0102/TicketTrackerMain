@@ -10,8 +10,8 @@ public class DocumentDAO extends BaseDAO {
 
     public Document create(Document document) throws SQLException {
         String sql = "INSERT INTO documents (id, ticket_id, step_id, name, type, size, url, " +
-                "storage_path, uploaded_by, is_mandatory, is_completion_certificate, file_content) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "storage_path, uploaded_by, is_mandatory, is_completion_certificate, audit_log_id, file_content) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -45,11 +45,12 @@ public class DocumentDAO extends BaseDAO {
             stmt.setBytes(9, document.getUploadedBy());
             stmt.setInt(10, document.isMandatory() ? 1 : 0);
             stmt.setInt(11, document.isCompletionCertificate() ? 1 : 0);
+            stmt.setBytes(12, document.getAuditLogId());
 
             if (document.getFileContent() != null) {
-                stmt.setBytes(12, document.getFileContent());
+                stmt.setBytes(13, document.getFileContent());
             } else {
-                stmt.setNull(12, Types.BLOB);
+                stmt.setNull(13, Types.BLOB);
             }
 
             int rowsAffected = stmt.executeUpdate();
@@ -194,7 +195,7 @@ public class DocumentDAO extends BaseDAO {
 
     public Document update(Document document) throws SQLException {
         String sql = "UPDATE documents SET name = ?, type = ?, size = ?, url = ?, " +
-                "storage_path = ?, is_mandatory = ?, is_completion_certificate = ? " +
+                "storage_path = ?, is_mandatory = ?, is_completion_certificate = ?, audit_log_id = ? " +
                 "WHERE id = ?";
 
         Connection conn = null;
@@ -211,7 +212,8 @@ public class DocumentDAO extends BaseDAO {
             stmt.setString(5, document.getStoragePath());
             stmt.setInt(6, document.isMandatory() ? 1 : 0);
             stmt.setInt(7, document.isCompletionCertificate() ? 1 : 0);
-            stmt.setBytes(8, document.getId());
+            stmt.setBytes(8, document.getAuditLogId());
+            stmt.setBytes(9, document.getId());
 
             int rowsAffected = stmt.executeUpdate();
             logger.info("Updated document: {} (rows affected: {})", document.getName(), rowsAffected);
@@ -260,6 +262,7 @@ public class DocumentDAO extends BaseDAO {
         document.setUploadedAt(rs.getTimestamp("uploaded_at"));
         document.setMandatory(rs.getInt("is_mandatory") == 1);
         document.setCompletionCertificate(rs.getInt("is_completion_certificate") == 1);
+        document.setAuditLogId(rs.getBytes("audit_log_id"));
 
         if (includeContent) {
             byte[] fileContent = rs.getBytes("file_content");
@@ -269,6 +272,47 @@ public class DocumentDAO extends BaseDAO {
         }
 
         return document;
+    }
+
+    public List<Document> findByAuditLogId(byte[] auditLogId) throws SQLException {
+        String sql = "SELECT * FROM documents WHERE audit_log_id = ? ORDER BY uploaded_at DESC";
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getConnection();
+            stmt = conn.prepareStatement(sql);
+            stmt.setBytes(1, auditLogId);
+            rs = stmt.executeQuery();
+
+            List<Document> documents = new ArrayList<>();
+            while (rs.next()) {
+                documents.add(mapResultSetToDocument(rs));
+            }
+            return documents;
+        } finally {
+            closeResources(conn, stmt, rs);
+        }
+    }
+
+    public boolean updateAuditLogId(byte[] documentId, byte[] auditLogId) throws SQLException {
+        String sql = "UPDATE documents SET audit_log_id = ? WHERE id = ?";
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+
+        try {
+            conn = getConnection();
+            stmt = conn.prepareStatement(sql);
+            stmt.setBytes(1, auditLogId);
+            stmt.setBytes(2, documentId);
+            int rows = stmt.executeUpdate();
+            return rows > 0;
+        } finally {
+            closeResources(conn, stmt, null);
+        }
     }
 
     private byte[] generateUUID() throws SQLException {

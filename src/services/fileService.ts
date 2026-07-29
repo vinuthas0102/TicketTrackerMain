@@ -187,6 +187,34 @@ export class FileService {
         throw new Error(`Failed to save document metadata: ${insertError.message}`);
       }
 
+      try {
+        const action = isCompletionCertificate ? 'COMPLETION_CERTIFICATE_UPLOADED' : 'STEP_DOCUMENT_UPLOADED';
+        const { data: auditData, error: auditError } = await supabase!
+          .from('audit_logs')
+          .insert({
+            ticket_id: ticketId,
+            step_id: stepId || null,
+            performed_by: userId,
+            action,
+            action_category: 'document_action',
+            description: `Uploaded ${isCompletionCertificate ? 'completion certificate' : 'document'} '${file.name}'`,
+            metadata: { fileName: file.name, documentId: insertData.id },
+          })
+          .select()
+          .single();
+
+        if (auditError) {
+          console.error('Failed to create audit log for document upload:', auditError);
+        } else if (auditData) {
+          await supabase!
+            .from('documents')
+            .update({ audit_log_id: auditData.id })
+            .eq('id', insertData.id);
+        }
+      } catch (auditErr) {
+        console.error('Error creating audit log for document upload:', auditErr);
+      }
+
       if (fileReferenceId) {
         try {
           validateUUID(fileReferenceId, 'File Reference ID');

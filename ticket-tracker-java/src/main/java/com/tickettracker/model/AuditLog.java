@@ -26,6 +26,7 @@ public class AuditLog {
     // Transient fields
     private String performedByName;
     private List<ProgressDocInfo> progressDocs;
+    private List<StepDocInfo> stepDocs;
 
     public AuditLog() {
         this.actionCategory = "ticket_action";
@@ -189,6 +190,14 @@ public class AuditLog {
         this.progressDocs = progressDocs;
     }
 
+    public List<StepDocInfo> getStepDocs() {
+        return stepDocs;
+    }
+
+    public void setStepDocs(List<StepDocInfo> stepDocs) {
+        this.stepDocs = stepDocs;
+    }
+
     private String bytesToUuid(byte[] bytes) {
         return UuidUtil.bytesToUuidString(bytes);
     }
@@ -239,5 +248,50 @@ public class AuditLog {
         public void setUploadedAt(Timestamp uploadedAt) { this.uploadedAt = uploadedAt; }
         public boolean isDeleted() { return isDeleted; }
         public void setDeleted(boolean deleted) { isDeleted = deleted; }
+    }
+
+    public static class StepDocInfo {
+        private String id;
+        private String stepId;
+        private String ticketId;
+        private String auditLogId;
+        private String fileName;
+        private String fileType;
+        private long fileSize;
+        private String url;
+        private String storagePath;
+        private String uploadedBy;
+        private Timestamp uploadedAt;
+        private boolean isMandatory;
+        private boolean isCompletionCertificate;
+
+        public StepDocInfo() {}
+
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+        public String getStepId() { return stepId; }
+        public void setStepId(String stepId) { this.stepId = stepId; }
+        public String getTicketId() { return ticketId; }
+        public void setTicketId(String ticketId) { this.ticketId = ticketId; }
+        public String getAuditLogId() { return auditLogId; }
+        public void setAuditLogId(String auditLogId) { this.auditLogId = auditLogId; }
+        public String getFileName() { return fileName; }
+        public void setFileName(String fileName) { this.fileName = fileName; }
+        public String getFileType() { return fileType; }
+        public void setFileType(String fileType) { this.fileType = fileType; }
+        public long getFileSize() { return fileSize; }
+        public void setFileSize(long fileSize) { this.fileSize = fileSize; }
+        public String getUrl() { return url; }
+        public void setUrl(String url) { this.url = url; }
+        public String getStoragePath() { return storagePath; }
+        public void setStoragePath(String storagePath) { this.storagePath = storagePath; }
+        public String getUploadedBy() { return uploadedBy; }
+        public void setUploadedBy(String uploadedBy) { this.uploadedBy = uploadedBy; }
+        public Timestamp getUploadedAt() { return uploadedAt; }
+        public void setUploadedAt(Timestamp uploadedAt) { this.uploadedAt = uploadedAt; }
+        public boolean isMandatory() { return isMandatory; }
+        public void setMandatory(boolean mandatory) { isMandatory = mandatory; }
+        public boolean isCompletionCertificate() { return isCompletionCertificate; }
+        public void setCompletionCertificate(boolean completionCertificate) { isCompletionCertificate = completionCertificate; }
     }
 }

@@ -2,6 +2,7 @@ package com.tickettracker.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tickettracker.dao.AuditLogDAO;
+import com.tickettracker.dao.DocumentDAO;
 import com.tickettracker.dao.WorkflowStepFileReferenceDAO;
 import com.tickettracker.dao.WorkflowStepProgressDocumentDAO.ProgressDocument;
 import com.tickettracker.exception.TicketTrackerException;
@@ -42,6 +43,7 @@ public class FileServlet extends HttpServlet {
 
     private static final Logger logger = LoggerFactory.getLogger(FileServlet.class);
     private DocumentService documentService;
+    private DocumentDAO documentDAO;
     private WorkflowStepProgressDocumentService progressDocumentService;
     private WorkflowStepFileReferenceDAO fileReferenceDAO;
     private AuditLogDAO auditLogDAO;
@@ -51,6 +53,7 @@ public class FileServlet extends HttpServlet {
     public void init() throws ServletException {
         super.init();
         this.documentService = new DocumentService();
+        this.documentDAO = new DocumentDAO();
         this.progressDocumentService = new WorkflowStepProgressDocumentService();
         this.fileReferenceDAO = new WorkflowStepFileReferenceDAO();
         this.auditLogDAO = new AuditLogDAO();
@@ -186,7 +189,38 @@ public class FileServlet extends HttpServlet {
         // Step 1: Create the document
         Document createdDocument = documentService.createDocument(document, currentUser.getId());
 
-        // Step 2: Link document to file reference if provided
+        // Step 2: Create an audit log entry and link it to the document
+        if (isValidParameter(ticketIdStr) || isValidParameter(stepIdStr)) {
+            try {
+                byte[] ticketId = isValidParameter(ticketIdStr) ? ByteArrayUtil.hexToBytes(ticketIdStr) : null;
+                byte[] stepId = isValidParameter(stepIdStr) ? ByteArrayUtil.hexToBytes(stepIdStr) : null;
+
+                String action = document.isCompletionCertificate() ? "COMPLETION_CERTIFICATE_UPLOADED" : "STEP_DOCUMENT_UPLOADED";
+                String description = String.format("%s uploaded document '%s'%s%s",
+                        currentUser.getName() != null ? currentUser.getName() : currentUser.getEmail(),
+                        fileName,
+                        stepId != null ? " to task" : " to ticket",
+                        stepId != null ? "" : "");
+
+                AuditLog auditLog = new AuditLog();
+                auditLog.setTicketId(ticketId);
+                auditLog.setStepId(stepId);
+                auditLog.setPerformedBy(currentUser.getId());
+                auditLog.setAction(action);
+                auditLog.setActionCategory("document_action");
+                auditLog.setDescription(description);
+                auditLog.setMetadata("{\"fileName\":\"" + fileName.replace("\"", "\\\"") + "\",\"documentId\":\"" + ByteArrayUtil.bytesToHex(createdDocument.getId()) + "\"}");
+                AuditLog createdAuditLog = auditLogDAO.create(auditLog);
+
+                documentDAO.updateAuditLogId(createdDocument.getId(), createdAuditLog.getId());
+                createdDocument.setAuditLogId(createdAuditLog.getId());
+                logger.info("Created audit log {} for document upload", ByteArrayUtil.bytesToHex(createdAuditLog.getId()));
+            } catch (Exception e) {
+                logger.error("Failed to create audit log for document upload", e);
+            }
+        }
+
+        // Step 3: Link document to file reference if provided
         if (isValidParameter(fileReferenceIdStr)) {
             try {
                 byte[] fileReferenceId = UuidUtil.uuidStringToBytes(fileReferenceIdStr);
@@ -332,6 +366,33 @@ public class FileServlet extends HttpServlet {
         }
 
         Document createdDoc = documentService.createDocument(document, currentUser.getId());
+
+        // Create an audit log entry and link it to the completion certificate
+        try {
+            byte[] stepId = isValidParameter(stepIdStr) ? ByteArrayUtil.hexToBytes(stepIdStr) : null;
+
+            String description = String.format("%s uploaded completion certificate '%s'%s",
+                    currentUser.getName() != null ? currentUser.getName() : currentUser.getEmail(),
+                    fileName,
+                    stepId != null ? " for task" : "");
+
+            AuditLog auditLog = new AuditLog();
+            auditLog.setTicketId(ByteArrayUtil.hexToBytes(ticketIdStr));
+            auditLog.setStepId(stepId);
+            auditLog.setPerformedBy(currentUser.getId());
+            auditLog.setAction("COMPLETION_CERTIFICATE_UPLOADED");
+            auditLog.setActionCategory("document_action");
+            auditLog.setDescription(description);
+            auditLog.setMetadata("{\"fileName\":\"" + fileName.replace("\"", "\\\"") + "\",\"documentId\":\"" + ByteArrayUtil.bytesToHex(createdDoc.getId()) + "\"}");
+            AuditLog createdAuditLog = auditLogDAO.create(auditLog);
+
+            documentDAO.updateAuditLogId(createdDoc.getId(), createdAuditLog.getId());
+            createdDoc.setAuditLogId(createdAuditLog.getId());
+            logger.info("Created audit log {} for completion certificate upload", ByteArrayUtil.bytesToHex(createdAuditLog.getId()));
+        } catch (Exception e) {
+            logger.error("Failed to create audit log for completion certificate upload", e);
+        }
+
         createdDoc.setFileContent(null);
 
         response.setStatus(HttpServletResponse.SC_CREATED);

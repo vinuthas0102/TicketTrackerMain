@@ -140,6 +140,21 @@ export class TicketService {
                 deleted_at,
                 deleted_by,
                 delete_reason
+              ),
+              step_docs:documents!audit_log_id(
+                id,
+                step_id,
+                ticket_id,
+                audit_log_id,
+                name,
+                type,
+                size,
+                url,
+                storage_path,
+                uploaded_by,
+                uploaded_at,
+                is_mandatory,
+                is_completion_certificate
               )
             `)
             .eq('ticket_id', ticket.id)
@@ -223,6 +238,7 @@ export class TicketService {
             })),
             auditTrail: (auditData || []).map((audit: any) => {
               let progressDocs = audit.progress_docs?.filter((doc: any) => !doc.is_deleted) || [];
+              const stepDocs = audit.step_docs || [];
 
               if (userId && (userRole === 'DO' || userRole === 'VENDOR')) {
                 progressDocs = progressDocs.filter((doc: any) =>
@@ -257,6 +273,21 @@ export class TicketService {
                   deletedAt: doc.deleted_at ? new Date(doc.deleted_at) : undefined,
                   deletedBy: doc.deleted_by,
                   deleteReason: doc.delete_reason,
+                })),
+                stepDocs: stepDocs.map((doc: any) => ({
+                  id: doc.id,
+                  stepId: doc.step_id,
+                  ticketId: doc.ticket_id,
+                  auditLogId: doc.audit_log_id,
+                  fileName: doc.name,
+                  fileType: doc.type,
+                  fileSize: doc.size,
+                  url: doc.url,
+                  storagePath: doc.storage_path,
+                  uploadedBy: doc.uploaded_by,
+                  uploadedAt: new Date(doc.uploaded_at),
+                  isMandatory: doc.is_mandatory || false,
+                  isCompletionCertificate: doc.is_completion_certificate || false,
                 })),
               };
             }),

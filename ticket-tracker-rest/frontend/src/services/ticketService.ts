@@ -53,6 +53,7 @@ export class TicketService {
       return audits.map((auditResponse: any) => {
         const audit = auditResponse.auditLog || auditResponse;
         const progressDocs = auditResponse.progressDocs || [];
+        const stepDocs = auditResponse.stepDocs || [];
 
         return {
           id: audit.id,
@@ -81,6 +82,21 @@ export class TicketService {
             deletedAt: safeParseDate(doc.deleted_at || doc.deletedAt),
             deletedBy: doc.deleted_by || doc.deletedBy,
             deleteReason: doc.delete_reason || doc.deleteReason,
+          })),
+          stepDocs: stepDocs.map((doc: any) => ({
+            id: doc.id,
+            stepId: doc.step_id || doc.stepId,
+            ticketId: doc.ticket_id || doc.ticketId,
+            auditLogId: doc.audit_log_id || doc.auditLogId,
+            fileName: doc.file_name || doc.fileName || doc.name,
+            fileType: doc.file_type || doc.fileType || doc.type,
+            fileSize: doc.file_size || doc.fileSize || doc.size,
+            url: doc.url,
+            storagePath: doc.storage_path || doc.storagePath,
+            uploadedBy: doc.uploaded_by || doc.uploadedBy,
+            uploadedAt: safeParseDate(doc.uploaded_at || doc.uploadedAt) || new Date(),
+            isMandatory: doc.is_mandatory || doc.isMandatory || false,
+            isCompletionCertificate: doc.is_completion_certificate || doc.isCompletionCertificate || false,
           })),
         };
       });
@@ -142,6 +158,21 @@ export class TicketService {
             deletedAt: safeParseDate(doc.deleted_at || doc.deletedAt),
             deletedBy: doc.deleted_by || doc.deletedBy,
             deleteReason: doc.delete_reason || doc.deleteReason,
+          })),
+          stepDocs: (audit.step_docs || audit.stepDocs || []).map((doc: any) => ({
+            id: doc.id,
+            stepId: doc.step_id || doc.stepId,
+            ticketId: doc.ticket_id || doc.ticketId,
+            auditLogId: doc.audit_log_id || doc.auditLogId,
+            fileName: doc.file_name || doc.fileName || doc.name,
+            fileType: doc.file_type || doc.fileType || doc.type,
+            fileSize: doc.file_size || doc.fileSize || doc.size,
+            url: doc.url,
+            storagePath: doc.storage_path || doc.storagePath,
+            uploadedBy: doc.uploaded_by || doc.uploadedBy,
+            uploadedAt: safeParseDate(doc.uploaded_at || doc.uploadedAt) || new Date(),
+            isMandatory: doc.is_mandatory || doc.isMandatory || false,
+            isCompletionCertificate: doc.is_completion_certificate || doc.isCompletionCertificate || false,
           })),
         })),
       }));

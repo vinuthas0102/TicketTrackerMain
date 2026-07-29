@@ -22,6 +22,7 @@ public class Document {
     private Timestamp uploadedAt;
     private boolean isMandatory;
     private boolean isCompletionCertificate;
+    private byte[] auditLogId;
     private byte[] fileContent;  // For BLOB storage
 
     // Transient field
@@ -200,6 +201,25 @@ public class Document {
 
     public void setUploadedByName(String uploadedByName) {
         this.uploadedByName = uploadedByName;
+    }
+
+    @JsonIgnore
+    public byte[] getAuditLogId() {
+        return auditLogId;
+    }
+
+    public void setAuditLogId(byte[] auditLogId) {
+        this.auditLogId = auditLogId;
+    }
+
+    @JsonProperty("auditLogId")
+    public String getAuditLogIdAsString() {
+        return bytesToUuid(auditLogId);
+    }
+
+    @JsonProperty("auditLogId")
+    public void setAuditLogIdAsString(String auditLogIdStr) {
+        this.auditLogId = UuidUtil.uuidStringToBytes(auditLogIdStr);
     }
 
     @JsonIgnore

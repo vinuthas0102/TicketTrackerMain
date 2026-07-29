@@ -274,12 +274,17 @@ public class WorkflowService {
 
             String changes = buildUpdateChangeDescription(updateRequest, existingStep);
             String actionCategory = determineActionCategory(updateRequest);
+            String actionName = "WORKFLOW_UPDATED";
+            if ("status_change".equals(actionCategory) && updateRequest.getStatus() != null) {
+                actionName = "completed".equalsIgnoreCase(updateRequest.getStatus())
+                        ? "WORKFLOW_COMPLETED" : "STATUS_CHANGED";
+            }
             String newData = updateRequest.getProgress() != null ? updateRequest.getProgress().toPlainString() : null;
             String oldData = oldProgress != null ? oldProgress.toPlainString() : null;
             String metadata = buildUpdateMetadata(updateRequest.getProgress(), updateRequest.getRemarks());
 
             createAuditLogWithData(updatedStep.getTicketId(), updatedStep.getId(), currentUserId,
-                    "WORKFLOW_UPDATED", changes, actionCategory, oldData, newData, metadata);
+                    actionName, changes, actionCategory, oldData, newData, metadata);
 
             logger.info("Workflow step updated: {} by user: {}",
                     updatedStep.getStepNumber(), bytesToHex(currentUserId));
@@ -726,26 +731,31 @@ public class WorkflowService {
 
     private String buildUpdateChangeDescription(WorkflowStepUpdateRequest updateRequest, WorkflowStep existingStep) {
         StringBuilder changes = new StringBuilder();
+        String stepTitle = existingStep != null ? existingStep.getTitle() : "task";
+        String timestamp = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date());
 
+        if (updateRequest.getStatus() != null) {
+            String oldStatus = existingStep != null ? existingStep.getStatus() : "unknown";
+            if ("completed".equals(updateRequest.getStatus())) {
+                String completedAt = updateRequest.getCompletedAt() != null
+                        ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(updateRequest.getCompletedAt())
+                        : timestamp;
+                changes.append(String.format("Task \"%s\" marked as completed on %s (status: %s -> completed); ",
+                        stepTitle, completedAt, oldStatus));
+            } else {
+                changes.append(String.format("Task \"%s\" status changed from '%s' to '%s' on %s; ",
+                        stepTitle, oldStatus, updateRequest.getStatus(), timestamp));
+            }
+        }
+        if (updateRequest.getAssignedTo() != null && existingStep != null
+                && !bytesEquals(updateRequest.getAssignedTo(), existingStep.getAssignedTo())) {
+            changes.append("Assignment changed; ");
+        }
         if (updateRequest.getTitle() != null) {
             changes.append("Title updated; ");
         }
         if (updateRequest.getDescription() != null) {
             changes.append("Description updated; ");
-        }
-        if (updateRequest.getStatus() != null) {
-            if ("completed".equals(updateRequest.getStatus())) {
-                String completedAt = updateRequest.getCompletedAt() != null
-                        ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(updateRequest.getCompletedAt())
-                        : new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date());
-                String stepTitle = existingStep != null ? existingStep.getTitle() : "task";
-                changes.append(String.format("Task \"%s\" marked as completed on %s; ", stepTitle, completedAt));
-            } else {
-                changes.append(String.format("Status changed to '%s'; ", updateRequest.getStatus()));
-            }
-        }
-        if (updateRequest.getAssignedTo() != null) {
-            changes.append("Assignment changed; ");
         }
         if (updateRequest.getProgress() != null) {
             changes.append(String.format("Progress updated to %.0f%%; ", updateRequest.getProgress().doubleValue()));
