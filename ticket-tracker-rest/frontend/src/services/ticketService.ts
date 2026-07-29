@@ -657,15 +657,19 @@ export class TicketService {
     files?: File[]
   ): Promise<void> {
     try {
-      const actionDescription = files && files.length > 0
-        ? `Progress updated to ${progress}%. ${files.length} document(s) attached. ${progressComment ? `Comment: ${progressComment}` : ''}`
-        : `Progress updated to ${progress}%. ${progressComment ? `Comment: ${progressComment}` : ''}`;
+      const isCompletion = progress >= 100;
+
+      const actionDescription = isCompletion
+        ? `Task marked as completed (progress: 100%). ${files && files.length > 0 ? `${files.length} document(s) attached. ` : ''}${progressComment ? `Comment: ${progressComment}` : ''}`
+        : files && files.length > 0
+          ? `Progress updated to ${progress}%. ${files.length} document(s) attached. ${progressComment ? `Comment: ${progressComment}` : ''}`
+          : `Progress updated to ${progress}%. ${progressComment ? `Comment: ${progressComment}` : ''}`;
 
       const auditLogId = await this.createAuditLog({
         ticketId,
         stepId,
-        action: 'PROGRESS_UPDATED',
-        actionCategory: 'progress_update' as AuditActionCategory,
+        action: isCompletion ? 'WORKFLOW_COMPLETED' : 'PROGRESS_UPDATED',
+        actionCategory: (isCompletion ? 'status_change' : 'progress_update') as AuditActionCategory,
         description: actionDescription,
         performedBy: userId,
         newData: JSON.stringify({ progress }),

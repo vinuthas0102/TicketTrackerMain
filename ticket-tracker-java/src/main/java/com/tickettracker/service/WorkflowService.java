@@ -315,10 +315,24 @@ public class WorkflowService {
                 throw new DatabaseException("Failed to update progress");
             }
 
-            String description = String.format("Progress updated from %.2f%% to %.2f%%",
-                    oldProgress, progress);
+            boolean isCompletion = progress >= 100;
+            String description;
+            String actionName;
+            String actionCategory;
+
+            if (isCompletion) {
+                String completedAt = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date());
+                description = String.format("Task \"%s\" marked as completed on %s (progress: 100%%)", step.getTitle(), completedAt);
+                actionName = "WORKFLOW_COMPLETED";
+                actionCategory = "status_change";
+            } else {
+                description = String.format("Progress updated from %.2f%% to %.2f%%", oldProgress, progress);
+                actionName = "Progress updated";
+                actionCategory = "progress_update";
+            }
+
             createAuditLog(step.getTicketId(), stepId, currentUserId,
-                    "Progress updated", description, "progress_update");
+                    actionName, description, actionCategory);
 
             logger.info("Step progress updated: {} from {}% to {}%",
                     step.getStepNumber(), oldProgress, progress);
@@ -351,14 +365,17 @@ public class WorkflowService {
             workflowStepDAO.updateSelective(updateRequest);
 
             String description;
+            String actionName;
             if ("completed".equals(newStatus)) {
                 String completedAt = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date());
-                description = String.format("Task \"%s\" marked as completed on %s", step.getTitle(), completedAt);
+                description = String.format("Task \"%s\" marked as completed on %s (status: %s -> completed, progress: 100%%)", step.getTitle(), completedAt, oldStatus);
+                actionName = "WORKFLOW_COMPLETED";
             } else {
-                description = String.format("Status changed from '%s' to '%s'", oldStatus, newStatus);
+                description = String.format("Task \"%s\" status changed from '%s' to '%s'", step.getTitle(), oldStatus, newStatus);
+                actionName = "STATUS_CHANGED";
             }
             createAuditLog(step.getTicketId(), stepId, currentUserId,
-                    "Step status changed", description, "status_change");
+                    actionName, description, "status_change");
 
             logger.info("Step status updated: {} from {} to {}",
                     step.getStepNumber(), oldStatus, newStatus);
@@ -740,8 +757,11 @@ public class WorkflowService {
                 String completedAt = updateRequest.getCompletedAt() != null
                         ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(updateRequest.getCompletedAt())
                         : timestamp;
-                changes.append(String.format("Task \"%s\" marked as completed on %s (status: %s -> completed); ",
-                        stepTitle, completedAt, oldStatus));
+                String progressInfo = updateRequest.getProgress() != null
+                        ? String.format(" (progress: %.0f%%)", updateRequest.getProgress().doubleValue())
+                        : " (progress: 100%)";
+                changes.append(String.format("Task \"%s\" marked as completed on %s%s (status: %s -> completed); ",
+                        stepTitle, completedAt, progressInfo, oldStatus));
             } else {
                 changes.append(String.format("Task \"%s\" status changed from '%s' to '%s' on %s; ",
                         stepTitle, oldStatus, updateRequest.getStatus(), timestamp));
@@ -757,7 +777,7 @@ public class WorkflowService {
         if (updateRequest.getDescription() != null) {
             changes.append("Description updated; ");
         }
-        if (updateRequest.getProgress() != null) {
+        if (updateRequest.getProgress() != null && !"completed".equals(updateRequest.getStatus())) {
             changes.append(String.format("Progress updated to %.0f%%; ", updateRequest.getProgress().doubleValue()));
         }
         if (updateRequest.getDueDate() != null) {

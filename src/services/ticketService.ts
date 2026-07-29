@@ -914,23 +914,29 @@ export class TicketService {
       const updateData: any = {};
       let actionDescription = 'Workflow updated';
       let actionCategory: AuditActionCategory = 'workflow_action';
+      let actionName = 'WORKFLOW_UPDATED';
+      let statusChanged = false;
+      let progressChanged = false;
 
       if (updates.title !== undefined) updateData.title = updates.title;
       if (updates.description !== undefined) updateData.description = updates.description;
       if (updates.status !== undefined) {
         updateData.status = updates.status.toLowerCase();
         actionCategory = 'status_change';
+        statusChanged = true;
         const stepTitle = updates.title || '';
         if (updates.status === 'COMPLETED') {
           updateData.completed_at = new Date().toISOString();
           updateData.actual_completed_at = new Date().toISOString();
           updateData.progress = 100;
+          actionName = 'WORKFLOW_COMPLETED';
           const completedAt = new Date().toLocaleString();
           actionDescription = stepTitle
-            ? `Task "${stepTitle}" marked as completed on ${completedAt}`
-            : `Task marked as completed on ${completedAt}`;
+            ? `Task "${stepTitle}" marked as completed on ${completedAt} (progress: 100%)`
+            : `Task marked as completed on ${completedAt} (progress: 100%)`;
         } else {
-          actionDescription = `Workflow status changed to ${updates.status}`;
+          actionName = 'STATUS_CHANGED';
+          actionDescription = `Task status changed to ${updates.status}`;
         }
         if (updates.status === 'WIP' && !updates.startDate) {
           updateData.start_date = new Date().toISOString();
@@ -938,19 +944,22 @@ export class TicketService {
       }
       if (updates.assignedTo !== undefined) {
         updateData.assigned_to = updates.assignedTo;
-        actionCategory = 'assignment_change';
-        actionDescription = 'Workflow assignment updated';
+        if (!statusChanged) {
+          actionCategory = 'assignment_change';
+          actionDescription = 'Workflow assignment updated';
+        }
       }
       if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate;
       if (updates.startDate !== undefined) updateData.start_date = updates.startDate;
       if (updates.is_parallel !== undefined) updateData.is_parallel = updates.is_parallel;
-      let progressChanged = false;
       if (updates.progress !== undefined) {
         updateData.progress = updates.progress;
-        actionDescription = `Progress updated to ${updates.progress}%`;
         progressChanged = true;
-        if (actionCategory === 'workflow_action') {
-          actionCategory = 'progress_update';
+        if (!statusChanged) {
+          actionDescription = `Progress updated to ${updates.progress}%`;
+          if (actionCategory === 'workflow_action') {
+            actionCategory = 'progress_update';
+          }
         }
       }
       if (updates.dependency_mode !== undefined) updateData.dependency_mode = updates.dependency_mode;
@@ -979,7 +988,7 @@ export class TicketService {
       await this.createAuditLog({
         ticketId,
         stepId,
-        action: 'WORKFLOW_UPDATED',
+        action: actionName,
         actionCategory,
         description: actionDescription,
         performedBy: userId,
