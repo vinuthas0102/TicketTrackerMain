@@ -110,11 +110,7 @@ public class WorkflowCommentService {
                 throw new ResourceNotFoundException("User", UuidUtil.bytesToUuidString(userId));
             }
 
-            if ("eo".equalsIgnoreCase(user.getRole())) {
-                return commentDAO.findByStepId(stepId);
-            } else {
-                return commentDAO.findByStepIdAndUser(stepId, userId);
-            }
+            return commentDAO.findByStepId(stepId);
         } catch (SQLException e) {
             logger.error("Error fetching workflow comments", e);
             throw new DatabaseException("Failed to fetch workflow comments", e);
