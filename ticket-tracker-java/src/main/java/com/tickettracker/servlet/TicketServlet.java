@@ -1,8 +1,11 @@
 package com.tickettracker.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tickettracker.dao.AuditLogDAO;
+import com.tickettracker.dao.DocumentDAO;
 import com.tickettracker.dao.ModuleDAO;
 import com.tickettracker.exception.TicketTrackerException;
+import com.tickettracker.model.AuditLog;
 import com.tickettracker.model.BulkTicketCreateRequest;
 import com.tickettracker.model.BulkTicketOperationResult;
 import com.tickettracker.model.Document;
@@ -19,15 +22,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 @WebServlet("/api/tickets/*")
+@MultipartConfig(
+    maxFileSize = 52428800,      // 50 MB
+    maxRequestSize = 104857600,   // 100 MB
+    fileSizeThreshold = 1048576   // 1 MB
+)
 public class TicketServlet extends HttpServlet {
 
     private static final Logger logger = LoggerFactory.getLogger(TicketServlet.class);
@@ -35,6 +46,8 @@ public class TicketServlet extends HttpServlet {
     private DocumentService documentService;
     private ObjectMapper objectMapper;
     private ModuleDAO moduleDAO;
+    private AuditLogDAO auditLogDAO;
+    private DocumentDAO documentDAO;
 
     @Override
     public void init() throws ServletException {
@@ -43,6 +56,8 @@ public class TicketServlet extends HttpServlet {
         this.documentService = new DocumentService();
         this.objectMapper = JsonUtil.getObjectMapper();
         this.moduleDAO = new ModuleDAO();
+        this.auditLogDAO = new AuditLogDAO();
+        this.documentDAO = new DocumentDAO();
     }
 
     @Override
@@ -83,15 +98,34 @@ public class TicketServlet extends HttpServlet {
                 return;
             }
 
+            if (pathInfo != null && pathInfo.equals("/bulk")) {
+                if (!currentUser.isAdmin()) {
+                    logger.warn("Permission denied: User {} (role: {}) attempted to bulk create tickets",
+                            currentUser.getEmail(), currentUser.getRole());
+                    sendError(response, 403, "Forbidden: Only EO users can create tickets");
+                    return;
+                }
+                handleBulkCreate(request, response, currentUser);
+                return;
+            }
+
+            if (pathInfo != null) {
+                String[] pathParts = pathInfo.split("/");
+                if (pathParts.length == 3 && "status".equals(pathParts[2])) {
+                    String contentType = request.getContentType();
+                    if (contentType != null && contentType.startsWith("multipart/form-data")) {
+                        handleStatusChangeWithFile(request, response, pathParts[1], currentUser);
+                    } else {
+                        sendError(response, 405, "Use PUT to change ticket status without a file");
+                    }
+                    return;
+                }
+            }
+
             if (!currentUser.isAdmin()) {
                 logger.warn("Permission denied: User {} (role: {}) attempted to create ticket",
                         currentUser.getEmail(), currentUser.getRole());
                 sendError(response, 403, "Forbidden: Only EO users can create tickets");
-                return;
-            }
-
-            if (pathInfo != null && pathInfo.equals("/bulk")) {
-                handleBulkCreate(request, response, currentUser);
                 return;
             }
 
@@ -501,6 +535,164 @@ public class TicketServlet extends HttpServlet {
 
         response.setStatus(HttpServletResponse.SC_OK);
         sendJsonResponse(response, new StatusChangeResponse(true, "Status updated successfully"));
+    }
+
+    private void handleStatusChangeWithFile(HttpServletRequest request, HttpServletResponse response,
+                                             String ticketIdHex, User currentUser)
+            throws IOException, ServletException, TicketTrackerException {
+        logger.debug("Handling status change with file for ticket: {}", ticketIdHex);
+
+        String newStatus = request.getParameter("newStatus");
+        String remarks = request.getParameter("remarks");
+
+        if (newStatus == null || newStatus.trim().isEmpty()) {
+            sendError(response, 400, "New status is required");
+            return;
+        }
+
+        String normalizedStatus = newStatus.toLowerCase().trim();
+
+        boolean isRemarksOptional = false;
+        if (remarks == null || remarks.trim().isEmpty()) {
+            try {
+                Ticket existingTicketForCheck = ticketService.getTicket(ByteArrayUtil.hexToBytes(ticketIdHex));
+                if (existingTicketForCheck != null && existingTicketForCheck.getModuleId() != null) {
+                    Module module = moduleDAO.findById(existingTicketForCheck.getModuleId());
+                    if (module != null && module.getConfig() != null) {
+                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        com.fasterxml.jackson.databind.JsonNode configNode = mapper.readTree(module.getConfig());
+                        boolean reviewByEORequired = configNode.has("reviewByEORequired") ? configNode.get("reviewByEORequired").asBoolean() : true;
+                        if (!reviewByEORequired && "active".equalsIgnoreCase(newStatus.trim())) {
+                            isRemarksOptional = true;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("Error checking module config for remarks validation: {}", e.getMessage());
+            }
+            if (!isRemarksOptional) {
+                sendError(response, 400, "Remarks are required for status change");
+                return;
+            }
+        } else if (remarks.trim().length() < 10) {
+            try {
+                Ticket existingTicketForCheck = ticketService.getTicket(ByteArrayUtil.hexToBytes(ticketIdHex));
+                if (existingTicketForCheck != null && existingTicketForCheck.getModuleId() != null) {
+                    Module module = moduleDAO.findById(existingTicketForCheck.getModuleId());
+                    if (module != null && module.getConfig() != null) {
+                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        com.fasterxml.jackson.databind.JsonNode configNode = mapper.readTree(module.getConfig());
+                        boolean reviewByEORequired = configNode.has("reviewByEORequired") ? configNode.get("reviewByEORequired").asBoolean() : true;
+                        if (!reviewByEORequired && "active".equalsIgnoreCase(newStatus.trim())) {
+                            isRemarksOptional = true;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("Error checking module config for remarks validation: {}", e.getMessage());
+            }
+            if (!isRemarksOptional) {
+                sendError(response, 400, "Remarks must be at least 10 characters");
+                return;
+            }
+        }
+
+        byte[] ticketId = ByteArrayUtil.hexToBytes(ticketIdHex);
+
+        boolean canUpdate = ticketService.canUserAccessTicket(currentUser.getId(), ticketId);
+        if (!canUpdate) {
+            logger.warn("Permission denied: User {} (role: {}) attempted to change status of ticket {}",
+                    currentUser.getEmail(), currentUser.getRole(), ticketIdHex);
+            sendError(response, 403, "Forbidden: You do not have permission to change this ticket's status");
+            return;
+        }
+
+        Ticket existingTicket = ticketService.getTicket(ticketId);
+        if (existingTicket != null && "COMPLETED".equalsIgnoreCase(existingTicket.getStatus())) {
+            logger.warn("Rejected status change for completed ticket {} by user {}",
+                    ticketIdHex, currentUser.getEmail());
+            sendError(response, 409, "Status cannot be changed for completed tickets");
+            return;
+        }
+
+        Part filePart = request.getPart("file");
+        if (filePart == null) {
+            sendError(response, 400, "Completion certificate file is required");
+            return;
+        }
+
+        String fileName = getFileName(filePart);
+
+        Document document = new Document();
+        document.setName(fileName);
+        String mimeType = filePart.getContentType();
+        if (mimeType == null || mimeType.isEmpty()) {
+            mimeType = "application/octet-stream";
+        }
+        document.setType(mimeType);
+        document.setSize(filePart.getSize());
+        document.setStoragePath("blob_" + System.currentTimeMillis());
+        document.setUploadedBy(currentUser.getId());
+        document.setTicketId(ticketId);
+        document.setCompletionCertificate(true);
+
+        try (InputStream fileContent = filePart.getInputStream()) {
+            byte[] fileData = new byte[(int) filePart.getSize()];
+            fileContent.read(fileData);
+            document.setFileContent(fileData);
+        }
+
+        Document createdDocument = documentService.createDocument(document, currentUser.getId());
+
+        try {
+            String description = String.format("%s uploaded completion certificate '%s'",
+                    currentUser.getName() != null ? currentUser.getName() : currentUser.getEmail(),
+                    fileName);
+
+            AuditLog auditLog = new AuditLog();
+            auditLog.setTicketId(ticketId);
+            auditLog.setPerformedBy(currentUser.getId());
+            auditLog.setAction("COMPLETION_CERTIFICATE_UPLOADED");
+            auditLog.setActionCategory("document_action");
+            auditLog.setDescription(description);
+            auditLog.setMetadata("{\"fileName\":\"" + fileName.replace("\"", "\\\"")
+                    + "\",\"documentId\":\"" + ByteArrayUtil.bytesToHex(createdDocument.getId()) + "\"}");
+            AuditLog createdAuditLog = auditLogDAO.create(auditLog);
+
+            documentDAO.updateAuditLogId(createdDocument.getId(), createdAuditLog.getId());
+            createdDocument.setAuditLogId(createdAuditLog.getId());
+            logger.info("Created audit log {} for completion certificate upload",
+                    ByteArrayUtil.bytesToHex(createdAuditLog.getId()));
+        } catch (Exception e) {
+            logger.error("Failed to create audit log for completion certificate upload", e);
+        }
+
+        ticketService.updateTicketStatus(ticketId, normalizedStatus, currentUser.getId());
+
+        logger.info("Ticket status changed with completion certificate: {} to {} by user: {}",
+                ticketIdHex, normalizedStatus, currentUser.getEmail());
+
+        createdDocument.setFileContent(null);
+
+        response.setStatus(HttpServletResponse.SC_OK);
+        sendJsonResponse(response, new StatusChangeResponse(true, "Status updated successfully"));
+    }
+
+    private String getFileName(Part part) {
+        String contentDisposition = part.getHeader("content-disposition");
+        if (contentDisposition == null) {
+            return "unknown";
+        }
+        for (String token : contentDisposition.split(";")) {
+            if (token.trim().startsWith("filename")) {
+                String value = token.substring(token.indexOf("=") + 1).trim();
+                if (value.startsWith("\"") && value.endsWith("\"")) {
+                    return value.substring(1, value.length() - 1);
+                }
+                return value;
+            }
+        }
+        return "unknown";
     }
 
     private User getCurrentUser(HttpServletRequest request) {
