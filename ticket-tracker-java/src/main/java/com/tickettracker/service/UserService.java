@@ -102,6 +102,11 @@ public class UserService {
 
             User createdUser = userDAO.create(user);
 
+            if (user.getRegions() != null && !user.getRegions().isEmpty()) {
+                userDAO.saveUserRegions(createdUser.getId(), user.getRegions());
+                createdUser.setRegions(user.getRegions());
+            }
+
             logAuditAction("user_created", createdUser.getId(), currentUserId,
                     null,
                     "{\"email\":\"" + user.getEmail() + "\",\"role\":\"" + user.getRoleInternal() + "\",\"department\":\"" + user.getDepartment() + "\"}",
@@ -133,6 +138,10 @@ public class UserService {
             boolean updated = userDAO.update(user);
             if (!updated) {
                 throw new DatabaseException("Failed to update user");
+            }
+
+            if (user.getRegions() != null) {
+                userDAO.saveUserRegions(user.getId(), user.getRegions());
             }
 
             logAuditAction("user_updated", user.getId(), currentUserId,

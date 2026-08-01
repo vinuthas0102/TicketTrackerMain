@@ -6,6 +6,7 @@ export interface User {
   role: 'EMPLOYEE' | 'DO' | 'EO' | 'VENDOR' | 'FINANCE' | 'TECHNICIAN';
   department: string;
   sapId?: string;
+  regions?: string[];
   lastLogin?: Date;
 }
 

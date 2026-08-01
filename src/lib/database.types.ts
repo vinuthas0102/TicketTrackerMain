@@ -70,6 +70,26 @@ export interface Database {
           updated_at?: string
         }
       }
+      user_regions: {
+        Row: {
+          id: string
+          user_id: string
+          region: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          region: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          region?: string
+          created_at?: string
+        }
+      }
       modules: {
         Row: {
           id: string

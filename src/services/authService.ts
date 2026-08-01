@@ -90,6 +90,7 @@ export class AuthService {
 
         return {
           ...dbUser,
+          regions: await this.getUserRegions(dbUser.id),
           lastLogin: new Date()
         };
       }
@@ -154,11 +155,35 @@ export class AuthService {
         role: data.role === 'dept_officer' ? 'DO' : data.role === 'eo' ? 'EO' : data.role === 'employee' ? 'EMPLOYEE' : data.role === 'vendor' ? 'VENDOR' : data.role === 'finance' ? 'FINANCE' : data.role === 'technician' ? 'TECHNICIAN' : data.role,
         department: data.department,
         sapId: data.sap_id,
+        regions: await this.getUserRegions(data.id),
         lastLogin: data.last_login ? new Date(data.last_login) : undefined
       };
     } catch (error) {
       console.error('Error fetching user from database:', error);
       return null;
+    }
+  }
+
+  private static async getUserRegions(userId: string): Promise<string[]> {
+    if (!isSupabaseAvailable()) {
+      return [];
+    }
+
+    try {
+      const { data, error } = await supabase
+        ?.from('user_regions')
+        .select('region')
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error fetching user regions:', error);
+        return [];
+      }
+
+      return (data || []).map((r: { region: string }) => r.region);
+    } catch (error) {
+      console.error('Error fetching user regions:', error);
+      return [];
     }
   }
 
@@ -186,6 +211,7 @@ export class AuthService {
         role: data.role === 'dept_officer' ? 'DO' : data.role === 'eo' ? 'EO' : data.role === 'employee' ? 'EMPLOYEE' : data.role === 'vendor' ? 'VENDOR' : data.role === 'finance' ? 'FINANCE' : data.role === 'technician' ? 'TECHNICIAN' : data.role,
         department: data.department,
         sapId: data.sap_id,
+        regions: await this.getUserRegions(data.id),
         lastLogin: data.last_login ? new Date(data.last_login) : undefined
       };
     } catch (error) {
@@ -322,6 +348,19 @@ export class AuthService {
         return mockUsers;
       }
 
+      // Fetch all user regions in one query
+      const { data: allUserRegions } = await supabase
+        .from('user_regions')
+        .select('user_id, region');
+
+      const userRegionMap = new Map<string, string[]>();
+      (allUserRegions || []).forEach((ur: { user_id: string; region: string }) => {
+        if (!userRegionMap.has(ur.user_id)) {
+          userRegionMap.set(ur.user_id, []);
+        }
+        userRegionMap.get(ur.user_id)!.push(ur.region);
+      });
+
       return users?.map(user => ({
         id: user.id,
         username: user.email.split('@')[0],
@@ -330,6 +369,7 @@ export class AuthService {
         role: user.role === 'dept_officer' ? 'DO' : user.role === 'eo' ? 'EO' : user.role === 'employee' ? 'EMPLOYEE' : user.role === 'vendor' ? 'VENDOR' : user.role === 'finance' ? 'FINANCE' : user.role === 'technician' ? 'TECHNICIAN' : user.role,
         department: user.department,
         sapId: user.sap_id,
+        regions: userRegionMap.get(user.id) || [],
         lastLogin: user.last_login ? new Date(user.last_login) : undefined
       }))
       .filter(user => {

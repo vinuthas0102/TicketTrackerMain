@@ -24,7 +24,7 @@ export class TicketService {
       let ticketsData;
       let ticketsError;
 
-      if (userId && (userRole === 'DO' || userRole === 'TECHNICIAN')) {
+      if (userId) {
         console.log('Fetching accessible tickets for user:', userId, 'role:', userRole);
 
         const { data: accessibleIds, error: idsError } = await supabase
@@ -49,41 +49,6 @@ export class TicketService {
           .select('*')
           .eq('module_id', moduleId)
           .in('id', accessibleTicketIds)
-          .order('created_at', { ascending: false });
-
-        ticketsData = result.data;
-        ticketsError = result.error;
-      } else if (userId && userRole === 'VENDOR') {
-        // Vendors can see tickets where they have assigned workflow steps
-        // First, get all tickets that have workflow steps assigned to this vendor
-        const { data: assignedSteps, error: stepsError } = await supabase
-          .from('workflow_steps')
-          .select('ticket_id')
-          .eq('assigned_to', userId);
-
-        if (stepsError) throw stepsError;
-
-        const ticketIds = [...new Set((assignedSteps || []).map(step => step.ticket_id))];
-
-        if (ticketIds.length === 0) {
-          return [];
-        }
-
-        const result = await supabase
-          .from('tickets')
-          .select('*')
-          .eq('module_id', moduleId)
-          .in('id', ticketIds)
-          .order('created_at', { ascending: false });
-
-        ticketsData = result.data;
-        ticketsError = result.error;
-      } else if (userId && userRole === 'EMPLOYEE') {
-        const result = await supabase
-          .from('tickets')
-          .select('*')
-          .eq('module_id', moduleId)
-          .eq('created_by', userId)
           .order('created_at', { ascending: false });
 
         ticketsData = result.data;

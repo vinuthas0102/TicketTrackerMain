@@ -91,6 +91,14 @@ public class UserManagementServlet extends HttpServlet {
             user.setEmail((String) userData.get("email"));
             user.setRole((String) userData.get("role"));
             user.setDepartment((String) userData.get("department"));
+            user.setSapId((String) userData.get("sap_id"));
+
+            Object regionsObj = userData.get("regions");
+            if (regionsObj instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<String> regions = (List<String>) regionsObj;
+                user.setRegions(regions);
+            }
 
             String password = (String) userData.get("password");
 

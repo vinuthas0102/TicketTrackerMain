@@ -7,6 +7,7 @@ export interface CreateUserRequest {
   role: 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance' | 'technician';
   department: string;
   sapId?: string;
+  regions?: string[];
   avatar?: string;
   createdBy: string;
 }
@@ -18,6 +19,7 @@ export interface UpdateUserRequest {
   role?: 'employee' | 'dept_officer' | 'eo' | 'vendor' | 'finance' | 'technician';
   department?: string;
   sapId?: string;
+  regions?: string[];
   avatar?: string;
   updatedBy: string;
 }
@@ -146,6 +148,15 @@ export class UserManagementService {
         }
       });
 
+      // Insert user regions
+      if (request.regions && request.regions.length > 0) {
+        const regionRows = request.regions.map(region => ({
+          user_id: newUser.id,
+          region
+        }));
+        await supabase.from('user_regions').insert(regionRows);
+      }
+
       const user: User = {
         id: newUser.id,
         username: newUser.email.split('@')[0],
@@ -154,6 +165,7 @@ export class UserManagementService {
         role: this.mapDatabaseRoleToAppRole(newUser.role),
         department: newUser.department,
         sapId: newUser.sap_id || undefined,
+        regions: request.regions || [],
         lastLogin: newUser.last_login ? new Date(newUser.last_login) : undefined
       };
 
@@ -254,6 +266,18 @@ export class UserManagementService {
         });
       }
 
+      // Update user regions if provided
+      if (request.regions !== undefined) {
+        await supabase.from('user_regions').delete().eq('user_id', request.id);
+        if (request.regions.length > 0) {
+          const regionRows = request.regions.map(region => ({
+            user_id: request.id,
+            region
+          }));
+          await supabase.from('user_regions').insert(regionRows);
+        }
+      }
+
       const user: User = {
         id: updatedUser.id,
         username: updatedUser.email.split('@')[0],
@@ -262,6 +286,7 @@ export class UserManagementService {
         role: this.mapDatabaseRoleToAppRole(updatedUser.role),
         department: updatedUser.department,
         sapId: updatedUser.sap_id || undefined,
+        regions: request.regions,
         lastLogin: updatedUser.last_login ? new Date(updatedUser.last_login) : undefined
       };
 
@@ -435,6 +460,19 @@ export class UserManagementService {
         return [];
       }
 
+      // Fetch all user regions in one query
+      const { data: allUserRegions } = await supabase
+        .from('user_regions')
+        .select('user_id, region');
+
+      const userRegionMap = new Map<string, string[]>();
+      (allUserRegions || []).forEach((ur: { user_id: string; region: string }) => {
+        if (!userRegionMap.has(ur.user_id)) {
+          userRegionMap.set(ur.user_id, []);
+        }
+        userRegionMap.get(ur.user_id)!.push(ur.region);
+      });
+
       return users?.map(user => ({
         id: user.id,
         username: user.email.split('@')[0],
@@ -443,6 +481,7 @@ export class UserManagementService {
         role: this.mapDatabaseRoleToAppRole(user.role),
         department: user.department,
         sapId: user.sap_id || undefined,
+        regions: userRegionMap.get(user.id) || [],
         lastLogin: user.last_login ? new Date(user.last_login) : undefined
       })) || [];
     } catch (error) {
@@ -467,6 +506,11 @@ export class UserManagementService {
         return null;
       }
 
+      const { data: userRegions } = await supabase
+        .from('user_regions')
+        .select('region')
+        .eq('user_id', userId);
+
       return {
         id: user.id,
         username: user.email.split('@')[0],
@@ -475,6 +519,7 @@ export class UserManagementService {
         role: this.mapDatabaseRoleToAppRole(user.role),
         department: user.department,
         sapId: user.sap_id || undefined,
+        regions: (userRegions || []).map((ur: { region: string }) => ur.region),
         lastLogin: user.last_login ? new Date(user.last_login) : undefined
       };
     } catch (error) {

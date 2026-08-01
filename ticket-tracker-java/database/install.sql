@@ -166,6 +166,14 @@ SELECT '========================================================================
 SELECT 'reviewByEORequired flag added!' FROM DUAL;
 SELECT '' FROM DUAL;
 
+-- Step 12c: Add user_regions table for region-based user profiles
+SELECT '==================================================================================' FROM DUAL;
+SELECT 'STEP 12c: Adding user_regions table...' FROM DUAL;
+SELECT '==================================================================================' FROM DUAL;
+@24-oracle-add-user-regions.sql
+SELECT 'user_regions table created!' FROM DUAL;
+SELECT '' FROM DUAL;
+
 -- Step 13: Verification
 SELECT '==================================================================================' FROM DUAL;
 SELECT 'INSTALLATION VERIFICATION' FROM DUAL;

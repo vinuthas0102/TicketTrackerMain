@@ -128,6 +128,9 @@ const UserListTable: React.FC<UserListTableProps> = ({
                 Department
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Regions
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Last Login
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -161,6 +164,21 @@ const UserListTable: React.FC<UserListTableProps> = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{user.department}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-900">
+                    {user.regions && user.regions.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {user.regions.map(region => (
+                          <span key={region} className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                            {region}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">

@@ -183,14 +183,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const canAccessTicket = async (ticketId: string): Promise<boolean> => {
     if (!user) return false;
-    if (user.role === 'EO') return true;
 
     return await TicketService.canUserAccessTicket(user.id, ticketId);
   };
 
   const getAccessibleTicketIds = async (): Promise<string[]> => {
     if (!user) return [];
-    if (user.role === 'EO') return [];
 
     return await TicketService.getAccessibleTicketIds(user.id);
   };

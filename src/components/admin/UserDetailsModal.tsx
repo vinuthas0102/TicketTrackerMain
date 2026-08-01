@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User as UserIcon, Mail, Briefcase, Building2, Calendar, Activity, Clock } from 'lucide-react';
+import { X, User as UserIcon, Mail, Briefcase, Building2, Calendar, Activity, Clock, MapPin } from 'lucide-react';
 import { User } from '../../types';
 import { UserManagementService, UserActivityLog, UserManagementAudit } from '../../services/userManagementService';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -231,6 +231,24 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, onClose }) =>
                     <span className="text-sm font-medium">Department</span>
                   </div>
                   <p className="text-gray-900 font-semibold">{user.department}</p>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-gray-700 mb-2">
+                    <MapPin className="w-4 h-4" />
+                    <span className="text-sm font-medium">Regions</span>
+                  </div>
+                  {user.regions && user.regions.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {user.regions.map(region => (
+                        <span key={region} className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                          {region}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400">No regions assigned</p>
+                  )}
                 </div>
 
                 <div className="bg-gray-50 rounded-lg p-4">

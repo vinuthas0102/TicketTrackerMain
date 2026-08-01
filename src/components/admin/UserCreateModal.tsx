@@ -31,6 +31,8 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState(false);
   const [departments, setDepartments] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
 
   useEffect(() => {
     const loadDepartments = async () => {
@@ -42,6 +44,18 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
       }
     };
     loadDepartments();
+  }, []);
+
+  useEffect(() => {
+    const loadLocations = async () => {
+      try {
+        const locs = await MasterDataService.getActive('locations');
+        setLocations(locs);
+      } catch (err) {
+        console.error('Failed to load locations:', err);
+      }
+    };
+    loadLocations();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,6 +71,11 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
       return;
     }
 
+    if (selectedRegions.length === 0) {
+      setError('Please select at least one region');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -67,6 +86,7 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
         role: formData.role,
         department: formData.department,
         sapId: formData.sapId.trim() || undefined,
+        regions: selectedRegions,
         createdBy: currentUser.id
       };
 
@@ -186,6 +206,10 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
                   <dd className="text-blue-900 font-medium">{formData.department}</dd>
                 </div>
                 <div className="flex justify-between">
+                  <dt className="text-blue-700">Regions:</dt>
+                  <dd className="text-blue-900 font-medium">{selectedRegions.join(', ')}</dd>
+                </div>
+                <div className="flex justify-between">
                   <dt className="text-blue-700">SAP ID:</dt>
                   <dd className="text-blue-900 font-medium">{formData.sapId || 'N/A'}</dd>
                 </div>
@@ -301,6 +325,38 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({ onClose, onUserCreate
                 placeholder="e.g., IT, HR, Finance"
                 required
               />
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Regions <span className="text-red-500">*</span>
+            </label>
+            {locations.length > 0 ? (
+              <div className="border border-gray-300 rounded-lg p-3 max-h-40 overflow-y-auto">
+                {locations.map(loc => (
+                  <label key={loc} className="flex items-center mb-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedRegions.includes(loc)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedRegions([...selectedRegions, loc]);
+                        } else {
+                          setSelectedRegions(selectedRegions.filter(r => r !== loc));
+                        }
+                      }}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">{loc}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No locations configured. Add locations in Master Data Management first.</p>
+            )}
+            {selectedRegions.length > 0 && (
+              <p className="text-xs text-gray-500 mt-1">{selectedRegions.length} region(s) selected</p>
             )}
           </div>
 

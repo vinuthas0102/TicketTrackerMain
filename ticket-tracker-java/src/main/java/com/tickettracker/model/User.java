@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tickettracker.util.UuidUtil;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User model representing system users with role-based access control.
@@ -25,6 +27,7 @@ public class User {
     private String role;
     private String department;
     private String sapId;
+    private List<String> regions = new ArrayList<>();
 
     @JsonIgnore
     private String passwordHash;
@@ -186,6 +189,14 @@ public class User {
 
     public void setSapId(String sapId) {
         this.sapId = sapId;
+    }
+
+    public List<String> getRegions() {
+        return regions;
+    }
+
+    public void setRegions(List<String> regions) {
+        this.regions = regions != null ? regions : new ArrayList<>();
     }
 
     public String getPasswordHash() {
