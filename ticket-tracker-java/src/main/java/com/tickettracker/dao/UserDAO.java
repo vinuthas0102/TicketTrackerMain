@@ -321,6 +321,75 @@ public class UserDAO extends BaseDAO {
     }
 
     /**
+     * Find regions (locations) assigned to a user.
+     *
+     * @param userId user ID as byte array
+     * @return List of region names
+     * @throws SQLException if database error occurs
+     */
+    public List<String> findRegionsByUserId(byte[] userId) throws SQLException {
+        String sql = "SELECT region FROM user_regions WHERE user_id = ? ORDER BY region";
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        List<String> regions = new ArrayList<>();
+        try {
+            conn = getConnection();
+            stmt = conn.prepareStatement(sql);
+            stmt.setBytes(1, userId);
+            rs = stmt.executeQuery();
+            while (rs.next()) {
+                regions.add(rs.getString("region"));
+            }
+            return regions;
+        } finally {
+            closeResources(conn, stmt, rs);
+        }
+    }
+
+    /**
+     * Save regions for a user (replaces all existing regions).
+     *
+     * @param userId user ID as byte array
+     * @param regions list of region names
+     * @throws SQLException if database error occurs
+     */
+    public void saveUserRegions(byte[] userId, List<String> regions) throws SQLException {
+        Connection conn = null;
+        PreparedStatement deleteStmt = null;
+        PreparedStatement insertStmt = null;
+        try {
+            conn = getConnection();
+            conn.setAutoCommit(false);
+            deleteStmt = conn.prepareStatement("DELETE FROM user_regions WHERE user_id = ?");
+            deleteStmt.setBytes(1, userId);
+            deleteStmt.executeUpdate();
+            if (regions != null && !regions.isEmpty()) {
+                insertStmt = conn.prepareStatement("INSERT INTO user_regions (id, user_id, region) VALUES (SYS_GUID(), ?, ?)");
+                for (String region : regions) {
+                    insertStmt.setBytes(1, userId);
+                    insertStmt.setString(2, region);
+                    insertStmt.addBatch();
+                }
+                insertStmt.executeBatch();
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ex) { logger.error("Rollback failed", ex); }
+            }
+            throw e;
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); } catch (SQLException ex) { logger.error("setAutoCommit failed", ex); }
+            }
+            closeResources(null, deleteStmt, null);
+            closeResources(null, insertStmt, null);
+            closeResources(conn, null, null);
+        }
+    }
+
+    /**
      * Map ResultSet to User object
      *
      * @param rs ResultSet
@@ -343,6 +412,11 @@ public class UserDAO extends BaseDAO {
         user.setCreatedAt(rs.getTimestamp("created_at"));
         user.setUpdatedAt(rs.getTimestamp("updated_at"));
         user.setLastLogin(rs.getTimestamp("last_login"));
+        try {
+            user.setRegions(findRegionsByUserId(user.getId()));
+        } catch (SQLException e) {
+            logger.warn("Failed to load regions for user {}: {}", user.getEmail(), e.getMessage());
+        }
         return user;
     }
 }
