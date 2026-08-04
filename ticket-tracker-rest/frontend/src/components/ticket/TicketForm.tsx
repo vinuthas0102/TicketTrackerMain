@@ -23,7 +23,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
   const [copyingAttachments, setCopyingAttachments] = useState(false);
   const [attachmentCopyStatus, setAttachmentCopyStatus] = useState<string>('');
   const [pendingStatus, setPendingStatus] = useState<'DRAFT' | 'SUBMITTED'>('SUBMITTED');
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [masterCategories, setMasterCategories] = useState<string[]>([]);
   const [masterLocations, setMasterLocations] = useState<string[]>([]);
   const [masterProperties, setMasterProperties] = useState<string[]>([]);
@@ -171,23 +171,22 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
   if (!isOpen) return null;
 
   const validateForm = (status: 'DRAFT' | 'SUBMITTED'): boolean => {
-    setValidationError(null);
+    const errors: Record<string, string> = {};
     if (!formData.title.trim()) {
-      setValidationError('Title is required.');
-      return false;
+      errors.title = 'Title is required.';
     }
     if (status === 'SUBMITTED') {
       if (!formData.description.trim()) {
-        setValidationError('Description is required to submit.');
-        return false;
+        errors.description = 'Description is required to submit.';
       }
-      if (!formData.propertyId) { setValidationError('Property ID is required to submit.'); return false; }
-      if (!formData.propertyLocation) { setValidationError('Property Location is required to submit.'); return false; }
+      if (!formData.propertyId) { errors.propertyId = 'Property ID is required to submit.'; }
+      if (!formData.propertyLocation) { errors.propertyLocation = 'Property Location is required to submit.'; }
       if (availableRequestTypes.length > 0 && !formData.requestType) {
-        setValidationError('Request Type is required to submit.'); return false;
+        errors.requestType = 'Request Type is required to submit.';
       }
     }
-    return true;
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (status: 'DRAFT' | 'SUBMITTED', e?: React.FormEvent) => {
@@ -314,7 +313,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
       setTimeout(() => {
         onClose();
         setPendingStatus('SUBMITTED');
-        setValidationError(null);
+        setFieldErrors({});
         setFormData({
           ticketNumber: '',
           title: '',
@@ -412,17 +411,6 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
 
           {/* Form */}
           <form onSubmit={(e) => handleSubmit('SUBMITTED', e)} className="p-6 max-h-[75vh] overflow-y-auto">
-            {validationError && (
-              <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                  <p className="text-sm text-red-700 font-medium">{validationError}</p>
-                  <button onClick={() => setValidationError(null)} className="ml-auto text-red-400 hover:text-red-600">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            )}
             {isCopying && (
               <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
@@ -508,11 +496,20 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                 <input
                   type="text"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={(e) => {
+                    setFormData({ ...formData, title: e.target.value });
+                    if (fieldErrors.title) setFieldErrors(prev => { const next = { ...prev }; delete next.title; return next; });
+                  }}
+                  className={`w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.title ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="Brief description..."
                   disabled={isEOEditingOthersTicket}
                 />
+                {fieldErrors.title && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {fieldErrors.title}
+                  </p>
+                )}
               </div>
 
               {/* Description */}
@@ -522,12 +519,21 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                 </label>
                 <textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, description: e.target.value });
+                    if (fieldErrors.description) setFieldErrors(prev => { const next = { ...prev }; delete next.description; return next; });
+                  }}
                   rows={6}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={`w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.description ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="Detailed description..."
                   disabled={isEOEditingOthersTicket}
                 />
+                {fieldErrors.description && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {fieldErrors.description}
+                  </p>
+                )}
               </div>
 
               {/* Property ID and Property Location */}
@@ -538,8 +544,11 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                     </label>
                     <select
                       value={formData.propertyId}
-                      onChange={(e) => setFormData({ ...formData, propertyId: e.target.value })}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      onChange={(e) => {
+                        setFormData({ ...formData, propertyId: e.target.value });
+                        if (fieldErrors.propertyId) setFieldErrors(prev => { const next = { ...prev }; delete next.propertyId; return next; });
+                      }}
+                      className={`w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.propertyId ? 'border-red-500' : 'border-gray-300'}`}
                     >
                       {availableProperties.map(prop => (
                         <option key={prop} value={prop}>{prop}</option>
@@ -548,6 +557,12 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                         <option value={formData.propertyId}>{formData.propertyId} (inactive)</option>
                       )}
                     </select>
+                    {fieldErrors.propertyId && (
+                      <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {fieldErrors.propertyId}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -556,8 +571,11 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                     </label>
                     <select
                       value={formData.propertyLocation}
-                      onChange={(e) => setFormData({ ...formData, propertyLocation: e.target.value })}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      onChange={(e) => {
+                        setFormData({ ...formData, propertyLocation: e.target.value });
+                        if (fieldErrors.propertyLocation) setFieldErrors(prev => { const next = { ...prev }; delete next.propertyLocation; return next; });
+                      }}
+                      className={`w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.propertyLocation ? 'border-red-500' : 'border-gray-300'}`}
                     >
                       {(availableLocations.length > 0 ? availableLocations : ['Location01', 'Location02']).map(loc => (
                         <option key={loc} value={loc}>{loc}</option>
@@ -566,6 +584,12 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                         <option value={formData.propertyLocation}>{formData.propertyLocation} (inactive)</option>
                       )}
                     </select>
+                    {fieldErrors.propertyLocation && (
+                      <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {fieldErrors.propertyLocation}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -627,8 +651,11 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                   </label>
                   <select
                     value={formData.requestType}
-                    onChange={(e) => setFormData({ ...formData, requestType: e.target.value })}
-                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    onChange={(e) => {
+                      setFormData({ ...formData, requestType: e.target.value });
+                      if (fieldErrors.requestType) setFieldErrors(prev => { const next = { ...prev }; delete next.requestType; return next; });
+                    }}
+                    className={`w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.requestType ? 'border-red-500' : 'border-gray-300'}`}
                     disabled={isEOEditingOthersTicket}
                   >
                     <option value="">Select a request type...</option>
@@ -636,6 +663,12 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                       <option key={rt.value} value={rt.value}>{rt.label}</option>
                     ))}
                   </select>
+                  {fieldErrors.requestType && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {fieldErrors.requestType}
+                    </p>
+                  )}
                   {showCEInspectionNotice && (
                     <div className="mt-2 flex items-start space-x-2 p-2.5 bg-amber-50 border border-amber-200 rounded-md">
                       <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -689,6 +722,18 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                 )}
               </div>
             </div>
+
+            {/* Validation summary - shown near the buttons so users see it without scrolling */}
+            {Object.keys(fieldErrors).length > 0 && (
+              <div className="mt-4 mb-2 bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                  <p className="text-sm text-red-700 font-medium">
+                    Please fix {Object.keys(fieldErrors).length} field{Object.keys(fieldErrors).length !== 1 ? 's' : ''} above before submitting.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Form Actions */}
             <div className="flex justify-end space-x-2 mt-6 pt-4 border-t border-gray-200">
