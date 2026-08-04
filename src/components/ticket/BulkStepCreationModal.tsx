@@ -6,6 +6,7 @@ import { DependencyService } from '../../services/dependencyService';
 import { useAuth } from '../../context/AuthContext';
 import { FileReferenceService } from '../../services/fileReferenceService';
 import { SelectedFileReference } from './FileReferenceSelector';
+import { MasterDataService } from '../../services/masterDataService';
 
 interface BulkStepCreationModalProps {
   ticketId: string;
@@ -30,7 +31,9 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
   const { user } = useAuth();
   const isEO = user?.role === 'EO';
   const [rows, setRows] = useState<BulkStepRow[]>([]);
+  const [masterDepartments, setMasterDepartments] = useState<string[]>([]);
   const uniqueDepartments = Array.from(new Set(users.map(u => u.department).filter(Boolean)));
+  const allDepartments = Array.from(new Set([...masterDepartments, ...uniqueDepartments]));
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [fileReferenceTemplates, setFileReferenceTemplates] = useState<FileReferenceTemplate[]>([]);
   const [showFileRefModal, setShowFileRefModal] = useState<string | null>(null);
@@ -61,6 +64,10 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
       errors: {},
     }));
     setRows(initialRows);
+  }, []);
+
+  useEffect(() => {
+    MasterDataService.getActive('departments').then(setMasterDepartments).catch(() => setMasterDepartments([]));
   }, []);
 
   useEffect(() => {
@@ -409,7 +416,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
                       className={`w-full px-3 py-2 border ${row.errors?.department ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     >
                       <option value="">All Departments</option>
-                      {uniqueDepartments.map(dept => (
+                      {allDepartments.map(dept => (
                         <option key={dept} value={dept}>{dept}</option>
                       ))}
                     </select>
