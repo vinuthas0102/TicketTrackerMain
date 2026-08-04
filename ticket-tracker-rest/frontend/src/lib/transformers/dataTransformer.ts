@@ -176,7 +176,7 @@ export const transformWorkflowStepFromBackend = (step: any): any => {
     level_2: step.level_2 || 0,
     level_3: step.level_3 || 0,
     parentStepId: step.parentStepId,
-    is_parallel: step.isParallel !== false,
+    is_parallel: step.is_parallel !== undefined ? step.is_parallel : (step.isParallel !== false),
     progress: step.progress || 0,
     dependencies: step.dependencies || [],
     dependency_mode: step.dependencyMode || 'all',

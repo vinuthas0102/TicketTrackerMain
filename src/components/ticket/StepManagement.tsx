@@ -501,13 +501,14 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       : users.filter(u => (isSubTask ? u.role === 'TECHNICIAN' : u.role === 'DO')
           && (!ticket.propertyLocation || !u.regions || u.regions.length === 0 || u.regions.includes(ticket.propertyLocation)));
     const filteredUsers = (() => {
-      if (step?.assignedTo && ((!isSubTask && isDO) || isTechnician || (isSubTask && isStepWIP))) {
+      const result = [...baseFilteredUsers];
+      if (step?.assignedTo) {
         const assignedUser = users.find(u => u.id === step.assignedTo);
-        if (assignedUser && !baseFilteredUsers.some(u => u.id === assignedUser.id)) {
-          return [assignedUser, ...baseFilteredUsers];
+        if (assignedUser && !result.some(u => u.id === assignedUser.id)) {
+          result.unshift(assignedUser);
         }
       }
-      return baseFilteredUsers;
+      return result;
     })();
 
     React.useEffect(() => {

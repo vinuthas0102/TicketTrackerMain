@@ -3,6 +3,23 @@ import { API_ENDPOINTS } from '../lib/apiEndpoints';
 import { transformUserFromBackend, transformUserToBackend } from '../lib/transformers/dataTransformer';
 import { User } from '../types';
 
+export interface CreateUserRequest {
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  sapId?: string;
+  regions: string[];
+  createdBy: string;
+}
+
+export interface CreateUserResult {
+  success: boolean;
+  tempPassword?: string;
+  user?: User;
+  message: string;
+}
+
 export class UserManagementService {
   static async getAllUsers(): Promise<User[]> {
     try {
@@ -24,18 +41,29 @@ export class UserManagementService {
     }
   }
 
-  static async createUser(userData: Partial<User>, createdBy: string): Promise<string> {
+  static async createUser(request: CreateUserRequest): Promise<CreateUserResult> {
     try {
       const payload = {
-        ...transformUserToBackend(userData),
-        createdBy,
+        ...transformUserToBackend(request),
+        createdBy: request.createdBy,
       };
 
-      const response = await apiClient.post<{ id: string }>(API_ENDPOINTS.USERS.CREATE, payload);
-      return response.id;
+      const response = await apiClient.post<any>(API_ENDPOINTS.USERS.CREATE, payload);
+      const user = response.user || response;
+      const tempPassword = response.tempPassword || undefined;
+
+      return {
+        success: true,
+        tempPassword,
+        user: user ? transformUserFromBackend(user) : undefined,
+        message: 'User created successfully',
+      };
     } catch (error) {
       console.error('Error creating user:', error);
-      throw error;
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to create user',
+      };
     }
   }
 

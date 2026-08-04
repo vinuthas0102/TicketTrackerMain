@@ -406,7 +406,13 @@ public class TicketDAO extends BaseDAO {
         String sql;
 
         if ("Admin".equalsIgnoreCase(userRole) || "Finance".equalsIgnoreCase(userRole) || "eo".equalsIgnoreCase(userRole)) {
-            sql = "SELECT * FROM tickets ORDER BY created_at DESC";
+            sql = "SELECT t.* FROM tickets t " +
+                    "WHERE EXISTS ( " +
+                    "  SELECT 1 FROM user_regions ur " +
+                    "  WHERE ur.user_id = ? " +
+                    "  AND (t.property_location = ur.region OR ur.region = 'ALL') " +
+                    ") " +
+                    "ORDER BY t.created_at DESC";
 
             Connection conn = null;
             PreparedStatement stmt = null;
@@ -415,6 +421,7 @@ public class TicketDAO extends BaseDAO {
             try {
                 conn = getConnection();
                 stmt = conn.prepareStatement(sql);
+                stmt.setBytes(1, userId);
                 rs = stmt.executeQuery();
 
                 List<Ticket> tickets = new ArrayList<>();
@@ -496,9 +503,17 @@ public class TicketDAO extends BaseDAO {
             conn = getConnection();
 
             if ("Admin".equalsIgnoreCase(userRole) || "Finance".equalsIgnoreCase(userRole) || "eo".equalsIgnoreCase(userRole)) {
-                sql = "SELECT * FROM tickets WHERE module_id = ? ORDER BY created_at DESC";
+                sql = "SELECT t.* FROM tickets t " +
+                        "WHERE t.module_id = ? " +
+                        "AND EXISTS ( " +
+                        "  SELECT 1 FROM user_regions ur " +
+                        "  WHERE ur.user_id = ? " +
+                        "  AND (t.property_location = ur.region OR ur.region = 'ALL') " +
+                        ") " +
+                        "ORDER BY t.created_at DESC";
                 stmt = conn.prepareStatement(sql);
                 stmt.setBytes(1, moduleId);
+                stmt.setBytes(2, userId);
             } else if ("DO_Manager".equalsIgnoreCase(userRole)) {
                 sql = "SELECT t.* FROM tickets t " +
                         "WHERE t.module_id = ? " +

@@ -430,7 +430,10 @@ public class WorkflowService {
                 throw new ForbiddenException("Auto-generated inspection steps cannot be deleted");
             }
 
+            deleteChildSteps(stepId, step.getTicketId(), currentUserId);
+
             dependencyDAO.deleteByStepId(stepId);
+            fileReferenceDAO.deleteByStepId(stepId);
 
             createAuditLog(step.getTicketId(), stepId, currentUserId,
                     "Workflow step deleted",
@@ -448,6 +451,20 @@ public class WorkflowService {
         } catch (SQLException e) {
             logger.error("Error deleting workflow step", e);
             throw new DatabaseException("Failed to delete workflow step", e);
+        }
+    }
+
+    private void deleteChildSteps(byte[] parentStepId, byte[] ticketId, byte[] currentUserId) throws SQLException {
+        List<WorkflowStep> children = workflowStepDAO.findByParentStepId(parentStepId);
+        for (WorkflowStep child : children) {
+            deleteChildSteps(child.getId(), ticketId, currentUserId);
+            dependencyDAO.deleteByStepId(child.getId());
+            fileReferenceDAO.deleteByStepId(child.getId());
+            createAuditLog(ticketId, child.getId(), currentUserId,
+                    "Workflow step deleted",
+                    String.format("Deleted child step: %s", child.getTitle()),
+                    "workflow_action");
+            workflowStepDAO.delete(child.getId());
         }
     }
 

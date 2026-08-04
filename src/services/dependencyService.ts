@@ -197,6 +197,19 @@ export class DependencyService {
     }
   }
 
+  static async removeAllDependenciesForStep(stepId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('workflow_step_dependencies')
+        .delete()
+        .or(`step_id.eq.${stepId},depends_on_step_id.eq.${stepId}`);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error removing dependencies for step:', error);
+    }
+  }
+
   static async getDependentSteps(stepId: string): Promise<string[]> {
     try {
       const { data, error } = await supabase

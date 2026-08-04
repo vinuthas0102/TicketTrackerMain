@@ -324,6 +324,12 @@ public class WorkflowStepDAO extends BaseDAO {
             hasFields = true;
         }
 
+        if (updateRequest.getRemarks() != null) {
+            sql.append("remarks = ?, ");
+            params.add(updateRequest.getRemarks());
+            hasFields = true;
+        }
+
         if (!hasFields) {
             logger.warn("No fields to update for workflow step: {}", bytesToHex(updateRequest.getId()));
             return findById(updateRequest.getId());

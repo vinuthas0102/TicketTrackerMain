@@ -968,25 +968,65 @@ export class TicketService {
 
   static async deleteWorkflowStep(stepId: string, ticketId: string, userId: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('workflow_steps')
-        .delete()
-        .eq('id', stepId);
-
-      if (error) throw error;
-
-      await this.createAuditLog({
-        ticketId,
-        stepId,
-        action: 'WORKFLOW_DELETED',
-        actionCategory: 'workflow_action',
-        description: 'Workflow deleted',
-        performedBy: userId,
-      });
+      await this.deleteStepRecursive(stepId, ticketId, userId);
     } catch (error) {
       console.error('Error deleting step:', error);
       throw error;
     }
+  }
+
+  private static async deleteStepRecursive(stepId: string, ticketId: string, userId: string): Promise<void> {
+    const { data: childSteps, error: childError } = await supabase
+      .from('workflow_steps')
+      .select('id')
+      .eq('parent_step_id', stepId);
+
+    if (childError) throw childError;
+
+    if (childSteps && childSteps.length > 0) {
+      for (const child of childSteps) {
+        await this.deleteStepRecursive(child.id, ticketId, userId);
+      }
+    }
+
+    await DependencyService.removeAllDependenciesForStep(stepId);
+
+    const { error: refError } = await supabase
+      .from('workflow_step_file_references')
+      .delete()
+      .eq('step_id', stepId);
+
+    if (refError) console.warn('Failed to delete file references for step:', refError);
+
+    const { error: docError } = await supabase
+      .from('documents')
+      .delete()
+      .eq('step_id', stepId);
+
+    if (docError) console.warn('Failed to delete documents for step:', docError);
+
+    const { error: progressDocError } = await supabase
+      .from('workflow_step_progress_documents')
+      .delete()
+      .eq('step_id', stepId);
+
+    if (progressDocError) console.warn('Failed to delete progress documents for step:', progressDocError);
+
+    const { error } = await supabase
+      .from('workflow_steps')
+      .delete()
+      .eq('id', stepId);
+
+    if (error) throw error;
+
+    await this.createAuditLog({
+      ticketId,
+      stepId,
+      action: 'WORKFLOW_DELETED',
+      actionCategory: 'workflow_action',
+      description: 'Workflow deleted',
+      performedBy: userId,
+    });
   }
 
   static async addStep(ticketId: string, stepData: any, userId: string): Promise<string> {
