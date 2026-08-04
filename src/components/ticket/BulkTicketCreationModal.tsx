@@ -25,12 +25,17 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
   } | null>(null);
   const [masterCategories, setMasterCategories] = useState<string[]>([]);
   const [masterLocations, setMasterLocations] = useState<string[]>([]);
+  const [masterDepartments, setMasterDepartments] = useState<string[]>([]);
 
   useEffect(() => {
     MasterDataService.getActive('categories').then(setMasterCategories).catch(() => setMasterCategories([]));
+    MasterDataService.getActive('departments').then(setMasterDepartments).catch(() => setMasterDepartments([]));
     MasterDataService.getActive('locations').then((locs) => {
       setMasterLocations(locs);
-      const defaultLoc = locs.length > 0 ? locs[0] : '';
+      const eoFiltered = user?.role === 'EO' && user.regions && user.regions.length > 0
+        ? locs.filter(l => user.regions!.includes(l))
+        : locs;
+      const defaultLoc = eoFiltered.length > 0 ? eoFiltered[0] : (locs.length > 0 ? locs[0] : '');
       setRows(prev => prev.map(row =>
         row.propertyLocation === 'Location01' || !row.propertyLocation
           ? { ...row, propertyLocation: defaultLoc }
@@ -218,6 +223,10 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
 
   const validRowsCount = getValidRows().length;
 
+  const availableLocations = user?.role === 'EO' && user.regions && user.regions.length > 0
+    ? masterLocations.filter(loc => user.regions!.includes(loc))
+    : masterLocations;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -352,6 +361,22 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
 
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Department
+                      </label>
+                      <select
+                        value={row.department}
+                        onChange={(e) => updateRow(row.rowId, 'department', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        disabled={bulkOperationInProgress}
+                      >
+                        {(masterDepartments.length > 0 ? masterDepartments : [user?.department].filter(Boolean) as string[]).map(dept => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
                         Category
                       </label>
                       <select
@@ -411,7 +436,7 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
                         }`}
                         disabled={bulkOperationInProgress}
                       >
-                        {(masterLocations.length > 0 ? masterLocations : ['Location01', 'Location02']).map(loc => (
+                        {(availableLocations.length > 0 ? availableLocations : ['Location01', 'Location02']).map(loc => (
                           <option key={loc} value={loc}>{loc}</option>
                         ))}
                       </select>

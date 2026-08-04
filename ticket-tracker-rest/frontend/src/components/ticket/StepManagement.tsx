@@ -608,6 +608,13 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       }
       if (!formData.startDate) {
         errors.startDate = 'Start Date is required';
+      } else {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const selectedDate = new Date(formData.startDate + 'T00:00:00');
+        if (selectedDate <= today) {
+          errors.startDate = 'Start Date must be greater than current date';
+        }
       }
       if (isEO && !formData.dueDate) {
         errors.dueDate = 'Due Date is required';
@@ -805,6 +812,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
               type="date"
               value={formData.startDate}
               onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+              min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
               className={`w-full px-3 py-2 border ${formErrors.startDate ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
             />
             {formErrors.startDate && <p className="text-xs text-red-600 mt-1">{formErrors.startDate}</p>}

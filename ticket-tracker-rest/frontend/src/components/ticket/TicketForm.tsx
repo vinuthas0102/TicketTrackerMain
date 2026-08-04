@@ -32,7 +32,10 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
     MasterDataService.getActive('locations').then((locs) => {
       setMasterLocations(locs);
       if (!ticket && !copiedTicket && locs.length > 0) {
-        setFormData(prev => ({ ...prev, propertyLocation: locs[0] }));
+        const eoFiltered = user?.role === 'EO' && user.regions && user.regions.length > 0
+          ? locs.filter(l => user.regions!.includes(l))
+          : locs;
+        setFormData(prev => ({ ...prev, propertyLocation: eoFiltered[0] || locs[0] }));
       }
     }).catch(() => setMasterLocations([]));
     MasterDataService.getActive('properties').then((props) => {
@@ -160,6 +163,10 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
 
   const isEditing = !!ticket;
   const isEOEditingOthersTicket = isEditing && user?.role === 'EO' && ticket?.createdBy !== user?.id;
+
+  const availableLocations = user?.role === 'EO' && user.regions && user.regions.length > 0
+    ? masterLocations.filter(loc => user.regions!.includes(loc))
+    : masterLocations;
 
   if (!isOpen) return null;
 
@@ -319,7 +326,9 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
           estCompletionDate: '',
           department: user?.department || '',
           propertyId: 'PROP001',
-          propertyLocation: masterLocations.length > 0 ? masterLocations[0] : '',
+          propertyLocation: (user?.role === 'EO' && user.regions && user.regions.length > 0
+          ? user.regions[0]
+          : (masterLocations.length > 0 ? masterLocations[0] : '')),
           requestType: user?.role === 'EMPLOYEE' ? 'General Maintenance' : ''
         });
         setFiles(null);
@@ -550,10 +559,10 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                       onChange={(e) => setFormData({ ...formData, propertyLocation: e.target.value })}
                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      {(masterLocations.length > 0 ? masterLocations : ['Location01', 'Location02']).map(loc => (
+                      {(availableLocations.length > 0 ? availableLocations : ['Location01', 'Location02']).map(loc => (
                         <option key={loc} value={loc}>{loc}</option>
                       ))}
-                      {formData.propertyLocation && masterLocations.length > 0 && !masterLocations.includes(formData.propertyLocation) && (
+                      {formData.propertyLocation && availableLocations.length > 0 && !availableLocations.includes(formData.propertyLocation) && (
                         <option value={formData.propertyLocation}>{formData.propertyLocation} (inactive)</option>
                       )}
                     </select>

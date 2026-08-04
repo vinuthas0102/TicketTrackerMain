@@ -280,9 +280,18 @@ public class WorkflowService {
                 }
             }
 
+            boolean startDateWasAutoSet = false;
             if (updateRequest.getStatus() != null && "wip".equals(updateRequest.getStatus())) {
                 if (existingStep.getStartDate() == null && updateRequest.getStartDate() == null) {
                     updateRequest.setStartDate(new Timestamp(System.currentTimeMillis()));
+                    startDateWasAutoSet = true;
+                }
+            }
+
+            if (updateRequest.getStartDate() != null && !startDateWasAutoSet && existingStep.getStartDate() == null) {
+                java.util.Date today = java.sql.Date.valueOf(java.time.LocalDate.now());
+                if (!updateRequest.getStartDate().after(today)) {
+                    throw new ValidationException("startDate", "Start Date must be greater than current date");
                 }
             }
 
@@ -700,6 +709,11 @@ public class WorkflowService {
 
         if (step.getStartDate() == null) {
             validation.addError("Start Date is required");
+        } else {
+            java.util.Date today = java.sql.Date.valueOf(java.time.LocalDate.now());
+            if (!step.getStartDate().after(today)) {
+                validation.addError("Start Date must be greater than current date");
+            }
         }
 
         if (step.getDueDate() == null) {
