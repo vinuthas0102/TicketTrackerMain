@@ -193,8 +193,12 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
     try {
       if (!user) throw new Error('User not authenticated');
       if (!selectedModule) throw new Error('No module selected');
-      
-      await TicketService.changeTicketStatus(request, user.id);
+
+      const effectiveRequest = user.role === 'EO' && request.newStatus === 'SUBMITTED'
+        ? { ...request, newStatus: 'ACTIVE' as const }
+        : request;
+
+      await TicketService.changeTicketStatus(effectiveRequest, user.id);
 
       // Reload tickets to get the updated list
       const updatedTickets = await TicketService.getTicketsByModule(

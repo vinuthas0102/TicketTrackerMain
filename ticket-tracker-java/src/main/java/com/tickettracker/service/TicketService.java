@@ -364,7 +364,15 @@ public class TicketService {
             Ticket ticket = getTicket(ticketId);
             String oldStatus = ticket.getStatus();
 
-            ticket.setStatus(newStatus);
+            String effectiveStatus = newStatus;
+            if ("submitted".equalsIgnoreCase(newStatus)) {
+                User currentUser = userDAO.findById(currentUserId);
+                if (currentUser != null && "eo".equalsIgnoreCase(currentUser.getRole())) {
+                    effectiveStatus = "active";
+                }
+            }
+
+            ticket.setStatus(effectiveStatus);
             ticketDAO.update(ticket);
 
             String description = String.format("Status changed from '%s' to '%s'", oldStatus, newStatus);
