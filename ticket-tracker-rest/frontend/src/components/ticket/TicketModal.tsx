@@ -67,7 +67,7 @@ const TicketModal: React.FC<TicketModalProps> = ({ ticket, isOpen, onClose, onEd
   const canEdit = () => {
     if (!user) return false;
     if (user.role === 'EO') return true;
-    if (user.role === 'DO') return ticket.department === user.department;
+    if (user.role === 'DO') return ticket.createdBy === user.id || ticket.department === user.department;
     return ticket.createdBy === user.id;
   };
 

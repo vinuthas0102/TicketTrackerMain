@@ -478,7 +478,36 @@ public class TicketService {
                 return false;
             }
 
+            if ("admin".equalsIgnoreCase(userRole)) {
+                return true;
+            }
+
+            if ("finance".equalsIgnoreCase(userRole)) {
+                if (ticket.getFinanceOfficerId() != null && java.util.Arrays.equals(ticket.getFinanceOfficerId(), userId)) {
+                    return true;
+                }
+                String ticketStatus = ticket.getStatus();
+                if (ticketStatus != null && ("sent_to_finance".equalsIgnoreCase(ticketStatus)
+                        || "approved_by_finance".equalsIgnoreCase(ticketStatus)
+                        || "rejected_by_finance".equalsIgnoreCase(ticketStatus))) {
+                    return true;
+                }
+                return false;
+            }
+
             if ("eo".equalsIgnoreCase(userRole)) {
+                if (ticket.getCreatedBy() != null && java.util.Arrays.equals(ticket.getCreatedBy(), userId)) {
+                    return true;
+                }
+                if (ticket.getAssignedTo() != null && java.util.Arrays.equals(ticket.getAssignedTo(), userId)) {
+                    return true;
+                }
+                List<WorkflowStep> steps = workflowStepDAO.findByTicketId(ticketId);
+                for (WorkflowStep step : steps) {
+                    if (step.getAssignedTo() != null && java.util.Arrays.equals(step.getAssignedTo(), userId)) {
+                        return true;
+                    }
+                }
                 List<String> userRegions = userDAO.findRegionsByUserId(userId);
                 if (userRegions == null || userRegions.isEmpty()) {
                     return false;
@@ -543,15 +572,49 @@ public class TicketService {
                 return new ArrayList<>();
             }
 
-            if ("eo".equalsIgnoreCase(userRole)) {
-                List<String> userRegions = userDAO.findRegionsByUserId(userId);
-                if (userRegions == null || userRegions.isEmpty()) {
-                    return new ArrayList<>();
-                }
+            if ("admin".equalsIgnoreCase(userRole)) {
                 List<Ticket> allTickets = ticketDAO.findAll();
                 List<byte[]> ticketIds = new ArrayList<>();
                 for (Ticket ticket : allTickets) {
-                    if (userRegions.contains(ticket.getPropertyLocation())) {
+                    ticketIds.add(ticket.getId());
+                }
+                return ticketIds;
+            }
+
+            if ("finance".equalsIgnoreCase(userRole)) {
+                List<Ticket> allTickets = ticketDAO.findAll();
+                List<byte[]> ticketIds = new ArrayList<>();
+                for (Ticket ticket : allTickets) {
+                    boolean isFinanceOfficer = ticket.getFinanceOfficerId() != null
+                            && java.util.Arrays.equals(ticket.getFinanceOfficerId(), userId);
+                    String ticketStatus = ticket.getStatus();
+                    boolean isFinanceTicket = ticketStatus != null && (
+                            "sent_to_finance".equalsIgnoreCase(ticketStatus)
+                            || "approved_by_finance".equalsIgnoreCase(ticketStatus)
+                            || "rejected_by_finance".equalsIgnoreCase(ticketStatus));
+                    if (isFinanceOfficer || isFinanceTicket) {
+                        ticketIds.add(ticket.getId());
+                    }
+                }
+                return ticketIds;
+            }
+
+            if ("eo".equalsIgnoreCase(userRole)) {
+                List<String> userRegions = userDAO.findRegionsByUserId(userId);
+                List<Ticket> allTickets = ticketDAO.findAll();
+                List<byte[]> ticketIds = new ArrayList<>();
+                for (Ticket ticket : allTickets) {
+                    boolean isOwner = (ticket.getCreatedBy() != null && java.util.Arrays.equals(ticket.getCreatedBy(), userId))
+                            || (ticket.getAssignedTo() != null && java.util.Arrays.equals(ticket.getAssignedTo(), userId));
+                    boolean hasAssignedStep = false;
+                    List<WorkflowStep> steps = workflowStepDAO.findByTicketId(ticket.getId());
+                    for (WorkflowStep step : steps) {
+                        if (step.getAssignedTo() != null && java.util.Arrays.equals(step.getAssignedTo(), userId)) {
+                            hasAssignedStep = true;
+                            break;
+                        }
+                    }
+                    if (isOwner || hasAssignedStep || (userRegions != null && userRegions.contains(ticket.getPropertyLocation()))) {
                         ticketIds.add(ticket.getId());
                     }
                 }
