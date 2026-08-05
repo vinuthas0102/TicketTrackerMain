@@ -381,7 +381,7 @@ export class TicketService {
         assignedTo: stepData.assignedTo,
         parentStepId: stepData.parentStepId || null,
         dependencies: stepData.dependencies || [],
-        isParallel: stepData.is_parallel !== undefined ? stepData.is_parallel : true,
+        is_parallel: stepData.is_parallel !== undefined ? stepData.is_parallel : true,
         dependencyMode: stepData.dependency_mode || 'all',
         progress: stepData.progress !== undefined ? stepData.progress : 0,
         mandatory_documents: stepData.mandatory_documents || [],
@@ -425,7 +425,7 @@ export class TicketService {
       if (updates.assignedTo !== undefined) payload.assignedTo = updates.assignedTo;
       if (updates.dueDate !== undefined) payload.dueDate = updates.dueDate;
       if (updates.startDate !== undefined) payload.startDate = updates.startDate;
-      if (updates.is_parallel !== undefined) payload.isParallel = updates.is_parallel;
+      if (updates.is_parallel !== undefined) payload.is_parallel = updates.is_parallel;
       if (updates.progress !== undefined) payload.progress = updates.progress;
       if (updates.dependency_mode !== undefined) payload.dependencyMode = updates.dependency_mode;
       if (updates.mandatory_documents !== undefined) payload.mandatoryDocuments = updates.mandatory_documents;

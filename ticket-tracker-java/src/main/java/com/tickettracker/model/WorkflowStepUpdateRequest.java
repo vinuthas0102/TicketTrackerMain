@@ -111,12 +111,12 @@ public class WorkflowStepUpdateRequest {
         this.startDate = startDate;
     }
 
-    @JsonProperty("isParallel")
+    @JsonProperty("is_parallel")
     public Boolean getIsParallel() {
         return isParallel;
     }
 
-    @JsonProperty("isParallel")
+    @JsonProperty("is_parallel")
     public void setIsParallel(Boolean isParallel) {
         this.isParallel = isParallel;
     }
