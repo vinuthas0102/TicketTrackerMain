@@ -101,6 +101,14 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
     }
     if (!row.startDate) {
       errors.startDate = 'Start Date is required';
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const rowStartDate = new Date(row.startDate);
+      rowStartDate.setHours(0, 0, 0, 0);
+      if (rowStartDate.getTime() <= today.getTime()) {
+        errors.startDate = 'Start Date must be greater than current date';
+      }
     }
     if (isEO && !row.dueDate) {
       errors.dueDate = 'Due Date is required';
