@@ -122,7 +122,7 @@ public class TicketServlet extends HttpServlet {
                 }
             }
 
-            if (!currentUser.isAdmin()) {
+            if (!currentUser.isAdmin() && !currentUser.isTechnician()) {
                 logger.warn("Permission denied: User {} (role: {}) attempted to create ticket",
                         currentUser.getEmail(), currentUser.getRole());
                 sendError(response, 403, "Forbidden: Only EO users can create tickets");
@@ -254,6 +254,7 @@ public class TicketServlet extends HttpServlet {
 
             try {
                 ticket = objectMapper.readValue(body, Ticket.class);
+                ticket.setId(UuidUtil.uuidStringToBytes(pathParts[1]));
             } catch (IllegalArgumentException e) {
                 logger.error("Invalid UUID format in ticket update request", e);
                 sendError(response, 400, "Invalid UUID format: " + e.getMessage());
