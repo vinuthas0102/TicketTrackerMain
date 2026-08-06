@@ -167,6 +167,10 @@ public class WorkflowService {
                 if (step.getStartDate() == null) {
                     throw new ValidationException("Start Date is required for all steps");
                 }
+                java.util.Date today = java.sql.Date.valueOf(java.time.LocalDate.now());
+                if (!step.getStartDate().after(today)) {
+                    throw new ValidationException("Start Date must be greater than current date for all steps");
+                }
                 if (step.getDueDate() == null) {
                     throw new ValidationException("Due Date is required for all steps");
                 }

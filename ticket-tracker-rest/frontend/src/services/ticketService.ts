@@ -219,7 +219,12 @@ export class TicketService {
         propertyId: ticketData.propertyId || 'PROP001',
         propertyLocation: ticketData.propertyLocation || '',
         requestType: ticketData.requestType,
-        data: ticketData.data || {},
+        department: ticketData.department,
+        data: {
+          ...(ticketData.data || {}),
+          department: ticketData.department || '',
+          category: ticketData.category || 'General',
+        },
         copiedFromTicketId,
       };
 

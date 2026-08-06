@@ -36,6 +36,22 @@ public class TicketService {
 
             ticket.setCreatedBy(currentUserId);
 
+            if ((ticket.getDepartment() == null || ticket.getDepartment().trim().isEmpty())
+                    && currentUserId != null) {
+                try {
+                    User creator = userDAO.findById(currentUserId);
+                    if (creator != null && creator.getDepartment() != null
+                            && !creator.getDepartment().trim().isEmpty()) {
+                        ticket.setDepartment(creator.getDepartment());
+                        logger.info("Auto-filled department '{}' from creating user",
+                                creator.getDepartment());
+                    }
+                } catch (SQLException e) {
+                    logger.warn("Could not look up creating user for department auto-fill: {}",
+                            e.getMessage());
+                }
+            }
+
             if (ticket.getStatus() == null || ticket.getStatus().trim().isEmpty()) {
                 ticket.setStatus("draft");
             } else {
@@ -181,6 +197,20 @@ public class TicketService {
                 validateTicket(ticket);
 
                 ticket.setCreatedBy(currentUserId);
+
+                if ((ticket.getDepartment() == null || ticket.getDepartment().trim().isEmpty())
+                        && currentUserId != null) {
+                    try {
+                        User creator = userDAO.findById(currentUserId);
+                        if (creator != null && creator.getDepartment() != null
+                                && !creator.getDepartment().trim().isEmpty()) {
+                            ticket.setDepartment(creator.getDepartment());
+                        }
+                    } catch (SQLException e) {
+                        logger.warn("Could not look up creating user for department auto-fill: {}",
+                                e.getMessage());
+                    }
+                }
 
                 if (ticket.getStatus() == null || ticket.getStatus().trim().isEmpty()) {
                     ticket.setStatus("draft");
