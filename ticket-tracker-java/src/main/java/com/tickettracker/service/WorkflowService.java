@@ -25,6 +25,7 @@ public class WorkflowService {
     private final TicketDAO ticketDAO;
     private final ModuleDAO moduleDAO;
     private final DocumentDAO documentDAO;
+    private final UserDAO userDAO;
 
     public WorkflowService() {
         this.workflowStepDAO = new WorkflowStepDAO();
@@ -34,6 +35,7 @@ public class WorkflowService {
         this.ticketDAO = new TicketDAO();
         this.moduleDAO = new ModuleDAO();
         this.documentDAO = new DocumentDAO();
+        this.userDAO = new UserDAO();
     }
 
     private boolean hasCompletionCertificate(byte[] stepId) throws SQLException {
@@ -98,6 +100,7 @@ public class WorkflowService {
     public WorkflowStep createWorkflowStep(WorkflowStep step, byte[] currentUserId) throws TicketTrackerException {
         try {
             validateWorkflowStep(step);
+            validateAssignedUserRegion(step.getTicketId(), step.getAssignedTo());
             ensureTicketReviewed(step.getTicketId());
 
             List<WorkflowStep> existingSteps = workflowStepDAO.findByTicketId(step.getTicketId());
@@ -142,6 +145,32 @@ public class WorkflowService {
         }
     }
 
+    /**
+     * Validate that the assigned user's regions are empty or include the ticket's property location.
+     */
+    private void validateAssignedUserRegion(byte[] ticketId, byte[] assignedToId) throws TicketTrackerException {
+        try {
+            Ticket ticket = ticketDAO.findById(ticketId);
+            if (ticket == null || ticket.getPropertyLocation() == null || ticket.getPropertyLocation().trim().isEmpty()) {
+                return;
+            }
+            User assignedUser = userDAO.findById(assignedToId);
+            if (assignedUser == null) {
+                return;
+            }
+            List<String> userRegions = assignedUser.getRegions();
+            if (userRegions == null || userRegions.isEmpty()) {
+                return;
+            }
+            if (!userRegions.contains(ticket.getPropertyLocation())) {
+                throw new ValidationException("Assigned user " + assignedUser.getName() + " is not assigned to region " + ticket.getPropertyLocation());
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to validate assigned user region", e);
+            throw new DatabaseException("Failed to validate assigned user region", e);
+        }
+    }
+
     public List<WorkflowStep> createWorkflowStepsBulk(List<WorkflowStep> steps, byte[] currentUserId)
             throws TicketTrackerException {
         List<WorkflowStep> createdSteps = new ArrayList<>();
@@ -164,6 +193,7 @@ public class WorkflowService {
                 if (step.getAssignedTo() == null) {
                     throw new ValidationException("Assigned To is required for all steps");
                 }
+                validateAssignedUserRegion(step.getTicketId(), step.getAssignedTo());
                 if (step.getStartDate() == null) {
                     throw new ValidationException("Start Date is required for all steps");
                 }

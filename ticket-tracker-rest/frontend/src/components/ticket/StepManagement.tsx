@@ -2002,6 +2002,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           ticketId={ticket.id}
           parentStep={bulkParentStep || undefined}
           existingSteps={ticket.workflow}
+          ticketPropertyLocation={ticket.propertyLocation}
           onClose={() => {
             setShowBulkModal(false);
             setBulkParentStep(null);

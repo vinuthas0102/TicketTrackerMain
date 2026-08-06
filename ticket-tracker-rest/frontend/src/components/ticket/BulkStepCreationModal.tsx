@@ -13,6 +13,7 @@ interface BulkStepCreationModalProps {
   ticketId: string;
   ticketTitle?: string;
   ticketDescription?: string;
+  ticketPropertyLocation?: string;
   parentStep?: WorkflowStep;
   existingSteps: WorkflowStep[];
   onClose: () => void;
@@ -23,6 +24,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
   ticketId,
   ticketTitle,
   ticketDescription,
+  ticketPropertyLocation,
   parentStep,
   existingSteps,
   onClose,
@@ -428,7 +430,7 @@ const BulkStepCreationModal: React.FC<BulkStepCreationModalProps> = ({
                       className={`w-full px-3 py-2 border ${row.errors?.assignedTo ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     >
                       <option value="">Unassigned</option>
-                      {(row.department ? users.filter(u => u.department === row.department && (parentStep ? u.role === 'TECHNICIAN' : u.role === 'DO')) : users.filter(u => parentStep ? u.role === 'TECHNICIAN' : u.role === 'DO')).map(user => (
+                      {(row.department ? users.filter(u => u.department === row.department && (parentStep ? u.role === 'TECHNICIAN' : u.role === 'DO')) : users.filter(u => parentStep ? u.role === 'TECHNICIAN' : u.role === 'DO')).filter(u => !ticketPropertyLocation || !u.regions || u.regions.length === 0 || u.regions.includes(ticketPropertyLocation)).map(user => (
                         <option key={user.id} value={user.id}>
                           {user.name}
                         </option>
