@@ -305,6 +305,11 @@ export class TicketService {
       if (updates.priority !== undefined) payload.priority = updates.priority;
       if (updates.assignedTo !== undefined) payload.assignedTo = updates.assignedTo;
       if (updates.dueDate !== undefined) payload.dueDate = updates.dueDate;
+      if (updates.moduleId !== undefined) payload.moduleId = updates.moduleId;
+      if (updates.department !== undefined) payload.department = updates.department;
+      if (updates.category !== undefined) payload.category = updates.category;
+      if (updates.propertyId !== undefined) payload.propertyId = updates.propertyId;
+      if (updates.propertyLocation !== undefined) payload.propertyLocation = updates.propertyLocation;
 
       payload.userId = userId;
 
