@@ -59,58 +59,134 @@ export class AuthService {
         (usernameOrEmail === 'global.services@vendor.com' && password === 'vendor123')
       );
 
-      if (!validCredentials) {
-        return null;
-      }
+      // If demo credentials matched, proceed with existing flow
+      if (validCredentials) {
+        const dbUser = await this.getUserByEmailOrUsername(usernameOrEmail);
 
-      // Try to get user from database first by email/username
-      const dbUser = await this.getUserByEmailOrUsername(usernameOrEmail);
+        if (dbUser) {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('active, locked_until')
+            .eq('id', dbUser.id)
+            .maybeSingle();
 
-      if (dbUser) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('active, locked_until')
-          .eq('id', dbUser.id)
-          .maybeSingle();
+          if (userData && !userData.active) {
+            console.log('User account is disabled');
+            return null;
+          }
 
-        if (userData && !userData.active) {
-          console.log('User account is disabled');
+          if (userData?.locked_until && new Date(userData.locked_until) > new Date()) {
+            console.log('User account is locked');
+            return null;
+          }
+
+          await supabase
+            .from('users')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', dbUser.id);
+
+          return {
+            ...dbUser,
+            regions: await this.getUserRegions(dbUser.id),
+            lastLogin: new Date()
+          };
+        }
+
+        // Fallback to mock user data if not in database
+        const mockUser = mockUsers.find(u => u.username === usernameOrEmail || u.email === usernameOrEmail);
+        if (!mockUser) {
+          console.error('No user data found for:', usernameOrEmail);
           return null;
         }
 
-        if (userData?.locked_until && new Date(userData.locked_until) > new Date()) {
-          console.log('User account is locked');
-          return null;
-        }
-
-        await supabase
-          .from('users')
-          .update({ last_login: new Date().toISOString() })
-          .eq('id', dbUser.id);
+        await this.ensureUserExistsInDatabase(mockUser);
 
         return {
-          ...dbUser,
-          regions: await this.getUserRegions(dbUser.id),
+          ...mockUser,
           lastLogin: new Date()
         };
       }
 
-      // Fallback to mock user data if not in database
-      const mockUser = mockUsers.find(u => u.username === usernameOrEmail || u.email === usernameOrEmail);
-      if (!mockUser) {
-        console.error('No user data found for:', usernameOrEmail);
+      // Demo credentials didn't match - check database for a user-created account
+      return await this.loginWithDatabasePassword(usernameOrEmail, password);
+    } catch (error) {
+      console.error('Login error:', error);
+      return null;
+    }
+  }
+
+  private static async loginWithDatabasePassword(usernameOrEmail: string, password: string): Promise<User | null> {
+    if (!isSupabaseAvailable()) {
+      return null;
+    }
+
+    try {
+      const { data: dbUser, error } = await supabase!
+        .from('users')
+        .select('id, name, email, role, department, sap_id, temp_password, temp_password_expires_at, active, locked_until, last_login')
+        .or(`email.eq.${usernameOrEmail},email.ilike.${usernameOrEmail}@%`)
+        .limit(1)
+        .maybeSingle();
+
+      if (error || !dbUser) {
+        console.log('Database login: user not found for', usernameOrEmail);
         return null;
       }
 
-      // Ensure user exists in database
-      await this.ensureUserExistsInDatabase(mockUser);
+      if (!dbUser.active) {
+        console.log('Database login: account is disabled');
+        return null;
+      }
+
+      if (dbUser.locked_until && new Date(dbUser.locked_until) > new Date()) {
+        console.log('Database login: account is locked until', dbUser.locked_until);
+        return null;
+      }
+
+      if (!dbUser.temp_password) {
+        console.log('Database login: no temp_password set for user');
+        return null;
+      }
+
+      if (dbUser.temp_password !== password) {
+        console.log('Database login: password mismatch');
+        return null;
+      }
+
+      if (dbUser.temp_password_expires_at && new Date(dbUser.temp_password_expires_at) < new Date()) {
+        console.log('Database login: temp password has expired');
+        return null;
+      }
+
+      await supabase!
+        .from('users')
+        .update({ last_login: new Date().toISOString() })
+        .eq('id', dbUser.id);
+
+      const regions = await this.getUserRegions(dbUser.id);
+
+      const roleMap: Record<string, 'EMPLOYEE' | 'DO' | 'EO' | 'VENDOR' | 'FINANCE' | 'TECHNICIAN'> = {
+        'employee': 'EMPLOYEE',
+        'dept_officer': 'DO',
+        'eo': 'EO',
+        'vendor': 'VENDOR',
+        'finance': 'FINANCE',
+        'technician': 'TECHNICIAN'
+      };
 
       return {
-        ...mockUser,
+        id: dbUser.id,
+        username: dbUser.email.split('@')[0],
+        name: dbUser.name,
+        email: dbUser.email,
+        role: roleMap[dbUser.role] || 'EMPLOYEE',
+        department: dbUser.department,
+        sapId: dbUser.sap_id || undefined,
+        regions,
         lastLogin: new Date()
       };
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Database login error:', error);
       return null;
     }
   }
