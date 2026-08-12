@@ -121,12 +121,21 @@ export class AuthService {
     }
 
     try {
-      const { data: dbUser, error } = await supabase!
-        .from('users')
-        .select('id, name, email, role, department, sap_id, temp_password, temp_password_expires_at, active, locked_until, last_login')
-        .or(`email.eq.${usernameOrEmail},email.ilike.${usernameOrEmail}@%`)
-        .limit(1)
-        .maybeSingle();
+      let query;
+      if (usernameOrEmail.includes('@')) {
+        query = supabase!
+          .from('users')
+          .select('id, name, email, role, department, sap_id, temp_password, temp_password_expires_at, active, locked_until, last_login')
+          .eq('email', usernameOrEmail);
+      } else {
+        query = supabase!
+          .from('users')
+          .select('id, name, email, role, department, sap_id, temp_password, temp_password_expires_at, active, locked_until, last_login')
+          .ilike('email', `${usernameOrEmail}@%`)
+          .limit(1);
+      }
+
+      const { data: dbUser, error } = await query.maybeSingle();
 
       if (error || !dbUser) {
         console.log('Database login: user not found for', usernameOrEmail);

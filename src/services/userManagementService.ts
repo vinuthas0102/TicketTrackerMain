@@ -617,7 +617,7 @@ export class UserManagementService {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
 
-      const { error: updateError } = await supabase
+      const { data: updatedRow, error: updateError } = await supabase
         .from('users')
         .update({
           temp_password: tempPassword,
@@ -625,12 +625,28 @@ export class UserManagementService {
           updated_by: performedBy,
           updated_at: new Date().toISOString()
         })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('id, temp_password')
+        .maybeSingle();
 
       if (updateError) {
         return {
           success: false,
           message: `Failed to reset password: ${updateError.message}`
+        };
+      }
+
+      if (!updatedRow) {
+        return {
+          success: false,
+          message: 'Failed to reset password: user not found or update was blocked'
+        };
+      }
+
+      if (updatedRow.temp_password !== tempPassword) {
+        return {
+          success: false,
+          message: 'Failed to reset password: update did not persist'
         };
       }
 
