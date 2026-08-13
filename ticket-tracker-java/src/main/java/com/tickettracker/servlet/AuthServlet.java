@@ -273,6 +273,7 @@ public class AuthServlet extends HttpServlet {
         sanitized.put("active", user.isActive());
         sanitized.put("sapId", user.getSapId());
         sanitized.put("avatar", user.getAvatar());
+        sanitized.put("regions", user.getRegions());
         if (user.getLastLogin() != null) {
             sanitized.put("lastLogin", user.getLastLogin());
         }
