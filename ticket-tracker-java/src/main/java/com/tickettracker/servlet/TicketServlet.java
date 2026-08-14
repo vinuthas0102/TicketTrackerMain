@@ -529,7 +529,7 @@ public class TicketServlet extends HttpServlet {
             }
         }
 
-        ticketService.updateTicketStatus(ticketId, normalizedStatus, currentUser.getId());
+        ticketService.updateTicketStatus(ticketId, normalizedStatus, currentUser.getId(), statusRequest.remarks);
 
         logger.info("Ticket status changed: {} to {} by user: {}",
                 ticketIdHex, normalizedStatus, currentUser.getEmail());
@@ -668,7 +668,7 @@ public class TicketServlet extends HttpServlet {
             logger.error("Failed to create audit log for completion certificate upload", e);
         }
 
-        ticketService.updateTicketStatus(ticketId, normalizedStatus, currentUser.getId());
+        ticketService.updateTicketStatus(ticketId, normalizedStatus, currentUser.getId(), remarks);
 
         logger.info("Ticket status changed with completion certificate: {} to {} by user: {}",
                 ticketIdHex, normalizedStatus, currentUser.getEmail());

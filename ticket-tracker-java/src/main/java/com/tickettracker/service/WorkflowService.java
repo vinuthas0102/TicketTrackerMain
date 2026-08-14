@@ -309,6 +309,9 @@ public class WorkflowService {
                 if (updateRequest.getCompletedAt() == null) {
                     updateRequest.setCompletedAt(new Timestamp(System.currentTimeMillis()));
                 }
+                if (updateRequest.getActualCompletedAt() == null) {
+                    updateRequest.setActualCompletedAt(new Timestamp(System.currentTimeMillis()));
+                }
                 if (updateRequest.getProgress() == null) {
                     updateRequest.setProgress(new BigDecimal("100"));
                 }
@@ -425,6 +428,7 @@ public class WorkflowService {
                     throw new ValidationException("Cannot complete step: A completion certificate must be uploaded before marking this task as completed");
                 }
                 updateRequest.setCompletedAt(new Timestamp(System.currentTimeMillis()));
+                updateRequest.setActualCompletedAt(new Timestamp(System.currentTimeMillis()));
                 updateRequest.setProgress(new BigDecimal("100"));
             }
 

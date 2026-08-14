@@ -318,6 +318,12 @@ public class WorkflowStepDAO extends BaseDAO {
             hasFields = true;
         }
 
+        if (updateRequest.getActualCompletedAt() != null) {
+            sql.append("actual_completed_at = ?, ");
+            params.add(updateRequest.getActualCompletedAt());
+            hasFields = true;
+        }
+
         if (updateRequest.getData() != null) {
             sql.append("data = ?, ");
             params.add(updateRequest.getData());

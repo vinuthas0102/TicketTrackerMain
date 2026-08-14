@@ -36,6 +36,8 @@ public class WorkflowStepUpdateRequest {
 
     private Timestamp completedAt;
 
+    private Timestamp actualCompletedAt;
+
     private String data;
 
     private String remarks;
@@ -180,6 +182,16 @@ public class WorkflowStepUpdateRequest {
     @JsonProperty("completedAt")
     public void setCompletedAt(Timestamp completedAt) {
         this.completedAt = completedAt;
+    }
+
+    @JsonProperty("actualCompletedAt")
+    public Timestamp getActualCompletedAt() {
+        return actualCompletedAt;
+    }
+
+    @JsonProperty("actualCompletedAt")
+    public void setActualCompletedAt(Timestamp actualCompletedAt) {
+        this.actualCompletedAt = actualCompletedAt;
     }
 
     @JsonProperty("data")

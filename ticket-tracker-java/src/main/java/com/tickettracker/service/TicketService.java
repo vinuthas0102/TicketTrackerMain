@@ -390,6 +390,11 @@ public class TicketService {
 
     public void updateTicketStatus(byte[] ticketId, String newStatus, byte[] currentUserId)
             throws TicketTrackerException {
+        updateTicketStatus(ticketId, newStatus, currentUserId, null);
+    }
+
+    public void updateTicketStatus(byte[] ticketId, String newStatus, byte[] currentUserId, String remarks)
+            throws TicketTrackerException {
         try {
             Ticket ticket = getTicket(ticketId);
             String oldStatus = ticket.getStatus();
@@ -406,8 +411,14 @@ public class TicketService {
             ticketDAO.update(ticket);
 
             String description = String.format("Status changed from '%s' to '%s'", oldStatus, newStatus);
-            createAuditLog(ticketId, null, currentUserId, "Status changed",
-                    description, description, "status_change");
+            String metadata = null;
+            if (remarks != null && !remarks.trim().isEmpty()) {
+                String escaped = remarks.trim().replace("\\", "\\\\").replace("\"", "\\\"");
+                metadata = "{\"reason\":\"" + escaped + "\"}";
+                description = description + " - " + remarks.trim();
+            }
+            createAuditLogWithMetadata(ticketId, null, currentUserId, "Status changed",
+                    description, description, "status_change", metadata);
 
             logger.info("Ticket status updated: {} from {} to {}",
                     ticket.getTicketNumber(), oldStatus, newStatus);
@@ -732,6 +743,21 @@ public class TicketService {
         auditLog.setOldData(oldData);
         auditLog.setDescription(description);
         auditLog.setActionCategory(category);
+        auditLogDAO.create(auditLog);
+    }
+
+    private void createAuditLogWithMetadata(byte[] ticketId, byte[] stepId, byte[] performedBy,
+                                String action, String oldData, String description,
+                                String category, String metadata) throws SQLException {
+        AuditLog auditLog = new AuditLog();
+        auditLog.setTicketId(ticketId);
+        auditLog.setStepId(stepId);
+        auditLog.setPerformedBy(performedBy);
+        auditLog.setAction(action);
+        auditLog.setOldData(oldData);
+        auditLog.setDescription(description);
+        auditLog.setActionCategory(category);
+        if (metadata != null) auditLog.setMetadata(metadata);
         auditLogDAO.create(auditLog);
     }
 

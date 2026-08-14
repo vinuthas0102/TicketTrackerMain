@@ -445,6 +445,45 @@ public class WorkflowStepServlet extends HttpServlet {
                     historyEntries.add(entry);
                     logger.debug("Added WORKFLOW_UPDATED entry to history (progress: {}, has docs: {})",
                         progress, !docs.isEmpty());
+                } else if ("WORKFLOW_COMPLETED".equals(action)) {
+                    Integer progress = null;
+                    Integer oldProgress = null;
+
+                    if (auditLog.getNewData() != null && !auditLog.getNewData().isEmpty()) {
+                        try {
+                            progress = Integer.parseInt(auditLog.getNewData().trim());
+                        } catch (NumberFormatException e) {
+                            progress = extractProgressFromMetadata(auditLog.getMetadata());
+                        }
+                    } else {
+                        progress = extractProgressFromMetadata(auditLog.getMetadata());
+                    }
+
+                    if (auditLog.getOldData() != null && !auditLog.getOldData().isEmpty()) {
+                        try {
+                            oldProgress = Integer.parseInt(auditLog.getOldData().trim());
+                        } catch (NumberFormatException e) {
+                        }
+                    }
+
+                    logger.debug("WORKFLOW_COMPLETED entry - progress: {}, oldProgress: {}, description: {}, metadata: {}",
+                            progress, oldProgress, auditLog.getDescription(), auditLog.getMetadata());
+
+                    Map<String, Object> entry = new HashMap<>(baseEntry);
+                    entry.put("type", "progress_update");
+                    if (progress != null) {
+                        entry.put("progress", progress);
+                    }
+                    if (oldProgress != null) {
+                        entry.put("oldProgress", oldProgress);
+                    }
+                    List<Map<String, Object>> docs = progressDocsMap.getOrDefault(auditLogIdHex, new ArrayList<>());
+                    if (!docs.isEmpty()) {
+                        entry.put("documents", docs);
+                    }
+                    historyEntries.add(entry);
+                    logger.debug("Added WORKFLOW_COMPLETED entry to history (progress: {}, has docs: {})",
+                            progress, !docs.isEmpty());
                 } else if ("STATUS_CHANGED".equals(action) || "status_change".equals(actionCategory)) {
                     logger.debug("STATUS_CHANGED entry - new status: {}, old status: {}",
                         auditLog.getNewData(), auditLog.getOldData());
