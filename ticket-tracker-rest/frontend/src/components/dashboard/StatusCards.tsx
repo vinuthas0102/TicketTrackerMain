@@ -154,7 +154,7 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
           >
             <CircleDashed className="w-3 h-3 text-slate-500 shrink-0" />
             <div className="text-sm font-bold text-slate-700">{startToWorkCount}</div>
-            <div className="text-xs font-medium text-slate-700 truncate">Start to work</div>
+            <div className="text-xs font-medium text-slate-700 truncate">Work Started</div>
           </button>
 
           <button
