@@ -56,6 +56,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(parsedUser);
         // Load user preferences
         loadUserPreferences(parsedUser.id);
+        // Refresh regions from database in case they changed since login
+        AuthService.getUserRegions(parsedUser.id).then((regions) => {
+          setUser(prev => {
+            if (!prev || prev.id !== parsedUser.id) return prev;
+            const updated = { ...prev, regions };
+            localStorage.setItem('user', JSON.stringify(updated));
+            return updated;
+          });
+        }).catch(() => {});
       } catch (error) {
         localStorage.removeItem('user');
       }

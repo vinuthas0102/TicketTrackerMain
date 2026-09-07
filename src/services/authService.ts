@@ -249,7 +249,7 @@ export class AuthService {
     }
   }
 
-  private static async getUserRegions(userId: string): Promise<string[]> {
+  static async getUserRegions(userId: string): Promise<string[]> {
     if (!isSupabaseAvailable()) {
       return [];
     }
