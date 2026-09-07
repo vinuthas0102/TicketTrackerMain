@@ -33,7 +33,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
       setMasterLocations(locs);
       if (!ticket && !copiedTicket && locs.length > 0) {
         const regionFiltered = user?.regions && user.regions.length > 0
-          ? locs.filter(l => user.regions!.includes(l))
+          ? user.regions
           : locs;
         setFormData(prev => ({ ...prev, propertyLocation: regionFiltered[0] || locs[0] }));
       }
@@ -165,7 +165,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
   const isEOEditingOthersTicket = isEditing && user?.role === 'EO' && ticket?.createdBy !== user?.id;
 
   const availableLocations = user?.regions && user.regions.length > 0
-    ? masterLocations.filter(loc => user.regions!.includes(loc))
+    ? user.regions
     : masterLocations;
 
   if (!isOpen) return null;
@@ -558,7 +558,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                       }}
                       className={`w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.propertyLocation ? 'border-red-500' : 'border-gray-300'}`}
                     >
-                      {(availableLocations.length > 0 ? availableLocations : ['Location01', 'Location02']).map(loc => (
+                      {availableLocations.map(loc => (
                         <option key={loc} value={loc}>{loc}</option>
                       ))}
                       {formData.propertyLocation && availableLocations.length > 0 && !availableLocations.includes(formData.propertyLocation) && (

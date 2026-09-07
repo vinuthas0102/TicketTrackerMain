@@ -34,7 +34,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
       if (!ticket && !copiedTicket && locs.length > 0) {
         const regionFiltered = user?.regions && user.regions.length > 0
           && user.role !== 'ADMIN' && user.role !== 'FINANCE'
-          ? locs.filter(l => user.regions!.includes(l))
+          ? user.regions
           : locs;
         setFormData(prev => ({ ...prev, propertyLocation: regionFiltered[0] || locs[0] }));
       }
@@ -167,7 +167,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
 
   const availableLocations = user?.regions && user.regions.length > 0
     && user.role !== 'ADMIN' && user.role !== 'FINANCE'
-    ? masterLocations.filter(loc => user.regions!.includes(loc))
+    ? user.regions
     : masterLocations;
 
   if (!isOpen) return null;
@@ -327,7 +327,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
           estCompletionDate: '',
           department: user?.department || '',
           propertyId: 'PROP001',
-          propertyLocation: (user?.role === 'EO' && user.regions && user.regions.length > 0
+          propertyLocation: (user?.regions && user.regions.length > 0
           ? user.regions[0]
           : (masterLocations.length > 0 ? masterLocations[0] : '')),
           requestType: user?.role === 'EMPLOYEE' ? 'General Maintenance' : ''
@@ -579,7 +579,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
                       }}
                       className={`w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.propertyLocation ? 'border-red-500' : 'border-gray-300'}`}
                     >
-                      {(availableLocations.length > 0 ? availableLocations : ['Location01', 'Location02']).map(loc => (
+                      {availableLocations.map(loc => (
                         <option key={loc} value={loc}>{loc}</option>
                       ))}
                       {formData.propertyLocation && availableLocations.length > 0 && !availableLocations.includes(formData.propertyLocation) && (
