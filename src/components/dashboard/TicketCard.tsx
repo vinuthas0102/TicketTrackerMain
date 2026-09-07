@@ -437,7 +437,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
             <ListField label="TITLE" value={ticket.title} wide />
             <ListField label="PROPERTY ID" value={ticket.propertyId || '—'} />
             <ListField label="LOCATION" value={ticket.propertyLocation || '—'} />
-            <ListField label="CATEGORY" value={ticket.category || '—'} />
+            <ListField label="CATEGORY" value={Array.isArray(ticket.category) ? ticket.category.join(', ') || '—' : (ticket.category || '—')} />
             <ListField label="DEPT" value={ticket.department} />
             <ListField label="PRIORITY" value={ticket.priority} />
             <ListField label="RAISED BY" value={createdByUser?.name || '—'} />

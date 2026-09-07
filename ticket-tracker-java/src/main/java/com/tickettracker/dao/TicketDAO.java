@@ -8,6 +8,7 @@ import oracle.sql.RAW;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class TicketDAO extends BaseDAO {
@@ -262,7 +263,7 @@ public class TicketDAO extends BaseDAO {
         }
     }
 
-    private String extractCategoryFromJson(String json) {
+    private List<String> extractCategoryFromJson(String json) {
         if (json == null || !json.contains("\"category\"")) {
             return null;
         }
@@ -274,13 +275,35 @@ public class TicketDAO extends BaseDAO {
             int colonIndex = json.indexOf(":", startIndex);
             if (colonIndex == -1) return null;
 
-            int valueStart = json.indexOf("\"", colonIndex) + 1;
-            if (valueStart == 0) return null;
+            int valueStart = colonIndex + 1;
+            // skip whitespace
+            while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) valueStart++;
+            if (valueStart >= json.length()) return null;
 
-            int valueEnd = json.indexOf("\"", valueStart);
-            if (valueEnd == -1) return null;
-
-            return json.substring(valueStart, valueEnd);
+            if (json.charAt(valueStart) == '[') {
+                // JSON array
+                int arrayEnd = json.indexOf(']', valueStart);
+                if (arrayEnd == -1) return null;
+                String arrayStr = json.substring(valueStart, arrayEnd + 1);
+                List<String> result = new ArrayList<>();
+                int pos = 1;
+                while (pos < arrayStr.length() - 1) {
+                    int qStart = arrayStr.indexOf('"', pos);
+                    if (qStart == -1) break;
+                    int qEnd = arrayStr.indexOf('"', qStart + 1);
+                    if (qEnd == -1) break;
+                    result.add(arrayStr.substring(qStart + 1, qEnd));
+                    pos = qEnd + 1;
+                }
+                return result.isEmpty() ? null : result;
+            } else if (json.charAt(valueStart) == '"') {
+                // Single string (backward compatibility)
+                int valueEnd = json.indexOf("\"", valueStart + 1);
+                if (valueEnd == -1) return null;
+                return Collections.singletonList(json.substring(valueStart + 1, valueEnd));
+            } else {
+                return null;
+            }
         } catch (Exception e) {
             logger.warn("Failed to extract category from JSON: {}", json, e);
             return null;
@@ -672,7 +695,7 @@ public class TicketDAO extends BaseDAO {
         return sb.toString();
     }
 
-    private String buildDataJson(String department, String category) {
+    private String buildDataJson(String department, List<String> category) {
         StringBuilder json = new StringBuilder("{");
         boolean hasFields = false;
 
@@ -681,9 +704,14 @@ public class TicketDAO extends BaseDAO {
             hasFields = true;
         }
 
-        if (category != null && !category.trim().isEmpty()) {
+        if (category != null && !category.isEmpty()) {
             if (hasFields) json.append(",");
-            json.append("\"category\":\"").append(escapeJson(category)).append("\"");
+            json.append("\"category\":[");
+            for (int i = 0; i < category.size(); i++) {
+                if (i > 0) json.append(",");
+                json.append("\"").append(escapeJson(category.get(i))).append("\"");
+            }
+            json.append("]");
         }
 
         json.append("}");

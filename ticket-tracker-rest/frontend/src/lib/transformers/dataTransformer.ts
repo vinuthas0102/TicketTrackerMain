@@ -116,7 +116,7 @@ export const transformTicketToBackend = (ticket: any): any => {
     request_type: ticket.requestType,
     data: {
       ...(ticket.data || {}),
-      category: ticket.category || 'General',
+      category: Array.isArray(ticket.category) && ticket.category.length > 0 ? ticket.category : ['General'],
       department: ticket.department || '',
     },
   };
@@ -141,7 +141,7 @@ export const transformTicketFromBackend = (ticket: any): any => {
     dueDate: safeParseDate(ticket.dueDate),
     startDate: safeParseDate(ticket.startDate),
     department: ticket.department || ticket.data?.department || '',
-    category: ticket.data?.category || ticket.category || 'General',
+    category: Array.isArray(ticket.data?.category) ? ticket.data.category : (Array.isArray(ticket.category) ? ticket.category : (ticket.data?.category || ticket.category ? [ticket.data?.category || ticket.category] : ['General'])),
     propertyId: ticket.propertyId || 'PROP001',
     propertyLocation: ticket.propertyLocation || '',
     completionDocumentsRequired: ticket.completionDocumentsRequired !== false,

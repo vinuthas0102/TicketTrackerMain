@@ -153,7 +153,7 @@ export class TicketService {
             dueDate: ticket.due_date ? new Date(ticket.due_date) : undefined,
             startDate: ticket.start_date ? new Date(ticket.start_date) : undefined,
             department: ticket.data?.department || '',
-            category: ticket.data?.category || 'General',
+            category: Array.isArray(ticket.data?.category) ? ticket.data.category : (ticket.data?.category ? [ticket.data.category] : ['General']),
             propertyId: ticket.property_id || 'PROP001',
             propertyLocation: ticket.property_location || '',
             completionDocumentsRequired: ticket.completion_documents_required !== false,
@@ -294,7 +294,7 @@ export class TicketService {
             property_id: ticketData.propertyId || 'PROP001',
             property_location: ticketData.propertyLocation || '',
             data: {
-              category: ticketData.category || 'General',
+              category: Array.isArray(ticketData.category) && ticketData.category.length > 0 ? ticketData.category : ['General'],
               department: ticketData.department || '',
             },
             requires_finance_approval: ticketData.requiresFinanceApproval !== undefined ? ticketData.requiresFinanceApproval : false,
@@ -371,7 +371,7 @@ export class TicketService {
               property_id: ticketInput.propertyId,
               property_location: ticketInput.propertyLocation,
               data: {
-                category: ticketInput.category || 'General',
+                category: Array.isArray(ticketInput.category) && ticketInput.category.length > 0 ? ticketInput.category : ['General'],
                 department: ticketInput.department || '',
               },
             },
@@ -425,7 +425,7 @@ export class TicketService {
 
         updateData.data = {
           ...(currentData?.data || {}),
-          ...(updates.category !== undefined ? { category: updates.category } : {}),
+          ...(updates.category !== undefined ? { category: Array.isArray(updates.category) ? updates.category : [updates.category] } : {}),
           ...(updates.department !== undefined ? { department: updates.department } : {}),
         };
       }

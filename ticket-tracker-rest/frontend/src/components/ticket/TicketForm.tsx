@@ -53,7 +53,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
       MasterDataService.getActive('categories', moduleId).then((cats) => {
         setMasterCategories(cats);
         if (!ticket && !copiedTicket && cats.length > 0) {
-          setFormData(prev => ({ ...prev, category: prev.category && cats.includes(prev.category) ? prev.category : cats[0] }));
+          setFormData(prev => ({ ...prev, category: Array.isArray(prev.category) && prev.category.length > 0 ? prev.category : (cats.length > 0 ? [cats[0]] : []) }));
         }
       }).catch(() => setMasterCategories([]));
     } else {
@@ -102,7 +102,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
     description: sourceTicket?.description || '',
     status: ticket?.status || 'DRAFT',
     priority: sourceTicket?.priority || 'MEDIUM',
-    category: sourceTicket?.category || 'Civil Maintenance',
+    category: Array.isArray(sourceTicket?.category) ? sourceTicket.category : (sourceTicket?.category ? [sourceTicket.category] : ['Civil Maintenance']),
     assignedTo: ticket?.assignedTo || '',
     estCompletionDate: safeDateToISOString(ticket?.dueDate),
     department: user?.department || '',
@@ -130,7 +130,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
         description: copiedTicket.description || '',
         status: 'DRAFT',
         priority: copiedTicket.priority || 'MEDIUM',
-        category: copiedTicket.category || 'Civil Maintenance',
+        category: Array.isArray(copiedTicket.category) ? copiedTicket.category : (copiedTicket.category ? [copiedTicket.category] : ['Civil Maintenance']),
         assignedTo: '',
         estCompletionDate: '',
         department: user?.department || '',
@@ -151,7 +151,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
         description: ticket.description || '',
         status: ticket.status || 'DRAFT',
         priority: ticket.priority || 'MEDIUM',
-        category: ticket.category || 'Civil Maintenance',
+        category: Array.isArray(ticket.category) ? ticket.category : (ticket.category ? [ticket.category] : ['Civil Maintenance']),
         assignedTo: ticket.assignedTo || '',
         estCompletionDate: safeDateToISOString(ticket.dueDate),
         department: ticket.department || user?.department || '',
@@ -322,7 +322,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
           description: '',
           status: 'DRAFT',
           priority: 'MEDIUM',
-          category: 'Civil Maintenance',
+          category: ['Civil Maintenance'],
           assignedTo: '',
           estCompletionDate: '',
           department: user?.department || '',
@@ -616,18 +616,43 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Category *
+                    Categories *
                   </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
+                  <div className="border border-gray-300 rounded-md p-2 max-h-32 overflow-y-auto focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
                     {availableCategories.map(category => (
-                      <option key={category} value={category}>{category}</option>
+                      <label key={category} className="flex items-center space-x-2 py-0.5 cursor-pointer hover:bg-gray-50 rounded px-1">
+                        <input
+                          type="checkbox"
+                          checked={formData.category.includes(category)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, category: [...formData.category, category] });
+                            } else {
+                              setFormData({ ...formData, category: formData.category.filter(c => c !== category) });
+                            }
+                          }}
+                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-xs text-gray-700">{category}</span>
+                      </label>
                     ))}
-                  </select>
+                  </div>
+                  {formData.category.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {formData.category.map(cat => (
+                        <span key={cat} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded-full border border-blue-200">
+                          {cat}
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, category: formData.category.filter(c => c !== cat) })}
+                            className="text-blue-400 hover:text-blue-600"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>

@@ -6,12 +6,16 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.tickettracker.deserializer.JsonObjectToStringDeserializer;
 import com.tickettracker.util.UuidUtil;
 import java.sql.Timestamp;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Ticket model representing main workflow instances.
  */
 public class Ticket {
+
+    private static final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     private byte[] id;
     private String ticketNumber;
@@ -25,7 +29,7 @@ public class Ticket {
     private Timestamp dueDate;
     @JsonDeserialize(using = JsonObjectToStringDeserializer.class)
     private String data; // JSON string
-    private String category;
+    private List<String> category;
     private String department;
     private String propertyId;
     private String propertyLocation;
@@ -199,12 +203,36 @@ public class Ticket {
         this.data = data;
     }
 
-    public String getCategory() {
+    public List<String> getCategory() {
         return category;
     }
 
-    public void setCategory(String category) {
+    public void setCategory(List<String> category) {
         this.category = category;
+    }
+
+    @JsonProperty("category")
+    public void setCategoryFromString(Object category) {
+        if (category == null) {
+            this.category = null;
+        } else if (category instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<String> list = (List<String>) category;
+            this.category = list;
+        } else if (category instanceof String) {
+            String str = (String) category;
+            if (str.startsWith("[")) {
+                try {
+                    this.category = objectMapper.readValue(str, new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {});
+                } catch (Exception e) {
+                    this.category = Collections.singletonList(str);
+                }
+            } else {
+                this.category = Collections.singletonList(str);
+            }
+        } else {
+            this.category = Collections.singletonList(String.valueOf(category));
+        }
     }
 
     public String getDepartment() {

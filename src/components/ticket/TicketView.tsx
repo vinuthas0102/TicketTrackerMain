@@ -418,7 +418,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
 
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-0.5">Category</label>
-                      <span className="text-sm text-gray-900">{ticket.category}</span>
+                      <span className="text-sm text-gray-900">{Array.isArray(ticket.category) ? ticket.category.join(', ') : ticket.category}</span>
                     </div>
 
                     <div>

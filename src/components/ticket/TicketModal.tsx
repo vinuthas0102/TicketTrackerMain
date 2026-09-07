@@ -257,7 +257,7 @@ const TicketModal: React.FC<TicketModalProps> = ({ ticket, isOpen, onClose, onEd
                         <div>
                           <label className="block text-xs font-medium text-gray-500">Category</label>
                           <div className="mt-1">
-                            <span className="text-sm text-gray-900">{ticket.category}</span>
+                            <span className="text-sm text-gray-900">{Array.isArray(ticket.category) ? ticket.category.join(', ') : ticket.category}</span>
                           </div>
                         </div>
                       </div>

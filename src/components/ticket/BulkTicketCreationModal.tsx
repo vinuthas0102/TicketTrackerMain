@@ -51,7 +51,7 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
       description: '',
       status: 'DRAFT' as TicketStatus,
       priority: 'MEDIUM' as const,
-      category: 'Civil Maintenance',
+      category: ['Civil Maintenance'],
       assignedTo: '',
       department: user?.department || '',
       propertyId: 'PROP001',
@@ -103,7 +103,7 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
       description: '',
       status: 'DRAFT' as TicketStatus,
       priority: 'MEDIUM' as const,
-      category: 'Civil Maintenance',
+      category: ['Civil Maintenance'],
       assignedTo: '',
       department: user?.department || '',
       propertyId: 'PROP001',
@@ -127,7 +127,7 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
       description: '',
       status: 'DRAFT' as TicketStatus,
       priority: 'MEDIUM' as const,
-      category: 'Civil Maintenance',
+      category: ['Civil Maintenance'],
       assignedTo: '',
       department: user?.department || '',
       propertyId: 'PROP001',
@@ -375,20 +375,40 @@ const BulkTicketCreationModal: React.FC<BulkTicketCreationModalProps> = ({
                       </select>
                     </div>
 
-                    <div>
+                    <div className="col-span-2">
                       <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Category
+                        Categories
                       </label>
-                      <select
-                        value={row.category}
-                        onChange={(e) => updateRow(row.rowId, 'category', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        disabled={bulkOperationInProgress}
-                      >
+                      <div className="border border-gray-300 rounded-md p-2 max-h-28 overflow-y-auto">
                         {availableCategories.map(category => (
-                          <option key={category} value={category}>{category}</option>
+                          <label key={category} className="flex items-center space-x-2 py-0.5 cursor-pointer hover:bg-gray-50 rounded px-1">
+                            <input
+                              type="checkbox"
+                              checked={Array.isArray(row.category) && row.category.includes(category)}
+                              onChange={(e) => {
+                                const current = Array.isArray(row.category) ? row.category : (row.category ? [row.category] : []);
+                                if (e.target.checked) {
+                                  updateRow(row.rowId, 'category', [...current, category]);
+                                } else {
+                                  updateRow(row.rowId, 'category', current.filter(c => c !== category));
+                                }
+                              }}
+                              className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              disabled={bulkOperationInProgress}
+                            />
+                            <span className="text-xs text-gray-700">{category}</span>
+                          </label>
                         ))}
-                      </select>
+                      </div>
+                      {Array.isArray(row.category) && row.category.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {row.category.map(cat => (
+                            <span key={cat} className="inline-flex items-center px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded-full border border-blue-200">
+                              {cat}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div>

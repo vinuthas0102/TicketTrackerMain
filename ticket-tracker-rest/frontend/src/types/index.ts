@@ -42,7 +42,7 @@ export interface Ticket {
   description: string;
   status: TicketStatus;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  category: string;
+  category: string[];
   assignedTo?: string;
   createdBy: string;
   createdAt: Date;
@@ -240,7 +240,7 @@ export interface BulkTicketInput {
   description?: string;
   status: TicketStatus;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  category: string;
+  category: string[];
   assignedTo?: string;
   dueDate?: Date;
   department: string;
