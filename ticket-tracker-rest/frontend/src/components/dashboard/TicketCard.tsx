@@ -4,6 +4,7 @@ import { Ticket, User as UserType, ActionIconDefinition } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTickets } from '../../context/TicketContext';
 import { getHierarchyLevel } from '../../lib/hierarchyColors';
+import { getActiveSubStatus } from '../../lib/utils';
 import IconDisplayWrapper from '../iconDisplay/IconDisplayWrapper';
 import { FileService, DocumentMetadata } from '../../services/fileService';
 
@@ -428,10 +429,16 @@ const TicketCard: React.FC<TicketCardProps> = ({
               {getStatusIcon(ticket.status)}
               <span>{ticket.status.replace(/_/g, ' ')}</span>
             </span>
-            {ticket.status === 'ACTIVE' && selectedModule?.config?.ticketClosureByTechnician && ticket.workflow.some(s => s.status === 'WIP') && (
+            {ticket.status === 'ACTIVE' && getActiveSubStatus(ticket.workflow) === 'WIP' && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full border bg-blue-100 text-blue-700 border-blue-300">
                 <Clock className="w-3 h-3" />
-                <span>Work InProgress</span>
+                <span>WIP</span>
+              </span>
+            )}
+            {ticket.status === 'ACTIVE' && getActiveSubStatus(ticket.workflow) === 'START_TO_WORK' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full border bg-slate-100 text-slate-700 border-slate-300">
+                <Clock className="w-3 h-3" />
+                <span>Start to work</span>
               </span>
             )}
             {totalWorkflows > 0 && (
@@ -593,10 +600,16 @@ const TicketCard: React.FC<TicketCardProps> = ({
                   {getStatusIcon(ticket.status)}
                   <span>{ticket.status}</span>
                 </span>
-                {ticket.status === 'ACTIVE' && selectedModule?.config?.ticketClosureByTechnician && ticket.workflow.some(s => s.status === 'WIP') && (
+                {ticket.status === 'ACTIVE' && getActiveSubStatus(ticket.workflow) === 'WIP' && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md border bg-blue-100 text-blue-700 border-blue-300">
                     <Clock className="w-3.5 h-3.5" />
-                    <span>Work InProgress</span>
+                    <span>WIP</span>
+                  </span>
+                )}
+                {ticket.status === 'ACTIVE' && getActiveSubStatus(ticket.workflow) === 'START_TO_WORK' && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md border bg-slate-100 text-slate-700 border-slate-300">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Start to work</span>
                   </span>
                 )}
                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md border ${getPriorityColor(ticket.priority)}`}>

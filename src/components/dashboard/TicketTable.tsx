@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { AlertTriangle, Calendar, Check, CheckCircle, Clock, CreditCard as Edit, Eye, FileText, IndianRupee, Play, RotateCcw, User, Users, X, XCircle } from 'lucide-react';
 import { Ticket, User as UserType } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { getActiveSubStatus } from '../../lib/utils';
 
 interface TicketTableProps {
   tickets: Ticket[];
@@ -239,10 +240,16 @@ const TicketTable: React.FC<TicketTableProps> = ({
                       {getStatusIcon(ticket.status)}
                       <span>{ticket.status.replace(/_/g, ' ')}</span>
                     </span>
-                    {ticket.status === 'ACTIVE' && selectedModule?.config?.ticketClosureByTechnician && ticket.workflow.some(s => s.status === 'WIP') && (
+                    {ticket.status === 'ACTIVE' && getActiveSubStatus(ticket.workflow) === 'WIP' && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded border bg-blue-100 text-blue-700 border-blue-300">
                         <Clock className="w-3 h-3" />
-                        <span>Work InProgress</span>
+                        <span>WIP</span>
+                      </span>
+                    )}
+                    {ticket.status === 'ACTIVE' && getActiveSubStatus(ticket.workflow) === 'START_TO_WORK' && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded border bg-slate-100 text-slate-700 border-slate-300">
+                        <Clock className="w-3 h-3" />
+                        <span>Start to work</span>
                       </span>
                     )}
                   </td>

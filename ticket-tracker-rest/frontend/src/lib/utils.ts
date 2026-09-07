@@ -71,11 +71,37 @@ export function canAddTasksToTicket(status: string, reviewByEORequired: boolean 
 
 export const TECHNICIAN_DEPARTMENTS = ['Civil Manager', 'Electrical Manager'];
 
-export type ActiveSubCategory = 'AWAITING_COMPLETION' | 'TECHNICIAN' | 'HOD';
+export type ActiveSubCategory = 'AWAITING_COMPLETION' | 'TECHNICIAN' | 'HOD' | 'WIP' | 'START_TO_WORK';
+
+export type ActiveSubStatus = 'WIP' | 'START_TO_WORK' | null;
+
+/**
+ * Returns 'WIP' as soon as any workflow step (task or sub-task) is WIP.
+ * Returns 'START_TO_WORK' if all steps are still not started.
+ * Returns null otherwise (e.g. some completed, none WIP).
+ */
+export function getActiveSubStatus(
+  workflow: { status: string }[]
+): ActiveSubStatus {
+  if (!workflow || workflow.length === 0) return null;
+
+  const hasWipStep = workflow.some(step =>
+    step.status === 'WIP' || step.status === 'wip' || step.status === 'IN_PROGRESS' || step.status === 'in_progress'
+  );
+  if (hasWipStep) return 'WIP';
+
+  const allNotStarted = workflow.every(step =>
+    step.status === 'not_started' || step.status === 'NOT_STARTED' ||
+    step.status === 'pending' || step.status === 'PENDING'
+  );
+  if (allNotStarted) return 'START_TO_WORK';
+
+  return null;
+}
 
 /**
  * Classifies an ACTIVE ticket into exactly one sub-filter based on workflow step status.
- * Priority: Awaiting Completion > Assigned to Technician > Assigned to HOD.
+ * Priority: WIP > Awaiting Completion > Assigned to Technician > Assigned to HOD > Start to Work.
  */
 export function classifyActiveTicket(
   workflow: { status: string; assignedTo?: string }[],
@@ -83,11 +109,16 @@ export function classifyActiveTicket(
 ): ActiveSubCategory | null {
   if (!workflow || workflow.length === 0) return null;
 
-  const allCompleted = workflow.every(step => step.status === 'COMPLETED');
+  const hasWipStep = workflow.some(step =>
+    step.status === 'WIP' || step.status === 'wip' || step.status === 'IN_PROGRESS' || step.status === 'in_progress'
+  );
+  if (hasWipStep) return 'WIP';
+
+  const allCompleted = workflow.every(step => step.status === 'COMPLETED' || step.status === 'completed');
   if (allCompleted) return 'AWAITING_COMPLETION';
 
   const hasPendingTechnicianStep = workflow.some(step => {
-    if (step.status === 'COMPLETED') return false;
+    if (step.status === 'COMPLETED' || step.status === 'completed') return false;
     const u = users.find(u => u.id === step.assignedTo);
     if (!u) return false;
     return u.role === 'TECHNICIAN' || (u.role === 'DO' && TECHNICIAN_DEPARTMENTS.includes(u.department));
@@ -95,12 +126,18 @@ export function classifyActiveTicket(
   if (hasPendingTechnicianStep) return 'TECHNICIAN';
 
   const hasPendingHODStep = workflow.some(step => {
-    if (step.status === 'COMPLETED') return false;
+    if (step.status === 'COMPLETED' || step.status === 'completed') return false;
     const u = users.find(u => u.id === step.assignedTo);
     if (!u) return false;
     return u.role === 'DO' && !TECHNICIAN_DEPARTMENTS.includes(u.department);
   });
   if (hasPendingHODStep) return 'HOD';
+
+  const allNotStarted = workflow.every(step =>
+    step.status === 'not_started' || step.status === 'NOT_STARTED' ||
+    step.status === 'pending' || step.status === 'PENDING'
+  );
+  if (allNotStarted) return 'START_TO_WORK';
 
   return null;
 }

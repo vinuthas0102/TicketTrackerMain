@@ -1,10 +1,10 @@
 import React from 'react';
-import { FileText, Play, CheckCircle, XCircle, Send, Eye, Users, Wrench, Hourglass } from 'lucide-react';
+import { FileText, Play, CheckCircle, XCircle, Send, Eye, Users, Wrench, Hourglass, Clock, CircleDashed } from 'lucide-react';
 import { TicketStatus, User } from '../../types';
 import { useTickets } from '../../context/TicketContext';
 import { classifyActiveTicket } from '../../lib/utils';
 
-type ActiveSubFilter = 'HOD' | 'TECHNICIAN' | 'AWAITING_COMPLETION' | null;
+type ActiveSubFilter = 'HOD' | 'TECHNICIAN' | 'AWAITING_COMPLETION' | 'WIP' | 'START_TO_WORK' | null;
 
 interface StatusCardsProps {
   onStatusFilter: (status: TicketStatus | null) => void;
@@ -92,6 +92,8 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
     classifyActiveTicket(ticket.workflow, users)
   );
 
+  const wipCount = classifications.filter(c => c === 'WIP').length;
+  const startToWorkCount = classifications.filter(c => c === 'START_TO_WORK').length;
   const hodCount = classifications.filter(c => c === 'HOD').length;
   const technicianCount = classifications.filter(c => c === 'TECHNICIAN').length;
   const awaitingCompletionCount = classifications.filter(c => c === 'AWAITING_COMPLETION').length;
@@ -128,7 +130,33 @@ const StatusCards: React.FC<StatusCardsProps> = ({ onStatusFilter, activeFilter,
       </div>
 
       {showSubFilters && (
-        <div className="grid grid-cols-3 gap-1">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
+          <button
+            onClick={() => onSubFilter(activeSubFilter === 'WIP' ? null : 'WIP')}
+            className={`
+              cursor-pointer border-l-4 border border-blue-400 rounded-md p-1 min-h-[40px]
+              flex items-center justify-center space-x-1 transition-all duration-150 hover:shadow-md
+              ${activeSubFilter === 'WIP' ? 'bg-blue-100 ring-1 ring-blue-400 shadow-sm' : 'bg-blue-50 hover:bg-blue-100'}
+            `}
+          >
+            <Clock className="w-3 h-3 text-blue-500 shrink-0" />
+            <div className="text-sm font-bold text-blue-700">{wipCount}</div>
+            <div className="text-xs font-medium text-blue-700 truncate">WIP</div>
+          </button>
+
+          <button
+            onClick={() => onSubFilter(activeSubFilter === 'START_TO_WORK' ? null : 'START_TO_WORK')}
+            className={`
+              cursor-pointer border-l-4 border border-slate-400 rounded-md p-1 min-h-[40px]
+              flex items-center justify-center space-x-1 transition-all duration-150 hover:shadow-md
+              ${activeSubFilter === 'START_TO_WORK' ? 'bg-slate-100 ring-1 ring-slate-400 shadow-sm' : 'bg-slate-50 hover:bg-slate-100'}
+            `}
+          >
+            <CircleDashed className="w-3 h-3 text-slate-500 shrink-0" />
+            <div className="text-sm font-bold text-slate-700">{startToWorkCount}</div>
+            <div className="text-xs font-medium text-slate-700 truncate">Start to work</div>
+          </button>
+
           <button
             onClick={() => onSubFilter(activeSubFilter === 'HOD' ? null : 'HOD')}
             className={`
