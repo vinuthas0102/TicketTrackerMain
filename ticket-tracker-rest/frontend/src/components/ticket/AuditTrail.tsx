@@ -74,8 +74,14 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
     switch (entry.action) {
       case 'CREATED':
         return 'Ticket created';
-      case 'STATUS_CHANGED':
-        return `Status changed from ${entry.oldValue} to ${entry.newValue}`;
+      case 'STATUS_CHANGED': {
+        const desc = entry.remarks || '';
+        if (desc) return desc;
+        const oldVal = entry.oldValue || 'unknown';
+        const newVal = entry.newValue || 'unknown';
+        if (oldVal === 'unknown' && newVal === 'unknown') return 'Status changed';
+        return `Status changed from ${oldVal} to ${newVal}`;
+      }
       case 'WORKFLOW_ADDED':
         return entry.remarks || (stepTitle ? `Task "${stepTitle}" added` : 'Task added');
       case 'WORKFLOW_UPDATED': {

@@ -350,8 +350,21 @@ public class WorkflowService {
                 actionName = "completed".equalsIgnoreCase(updateRequest.getStatus())
                         ? "WORKFLOW_COMPLETED" : "STATUS_CHANGED";
             }
-            String newData = updateRequest.getProgress() != null ? updateRequest.getProgress().toPlainString() : null;
-            String oldData = oldProgress != null ? oldProgress.toPlainString() : null;
+
+            String oldData = null;
+            String newData = null;
+            if (updateRequest.getStatus() != null) {
+                oldData = existingStep.getStatus();
+                newData = updateRequest.getStatus();
+            } else if (updateRequest.getDueDate() != null && existingStep.getDueDate() != null
+                    && !updateRequest.getDueDate().equals(existingStep.getDueDate())) {
+                oldData = existingStep.getDueDate() != null
+                        ? new java.text.SimpleDateFormat("yyyy-MM-dd").format(existingStep.getDueDate()) : null;
+                newData = new java.text.SimpleDateFormat("yyyy-MM-dd").format(updateRequest.getDueDate());
+            } else if (updateRequest.getProgress() != null) {
+                oldData = oldProgress != null ? oldProgress.toPlainString() : null;
+                newData = updateRequest.getProgress().toPlainString();
+            }
             String metadata = buildUpdateMetadata(updateRequest.getProgress(), updateRequest.getRemarks(), updateRequest.getDueDateChangeReason());
 
             createAuditLogWithData(updatedStep.getTicketId(), updatedStep.getId(), currentUserId,
@@ -457,8 +470,8 @@ public class WorkflowService {
                 description = String.format("Task \"%s\" status changed from '%s' to '%s'", step.getTitle(), oldStatus, newStatus);
                 actionName = "STATUS_CHANGED";
             }
-            createAuditLog(step.getTicketId(), stepId, currentUserId,
-                    actionName, description, "status_change");
+            createAuditLogWithData(step.getTicketId(), stepId, currentUserId,
+                    actionName, description, "status_change", oldStatus, newStatus, null);
 
             logger.info("Step status updated: {} from {} to {}",
                     step.getStepNumber(), oldStatus, newStatus);
@@ -900,7 +913,14 @@ public class WorkflowService {
             changes.append(String.format("Progress updated to %.0f%%; ", updateRequest.getProgress().doubleValue()));
         }
         if (updateRequest.getDueDate() != null) {
-            changes.append("Due date updated; ");
+            if (existingStep != null && existingStep.getDueDate() != null
+                    && !updateRequest.getDueDate().equals(existingStep.getDueDate())) {
+                String oldDateStr = new java.text.SimpleDateFormat("yyyy-MM-dd").format(existingStep.getDueDate());
+                String newDateStr = new java.text.SimpleDateFormat("yyyy-MM-dd").format(updateRequest.getDueDate());
+                changes.append(String.format("Due date changed from %s to %s; ", oldDateStr, newDateStr));
+            } else {
+                changes.append("Due date updated; ");
+            }
             if (updateRequest.getDueDateChangeReason() != null && !updateRequest.getDueDateChangeReason().trim().isEmpty()) {
                 changes.append(String.format("Due date change reason: %s; ", updateRequest.getDueDateChangeReason().trim()));
             }

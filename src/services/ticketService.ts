@@ -851,15 +851,18 @@ export class TicketService {
 
   static async updateWorkflowStep(ticketId: string, stepId: string, updates: Partial<WorkflowStep>, userId: string, remarks?: string): Promise<void> {
     try {
-      // Get the current workflow step to check permissions
+      // Get the current workflow step to check permissions and capture old values for audit
       const { data: stepData, error: stepError } = await supabase
         .from('workflow_steps')
-        .select('assigned_to')
+        .select('assigned_to, status, due_date, progress')
         .eq('id', stepId)
         .single();
 
       if (stepError) throw stepError;
       if (!stepData) throw new Error('Workflow step not found');
+
+      const oldStatus = stepData.status || null;
+      const oldDueDate = stepData.due_date || null;
 
       // Get user role to check permissions
       const { data: userData, error: userError } = await supabase
@@ -886,23 +889,26 @@ export class TicketService {
 
       if (updates.title !== undefined) updateData.title = updates.title;
       if (updates.description !== undefined) updateData.description = updates.description;
+      let oldDataForAudit: string | undefined;
+      let newDataForAudit: string | undefined;
+
       if (updates.status !== undefined) {
-        updateData.status = updates.status.toLowerCase();
+        const newStatusLower = updates.status.toLowerCase();
+        updateData.status = newStatusLower;
         actionCategory = 'status_change';
         statusChanged = true;
-        const stepTitle = updates.title || '';
+        oldDataForAudit = oldStatus || undefined;
+        newDataForAudit = newStatusLower;
         if (updates.status === 'COMPLETED') {
           updateData.completed_at = new Date().toISOString();
           updateData.actual_completed_at = new Date().toISOString();
           updateData.progress = 100;
           actionName = 'WORKFLOW_COMPLETED';
           const completedAt = new Date().toLocaleString();
-          actionDescription = stepTitle
-            ? `Task "${stepTitle}" marked as completed on ${completedAt} (progress: 100%)`
-            : `Task marked as completed on ${completedAt} (progress: 100%)`;
+          actionDescription = `Task marked as completed on ${completedAt} (progress: 100%)`;
         } else {
           actionName = 'STATUS_CHANGED';
-          actionDescription = `Task status changed to ${updates.status}`;
+          actionDescription = `Task status changed from ${oldStatus || 'unknown'} to ${newStatusLower}`;
         }
         if (updates.status === 'WIP' && !updates.startDate) {
           const { data: existingStep } = await supabase
@@ -922,14 +928,31 @@ export class TicketService {
           actionDescription = 'Workflow assignment updated';
         }
       }
-      if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate;
+      if (updates.dueDate !== undefined) {
+        updateData.due_date = updates.dueDate;
+        if (oldDueDate && updates.dueDate !== oldDueDate) {
+          if (!statusChanged) {
+            oldDataForAudit = oldDueDate;
+            newDataForAudit = updates.dueDate;
+          }
+          const oldDateStr = new Date(oldDueDate).toLocaleDateString();
+          const newDateStr = new Date(updates.dueDate).toLocaleDateString();
+          if (statusChanged) {
+            actionDescription = `${actionDescription}. Due date changed from ${oldDateStr} to ${newDateStr}`;
+          } else {
+            actionDescription = `Due date changed from ${oldDateStr} to ${newDateStr}`;
+          }
+        }
+      }
       if ((updates as any).dueDateChangeReason !== undefined) updateData.due_date_change_reason = (updates as any).dueDateChangeReason;
       if (updates.startDate !== undefined) updateData.start_date = updates.startDate;
       if (updates.is_parallel !== undefined) updateData.is_parallel = updates.is_parallel;
       if (updates.progress !== undefined) {
         updateData.progress = updates.progress;
         progressChanged = true;
-        if (!statusChanged) {
+        if (!statusChanged && !oldDataForAudit) {
+          oldDataForAudit = stepData.progress != null ? String(stepData.progress) : undefined;
+          newDataForAudit = String(updates.progress);
           actionDescription = `Progress updated to ${updates.progress}%`;
           if (actionCategory === 'workflow_action') {
             actionCategory = 'progress_update';
@@ -963,6 +986,10 @@ export class TicketService {
         actionDescription = `${actionDescription}. Comment: ${remarks.trim()}`;
       }
 
+      if (!statusChanged && !progressChanged && !oldDataForAudit && !newDataForAudit && !remarks?.trim()) {
+        actionDescription = 'No changes to task/sub-task status';
+      }
+
       await this.createAuditLog({
         ticketId,
         stepId,
@@ -970,7 +997,8 @@ export class TicketService {
         actionCategory,
         description: actionDescription,
         performedBy: userId,
-        newData: progressChanged ? String(updates.progress) : undefined,
+        oldData: oldDataForAudit,
+        newData: newDataForAudit,
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
       });
 
