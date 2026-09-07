@@ -3,7 +3,7 @@ import { Module, ModuleFieldConfiguration, FieldDropdownOption, FieldContext, Us
 import { FieldConfigService } from '../../services/fieldConfigService';
 import { apiClient } from '../../lib/apiClient';
 import { API_ENDPOINTS } from '../../lib/apiEndpoints';
-import { Settings, Plus, CreditCard as Edit, Trash2, GripVertical, IndianRupee, CheckCircle, XCircle, ClipboardCheck } from 'lucide-react';
+import { Settings, Plus, CreditCard as Edit, Trash2, GripVertical, IndianRupee, CheckCircle, XCircle, ClipboardCheck, Wrench } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { FieldEditorModal } from './FieldEditorModal';
 
@@ -24,12 +24,15 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
   const [updatingFinanceApproval, setUpdatingFinanceApproval] = useState(false);
   const [reviewByEOEnabled, setReviewByEOEnabled] = useState<boolean>(false);
   const [updatingReviewByEO, setUpdatingReviewByEO] = useState(false);
+  const [ticketClosureByTechnicianEnabled, setTicketClosureByTechnicianEnabled] = useState<boolean>(false);
+  const [updatingTicketClosureByTechnician, setUpdatingTicketClosureByTechnician] = useState(false);
 
   useEffect(() => {
     if (selectedModule) {
       loadFields();
       setFinanceApprovalEnabled(selectedModule.config?.requiresFinanceApproval === true);
       setReviewByEOEnabled(selectedModule.config?.reviewByEORequired === true);
+      setTicketClosureByTechnicianEnabled(selectedModule.config?.ticketClosureByTechnician === true);
     }
   }, [selectedModule, selectedContext]);
 
@@ -130,6 +133,25 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
       alert('Failed to update finance approval setting: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setUpdatingFinanceApproval(false);
+    }
+  };
+
+  const handleToggleTicketClosureByTechnician = async (enabled: boolean) => {
+    if (!selectedModule) return;
+    setUpdatingTicketClosureByTechnician(true);
+    try {
+      await apiClient.put(API_ENDPOINTS.MODULES.UPDATE_CONFIG(selectedModule.id), {
+        ticketClosureByTechnician: enabled,
+      });
+      setTicketClosureByTechnicianEnabled(enabled);
+      setSelectedModule({
+        ...selectedModule,
+        config: { ...selectedModule.config, ticketClosureByTechnician: enabled },
+      });
+    } catch (err) {
+      alert('Failed to update ticket closure by technician setting: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    } finally {
+      setUpdatingTicketClosureByTechnician(false);
     }
   };
 
@@ -267,6 +289,37 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
               >
                 {reviewByEOEnabled ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                 <span>{reviewByEOEnabled ? 'Yes' : 'No'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedModule && (
+        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Wrench className="w-5 h-5 text-amber-600" />
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">Ticket Closure by Technician</h3>
+                <p className="text-xs text-gray-500 mt-0.5">When enabled, closing a sub-task by a technician will auto-complete the parent task and the ticket (if all tasks are done). The technician's comments and files are carried forward to the completion records. When disabled (default), the existing ticket closure flow remains unchanged.</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              {updatingTicketClosureByTechnician && (
+                <span className="text-xs text-gray-400">Updating...</span>
+              )}
+              <button
+                onClick={() => handleToggleTicketClosureByTechnician(!ticketClosureByTechnicianEnabled)}
+                disabled={updatingTicketClosureByTechnician}
+                className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  ticketClosureByTechnicianEnabled
+                    ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {ticketClosureByTechnicianEnabled ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                <span>{ticketClosureByTechnicianEnabled ? 'Yes' : 'No'}</span>
               </button>
             </div>
           </div>

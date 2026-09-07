@@ -960,9 +960,219 @@ export class TicketService {
         newData: progressChanged ? String(updates.progress) : undefined,
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
       });
+
+      if (updates.status === 'COMPLETED') {
+        await this.handleTechnicianClosureCascade(ticketId, stepId, userId, remarks);
+      }
     } catch (error) {
       console.error('Error updating step:', error);
       throw error;
+    }
+  }
+
+  private static async isTicketClosureByTechnicianEnabled(ticketId: string): Promise<boolean> {
+    try {
+      const { data: ticket } = await supabase
+        .from('tickets')
+        .select('module_id')
+        .eq('id', ticketId)
+        .maybeSingle();
+      if (!ticket?.module_id) return false;
+
+      const { data: module } = await supabase
+        .from('modules')
+        .select('config')
+        .eq('id', ticket.module_id)
+        .maybeSingle();
+
+      return module?.config?.ticketClosureByTechnician === true;
+    } catch {
+      return false;
+    }
+  }
+
+  private static async handleTechnicianClosureCascade(
+    ticketId: string,
+    completedStepId: string,
+    userId: string,
+    remarks?: string
+  ): Promise<void> {
+    try {
+      const enabled = await this.isTicketClosureByTechnicianEnabled(ticketId);
+      if (!enabled) return;
+
+      const { data: completedStep } = await supabase
+        .from('workflow_steps')
+        .select('id, parent_step_id, title, step_number')
+        .eq('id', completedStepId)
+        .maybeSingle();
+
+      if (!completedStep) return;
+
+      if (!completedStep.parent_step_id) {
+        await this.propagateStepDocumentsToTicket(ticketId, completedStepId, userId);
+        await this.checkAndAutoCompleteTicket(ticketId, userId, remarks);
+        return;
+      }
+
+      const { data: parentStep } = await supabase
+        .from('workflow_steps')
+        .select('id, status, title, step_number')
+        .eq('id', completedStep.parent_step_id)
+        .maybeSingle();
+
+      if (!parentStep) return;
+      if (parentStep.status?.toUpperCase() === 'COMPLETED') return;
+
+      const { data: siblings } = await supabase
+        .from('workflow_steps')
+        .select('id, status')
+        .eq('parent_step_id', completedStep.parent_step_id);
+
+      const allSiblingsCompleted = (siblings || []).every(
+        (s: any) => ['completed', 'closed'].includes((s.status || '').toLowerCase())
+      );
+
+      if (allSiblingsCompleted) {
+        for (const sibling of (siblings || [])) {
+          await this.propagateStepDocuments(ticketId, sibling.id, parentStep.id, userId);
+        }
+
+        const now = new Date().toISOString();
+        await supabase
+          .from('workflow_steps')
+          .update({
+            status: 'completed',
+            completed_at: now,
+            actual_completed_at: now,
+            progress: 100,
+          })
+          .eq('id', parentStep.id);
+
+        await this.createAuditLog({
+          ticketId,
+          stepId: parentStep.id,
+          action: 'WORKFLOW_COMPLETED',
+          actionCategory: 'status_change',
+          description: `Task "${parentStep.title}" auto-completed because all sub-tasks were completed (ticketClosureByTechnician enabled)${
+            remarks && remarks.trim() ? '. Technician comment: ' + remarks.trim() : ''
+          }`,
+          performedBy: userId,
+        });
+
+        await this.propagateStepDocumentsToTicket(ticketId, parentStep.id, userId);
+        await this.checkAndAutoCompleteTicket(ticketId, userId, remarks);
+      }
+    } catch (error) {
+      console.error('Error in technician closure cascade:', error);
+    }
+  }
+
+  private static async propagateStepDocuments(
+    ticketId: string,
+    sourceStepId: string,
+    targetStepId: string,
+    userId: string
+  ): Promise<void> {
+    try {
+      const { data: sourceDocs } = await supabase
+        .from('documents')
+        .select('id, name, type, size, url, storage_path, is_completion_certificate')
+        .eq('step_id', sourceStepId);
+
+      for (const doc of (sourceDocs || [])) {
+        await supabase.from('documents').insert({
+          ticket_id: ticketId,
+          step_id: targetStepId,
+          name: doc.name,
+          type: doc.type,
+          size: doc.size,
+          url: doc.url,
+          storage_path: doc.storage_path,
+          uploaded_by: userId,
+          is_mandatory: false,
+          is_completion_certificate: doc.is_completion_certificate || false,
+        });
+      }
+    } catch (error) {
+      console.error('Error propagating step documents:', error);
+    }
+  }
+
+  private static async propagateStepDocumentsToTicket(
+    ticketId: string,
+    sourceStepId: string,
+    userId: string
+  ): Promise<void> {
+    try {
+      const { data: sourceDocs } = await supabase
+        .from('documents')
+        .select('id, name, type, size, url, storage_path, is_completion_certificate')
+        .eq('step_id', sourceStepId);
+
+      for (const doc of (sourceDocs || [])) {
+        await supabase.from('documents').insert({
+          ticket_id: ticketId,
+          step_id: sourceStepId,
+          name: doc.name,
+          type: doc.type,
+          size: doc.size,
+          url: doc.url,
+          storage_path: doc.storage_path,
+          uploaded_by: userId,
+          is_mandatory: false,
+          is_completion_certificate: doc.is_completion_certificate || false,
+        });
+      }
+    } catch (error) {
+      console.error('Error propagating step documents to ticket:', error);
+    }
+  }
+
+  private static async checkAndAutoCompleteTicket(
+    ticketId: string,
+    userId: string,
+    remarks?: string
+  ): Promise<void> {
+    try {
+      const { data: allSteps } = await supabase
+        .from('workflow_steps')
+        .select('id, status')
+        .eq('ticket_id', ticketId);
+
+      const allCompleted = (allSteps || []).every(
+        (s: any) => ['completed', 'closed'].includes((s.status || '').toLowerCase())
+      );
+
+      if (!allCompleted) return;
+
+      const { data: ticket } = await supabase
+        .from('tickets')
+        .select('id, status, ticket_number')
+        .eq('id', ticketId)
+        .maybeSingle();
+
+      if (!ticket) return;
+      const currentStatus = (ticket.status || '').toUpperCase();
+      if (currentStatus === 'COMPLETED' || currentStatus === 'CLOSED') return;
+
+      await supabase
+        .from('tickets')
+        .update({ status: 'completed' })
+        .eq('id', ticketId);
+
+      const description = `Ticket auto-completed because all tasks/sub-tasks were completed (ticketClosureByTechnician enabled)${
+        remarks && remarks.trim() ? '. Technician comment: ' + remarks.trim() : ''
+      }`;
+      await this.createAuditLog({
+        ticketId,
+        action: 'STATUS_CHANGED',
+        actionCategory: 'status_change',
+        description,
+        performedBy: userId,
+      });
+    } catch (error) {
+      console.error('Error auto-completing ticket:', error);
     }
   }
 

@@ -410,6 +410,12 @@ const TicketCard: React.FC<TicketCardProps> = ({
               {getStatusIcon(ticket.status)}
               <span>{ticket.status.replace(/_/g, ' ')}</span>
             </span>
+            {ticket.status === 'ACTIVE' && selectedModule?.config?.ticketClosureByTechnician && ticket.workflow.some(s => s.status === 'WIP') && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full border bg-blue-100 text-blue-700 border-blue-300">
+                <Clock className="w-3 h-3" />
+                <span>Work InProgress</span>
+              </span>
+            )}
             {totalWorkflows > 0 && (
               <span className="inline-flex items-center gap-1.5" title={`${completedWorkflows}/${totalWorkflows} workflow steps completed`}>
                 <span className="relative w-16 bg-gray-200 rounded-full h-1.5 overflow-hidden">
@@ -571,6 +577,12 @@ const TicketCard: React.FC<TicketCardProps> = ({
                   {getStatusIcon(ticket.status)}
                   <span>{ticket.status}</span>
                 </span>
+                {ticket.status === 'ACTIVE' && selectedModule?.config?.ticketClosureByTechnician && ticket.workflow.some(s => s.status === 'WIP') && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md border bg-blue-100 text-blue-700 border-blue-300">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Work InProgress</span>
+                  </span>
+                )}
                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md border ${getPriorityColor(ticket.priority)}`}>
                   {getPriorityIcon(ticket.priority)}
                   <span>{ticket.priority}</span>

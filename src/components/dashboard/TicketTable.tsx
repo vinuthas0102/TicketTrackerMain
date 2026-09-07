@@ -81,7 +81,7 @@ const RowActions: React.FC<RowActionsProps> = ({
   ticket, onModify, onApprove, onClose, onCancel,
   onMarkInProgress, onReopen, onReinstate, onSendToFinance, onView
 }) => {
-  const { user } = useAuth();
+  const { user, selectedModule } = useAuth();
 
   const canModify = useMemo(() => {
     if (!user) return false;
@@ -191,7 +191,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
   onModify, onApprove, onClose, onCancel,
   onMarkInProgress, onReopen, onReinstate, onSendToFinance,
 }) => {
-  const { user } = useAuth();
+  const { user, selectedModule } = useAuth();
 
   return (
     <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-xl shadow-lg border border-white border-opacity-30 overflow-hidden">
@@ -239,6 +239,12 @@ const TicketTable: React.FC<TicketTableProps> = ({
                       {getStatusIcon(ticket.status)}
                       <span>{ticket.status.replace(/_/g, ' ')}</span>
                     </span>
+                    {ticket.status === 'ACTIVE' && selectedModule?.config?.ticketClosureByTechnician && ticket.workflow.some(s => s.status === 'WIP') && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded border bg-blue-100 text-blue-700 border-blue-300">
+                        <Clock className="w-3 h-3" />
+                        <span>Work InProgress</span>
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded border ${getPriorityColor(ticket.priority)}`}>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Module, ModuleFieldConfiguration, FieldDropdownOption, FieldContext, User } from '../../types';
 import { FieldConfigService } from '../../services/fieldConfigService';
-import { Settings, Plus, CreditCard as Edit, Trash2, GripVertical, IndianRupee, ClipboardCheck } from 'lucide-react';
+import { Settings, Plus, CreditCard as Edit, Trash2, GripVertical, IndianRupee, ClipboardCheck, Wrench } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { FieldEditorModal } from './FieldEditorModal';
 import { supabase } from '../../lib/supabase';
@@ -171,6 +171,10 @@ export const FieldConfigurationManager: React.FC<FieldConfigurationManagerProps>
 
         {selectedModule && (
           <ReviewByEORequiredToggle module={selectedModule} onUpdated={(updated) => setSelectedModule(updated)} />
+        )}
+
+        {selectedModule && (
+          <TicketClosureByTechnicianToggle module={selectedModule} onUpdated={(updated) => setSelectedModule(updated)} />
         )}
       </div>
 
@@ -412,6 +416,81 @@ interface FinanceApprovalToggleProps {
   module: Module;
   onUpdated: (module: Module) => void;
 }
+
+interface TicketClosureByTechnicianToggleProps {
+  module: Module;
+  onUpdated: (module: Module) => void;
+}
+
+const TicketClosureByTechnicianToggle: React.FC<TicketClosureByTechnicianToggleProps> = ({ module, onUpdated }) => {
+  const [enabled, setEnabled] = useState<boolean>(module.config?.ticketClosureByTechnician ?? false);
+  const [saving, setSaving] = useState(false);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
+
+  const handleToggle = async (value: boolean) => {
+    setEnabled(value);
+    setSaving(true);
+    setSavedMessage(null);
+    try {
+      const updatedConfig = { ...(module.config || {}), ticketClosureByTechnician: value };
+      const { error } = await supabase
+        .from('modules')
+        .update({ config: updatedConfig })
+        .eq('id', module.id);
+      if (error) throw error;
+      onUpdated({ ...module, config: updatedConfig });
+      setSavedMessage(value ? 'Ticket closure by technician enabled for this module' : 'Ticket closure by technician disabled for this module');
+      setTimeout(() => setSavedMessage(null), 3000);
+    } catch (err) {
+      console.error('Error updating ticket closure by technician setting:', err);
+      setEnabled(!value);
+      setSavedMessage('Failed to update setting. Please try again.');
+      setTimeout(() => setSavedMessage(null), 3000);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-center w-10 h-10 bg-amber-50 rounded-lg">
+            <Wrench className="w-5 h-5 text-amber-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">Ticket Closure by Technician</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              When enabled, closing a sub-task by a technician will auto-complete the parent task and the ticket (if all tasks are done). The technician's comments and files are carried forward to the completion records. When disabled (default), the existing ticket closure flow remains unchanged.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-3">
+          {savedMessage && (
+            <span className="text-xs text-gray-500">{savedMessage}</span>
+          )}
+          <label className="inline-flex items-center cursor-pointer">
+            <span className="relative">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={enabled}
+                onChange={(e) => handleToggle(e.target.checked)}
+                disabled={saving}
+              />
+              <div className={`w-11 h-6 rounded-full transition-colors duration-200 ${enabled ? 'bg-amber-500' : 'bg-gray-300'}`}>
+                <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform duration-200 ${enabled ? 'translate-x-5' : ''}`} />
+              </div>
+            </span>
+            <span className="ml-2 text-sm font-medium text-gray-700">
+              {enabled ? 'Yes' : 'No'}
+            </span>
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const FinanceApprovalToggle: React.FC<FinanceApprovalToggleProps> = ({ module, onUpdated }) => {
   const [enabled, setEnabled] = useState<boolean>(module.config?.requiresFinanceApproval ?? false);

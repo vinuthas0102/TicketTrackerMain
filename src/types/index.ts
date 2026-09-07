@@ -28,6 +28,7 @@ export interface Module {
     requestTypes?: RequestType[];
     requiresFinanceApproval?: boolean;
     reviewByEORequired?: boolean;
+    ticketClosureByTechnician?: boolean;
   };
   active: boolean;
   created_at: Date;

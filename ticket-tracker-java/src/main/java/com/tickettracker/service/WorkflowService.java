@@ -351,6 +351,10 @@ public class WorkflowService {
             logger.info("Workflow step updated: {} by user: {}",
                     updatedStep.getStepNumber(), bytesToHex(currentUserId));
 
+            if ("completed".equalsIgnoreCase(updateRequest.getStatus())) {
+                handleTechnicianClosureCascade(updatedStep, currentUserId, updateRequest.getRemarks());
+            }
+
             return updatedStep;
         } catch (SQLException e) {
             logger.error("Error updating workflow step", e);
@@ -449,6 +453,13 @@ public class WorkflowService {
 
             logger.info("Step status updated: {} from {} to {}",
                     step.getStepNumber(), oldStatus, newStatus);
+
+            if ("completed".equals(newStatus)) {
+                WorkflowStep updatedStep = workflowStepDAO.findById(stepId);
+                if (updatedStep != null) {
+                    handleTechnicianClosureCascade(updatedStep, currentUserId, null);
+                }
+            }
 
         } catch (SQLException e) {
             logger.error("Error updating step status", e);
@@ -896,6 +907,170 @@ public class WorkflowService {
             return "progress_update";
         }
         return "workflow_action";
+    }
+
+    private boolean isTicketClosureByTechnicianEnabled(byte[] ticketId) {
+        try {
+            Ticket ticket = ticketDAO.findById(ticketId);
+            if (ticket == null || ticket.getModuleId() == null) return false;
+            Module module = moduleDAO.findById(ticket.getModuleId());
+            if (module == null || module.getConfig() == null) return false;
+            try {
+                com.fasterxml.jackson.databind.JsonNode configNode =
+                    new com.fasterxml.jackson.databind.ObjectMapper().readTree(module.getConfig());
+                return configNode.has("ticketClosureByTechnician")
+                    && configNode.get("ticketClosureByTechnician").asBoolean();
+            } catch (Exception e) {
+                return false;
+            }
+        } catch (Exception e) {
+            logger.warn("Error checking ticketClosureByTechnician flag: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private void handleTechnicianClosureCascade(WorkflowStep completedStep, byte[] currentUserId, String remarks) {
+        try {
+            if (!isTicketClosureByTechnicianEnabled(completedStep.getTicketId())) {
+                return;
+            }
+
+            byte[] parentStepId = completedStep.getParentStepId();
+            if (parentStepId == null) {
+                propagateStepDocumentsToTicket(completedStep, currentUserId);
+                checkAndAutoCompleteTicket(completedStep.getTicketId(), currentUserId, remarks);
+                return;
+            }
+
+            WorkflowStep parentStep = workflowStepDAO.findById(parentStepId);
+            if (parentStep == null) return;
+            if ("COMPLETED".equalsIgnoreCase(parentStep.getStatus())) return;
+
+            List<WorkflowStep> siblings = workflowStepDAO.findByParentStepId(parentStepId);
+            boolean allSiblingsCompleted = true;
+            for (WorkflowStep sibling : siblings) {
+                String sibStatus = sibling.getStatus() == null ? "" : sibling.getStatus().toUpperCase();
+                if (!"COMPLETED".equals(sibStatus) && !"CLOSED".equals(sibStatus)) {
+                    allSiblingsCompleted = false;
+                    break;
+                }
+            }
+
+            if (allSiblingsCompleted) {
+                for (WorkflowStep sibling : siblings) {
+                    propagateStepDocuments(sibling, parentStep, currentUserId);
+                }
+
+                WorkflowStepUpdateRequest parentUpdate = new WorkflowStepUpdateRequest();
+                parentUpdate.setId(parentStepId);
+                parentUpdate.setStatus("completed");
+                parentUpdate.setCompletedAt(new Timestamp(System.currentTimeMillis()));
+                parentUpdate.setActualCompletedAt(new Timestamp(System.currentTimeMillis()));
+                parentUpdate.setProgress(new BigDecimal("100"));
+                workflowStepDAO.updateSelective(parentUpdate);
+
+                String parentDescription = String.format(
+                    "Task \"%s\" auto-completed because all sub-tasks were completed (ticketClosureByTechnician enabled)%s",
+                    parentStep.getTitle(),
+                    (remarks != null && !remarks.trim().isEmpty()) ? ". Technician comment: " + remarks.trim() : "");
+                createAuditLog(parentStep.getTicketId(), parentStepId, currentUserId,
+                    "WORKFLOW_COMPLETED", parentDescription, "status_change");
+
+                logger.info("Parent step {} auto-completed via technician closure cascade", parentStep.getStepNumber());
+
+                propagateStepDocumentsToTicket(parentStep, currentUserId);
+                checkAndAutoCompleteTicket(parentStep.getTicketId(), currentUserId, remarks);
+            }
+        } catch (Exception e) {
+            logger.error("Error in technician closure cascade: {}", e.getMessage(), e);
+        }
+    }
+
+    private void propagateStepDocuments(WorkflowStep sourceStep, WorkflowStep targetStep, byte[] currentUserId) {
+        try {
+            List<Document> sourceDocs = documentDAO.findByStepId(sourceStep.getId());
+            for (Document doc : sourceDocs) {
+                Document copy = new Document();
+                copy.setTicketId(sourceStep.getTicketId());
+                copy.setStepId(targetStep.getId());
+                copy.setName(doc.getName());
+                copy.setType(doc.getType());
+                copy.setSize(doc.getSize());
+                copy.setUrl(doc.getUrl());
+                copy.setStoragePath(doc.getStoragePath());
+                copy.setUploadedBy(currentUserId);
+                copy.setMandatory(false);
+                copy.setCompletionCertificate(doc.isCompletionCertificate());
+                documentDAO.create(copy);
+            }
+            if (!sourceDocs.isEmpty()) {
+                logger.info("Propagated {} documents from step {} to step {}",
+                    sourceDocs.size(), sourceStep.getStepNumber(), targetStep.getStepNumber());
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to propagate documents from step {} to step {}: {}",
+                sourceStep.getStepNumber(), targetStep.getStepNumber(), e.getMessage());
+        }
+    }
+
+    private void propagateStepDocumentsToTicket(WorkflowStep sourceStep, byte[] currentUserId) {
+        try {
+            List<Document> sourceDocs = documentDAO.findByStepId(sourceStep.getId());
+            for (Document doc : sourceDocs) {
+                Document copy = new Document();
+                copy.setTicketId(sourceStep.getTicketId());
+                copy.setStepId(sourceStep.getId());
+                copy.setName(doc.getName());
+                copy.setType(doc.getType());
+                copy.setSize(doc.getSize());
+                copy.setUrl(doc.getUrl());
+                copy.setStoragePath(doc.getStoragePath());
+                copy.setUploadedBy(currentUserId);
+                copy.setMandatory(false);
+                copy.setCompletionCertificate(doc.isCompletionCertificate());
+                documentDAO.create(copy);
+            }
+            if (!sourceDocs.isEmpty()) {
+                logger.info("Propagated {} documents from step {} to ticket completion",
+                    sourceDocs.size(), sourceStep.getStepNumber());
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to propagate documents from step {} to ticket: {}",
+                sourceStep.getStepNumber(), e.getMessage());
+        }
+    }
+
+    private void checkAndAutoCompleteTicket(byte[] ticketId, byte[] currentUserId, String remarks) {
+        try {
+            List<WorkflowStep> allSteps = workflowStepDAO.findByTicketId(ticketId);
+            boolean allCompleted = true;
+            for (WorkflowStep step : allSteps) {
+                String status = step.getStatus() == null ? "" : step.getStatus().toUpperCase();
+                if (!"COMPLETED".equals(status) && !"CLOSED".equals(status)) {
+                    allCompleted = false;
+                    break;
+                }
+            }
+
+            if (!allCompleted) return;
+
+            Ticket ticket = ticketDAO.findById(ticketId);
+            if (ticket == null) return;
+            String currentStatus = ticket.getStatus() == null ? "" : ticket.getStatus().toUpperCase();
+            if ("COMPLETED".equals(currentStatus) || "CLOSED".equals(currentStatus)) return;
+
+            ticketDAO.updateStatus(ticketId, "completed");
+
+            String description = String.format(
+                "Ticket auto-completed because all tasks/sub-tasks were completed (ticketClosureByTechnician enabled)%s",
+                (remarks != null && !remarks.trim().isEmpty()) ? ". Technician comment: " + remarks.trim() : "");
+            createAuditLog(ticketId, null, currentUserId,
+                "STATUS_CHANGED", description, "status_change");
+
+            logger.info("Ticket {} auto-completed via technician closure cascade", ticket.getTicketNumber());
+        } catch (Exception e) {
+            logger.error("Error auto-completing ticket: {}", e.getMessage(), e);
+        }
     }
 
     private boolean bytesEquals(byte[] a, byte[] b) {

@@ -353,6 +353,22 @@ public class TicketDAO extends BaseDAO {
         }
     }
 
+    public void updateStatus(byte[] id, String status) throws SQLException {
+        String sql = "UPDATE tickets SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        try {
+            conn = getConnection();
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, status);
+            stmt.setBytes(2, id);
+            stmt.executeUpdate();
+            logger.info("Updated ticket status to: {} for ticket ID: {}", status, bytesToHex(id));
+        } finally {
+            closeResources(conn, stmt, null);
+        }
+    }
+
     public boolean delete(byte[] id) throws SQLException {
         String sql = "DELETE FROM tickets WHERE id = ?";
 
