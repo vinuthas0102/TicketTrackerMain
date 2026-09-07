@@ -32,10 +32,10 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
     MasterDataService.getActive('locations').then((locs) => {
       setMasterLocations(locs);
       if (!ticket && !copiedTicket && locs.length > 0) {
-        const eoFiltered = user?.role === 'EO' && user.regions && user.regions.length > 0
+        const regionFiltered = user?.regions && user.regions.length > 0
           ? locs.filter(l => user.regions!.includes(l))
           : locs;
-        setFormData(prev => ({ ...prev, propertyLocation: eoFiltered[0] || locs[0] }));
+        setFormData(prev => ({ ...prev, propertyLocation: regionFiltered[0] || locs[0] }));
       }
     }).catch(() => setMasterLocations([]));
     MasterDataService.getActive('properties').then((props) => {
@@ -164,7 +164,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
   const isEditing = !!ticket;
   const isEOEditingOthersTicket = isEditing && user?.role === 'EO' && ticket?.createdBy !== user?.id;
 
-  const availableLocations = user?.role === 'EO' && user.regions && user.regions.length > 0
+  const availableLocations = user?.regions && user.regions.length > 0
     ? masterLocations.filter(loc => user.regions!.includes(loc))
     : masterLocations;
 
@@ -318,7 +318,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ isOpen, onClose, ticket, copied
         estCompletionDate: '',
         department: user?.department || '',
         propertyId: 'PROP001',
-        propertyLocation: (user?.role === 'EO' && user.regions && user.regions.length > 0
+        propertyLocation: (user?.regions && user.regions.length > 0
           ? user.regions[0]
           : (masterLocations.length > 0 ? masterLocations[0] : '')),
         requestType: user?.role === 'EMPLOYEE' ? 'General Maintenance' : ''
