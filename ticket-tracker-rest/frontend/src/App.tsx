@@ -44,7 +44,7 @@ const Dashboard: React.FC = () => {
   const [copiedAttachmentIds, setCopiedAttachmentIds] = useState<string[]>([]);
   const [showEditForm, setShowEditForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | null>(null);
-  const [activeSubFilter, setActiveSubFilter] = useState<'HOD' | 'TECHNICIAN' | 'AWAITING_COMPLETION' | 'WIP' | 'START_TO_WORK' | null>(null);
+  const [activeSubFilter, setActiveSubFilter] = useState<'HOD' | 'TECHNICIAN' | 'AWAITING_COMPLETION' | null>(null);
   const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('list');
   const [showAdminPanel, setShowAdminPanel] = useState(false);
