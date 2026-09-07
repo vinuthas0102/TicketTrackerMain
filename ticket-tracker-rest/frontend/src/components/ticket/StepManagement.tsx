@@ -458,9 +458,12 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       optionalDocuments: step?.optional_documents || [],
       fileReferenceTemplateId: '',
       selectedFileReferences: [] as SelectedFileReference[],
-      remarks: step?.remarks || ''
+      remarks: step?.remarks || '',
+      dueDateChangeReason: '',
+      originalDueDate: safeDateToISOString(step?.dueDate) || (parentStep?.dueDate ? safeDateToISOString(parentStep.dueDate) : '')
     });
     const [masterDepartments, setMasterDepartments] = useState<string[]>([]);
+    const [ticketClosureByTechnicianEnabled, setTicketClosureByTechnicianEnabled] = useState(false);
     const isSubTask = !!parentStep;
 
     React.useEffect(() => {
@@ -511,6 +514,18 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       }
       return result;
     })();
+
+    React.useEffect(() => {
+      const loadTicketClosureFlag = async () => {
+        try {
+          const enabled = await TicketService.isTicketClosureByTechnicianEnabled(ticket.id);
+          setTicketClosureByTechnicianEnabled(enabled);
+        } catch (err) {
+          console.error('Failed to load ticketClosureByTechnician flag:', err);
+        }
+      };
+      loadTicketClosureFlag();
+    }, [ticket.id]);
 
     React.useEffect(() => {
       if (isSubTask && !step && parentStep) {
@@ -609,7 +624,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       }
       if (!formData.startDate) {
         errors.startDate = 'Start Date is required';
-      } else {
+      } else if (!step) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const selectedDate = new Date(formData.startDate + 'T00:00:00');
@@ -619,6 +634,11 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
       }
       if (isEO && !formData.dueDate) {
         errors.dueDate = 'Due Date is required';
+      }
+      if (isTechnician && ticketClosureByTechnicianEnabled && step && formData.dueDate !== formData.originalDueDate) {
+        if (!formData.dueDateChangeReason?.trim()) {
+          errors.dueDateChangeReason = 'Reason for due date change is required';
+        }
       }
       setFormErrors(errors);
       return Object.keys(errors).length === 0;
@@ -813,25 +833,38 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
               type="date"
               value={formData.startDate}
               onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+              min={step ? undefined : new Date(Date.now() + 86400000).toISOString().split('T')[0]}
               className={`w-full px-3 py-2 border ${formErrors.startDate ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
             />
             {formErrors.startDate && <p className="text-xs text-red-600 mt-1">{formErrors.startDate}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date {isEO ? <span className="text-red-500">*</span> : <span className="text-xs text-gray-500">(EO Only)</span>}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date {isEO ? <span className="text-red-500">*</span> : (isTechnician && ticketClosureByTechnicianEnabled && step) ? <span className="text-xs text-blue-600">(Editable with reason)</span> : <span className="text-xs text-gray-500">(EO Only)</span>}</label>
             <input
               type="date"
               value={formData.dueDate}
-              onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-              className={`w-full px-3 py-2 border ${formErrors.dueDate ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${(isSubTask || !isEO) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              onChange={(e) => setFormData({ ...formData, dueDate: e.target.value, dueDateChangeReason: formData.dueDate === e.target.value ? '' : formData.dueDateChangeReason })}
+              className={`w-full px-3 py-2 border ${formErrors.dueDate ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${(isSubTask || (!isEO && !(isTechnician && ticketClosureByTechnicianEnabled && step))) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               min={formData.startDate || getCurrentDateISOString()}
-              disabled={isSubTask || !isEO}
+              disabled={isSubTask || (!isEO && !(isTechnician && ticketClosureByTechnicianEnabled && step))}
             />
             {formErrors.dueDate && <p className="text-xs text-red-600 mt-1">{formErrors.dueDate}</p>}
           </div>
         </div>
+        {isTechnician && ticketClosureByTechnicianEnabled && step && formData.dueDate !== formData.originalDueDate && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Due Date Change <span className="text-red-500">*</span></label>
+            <textarea
+              value={formData.dueDateChangeReason}
+              onChange={(e) => setFormData({ ...formData, dueDateChangeReason: e.target.value })}
+              rows={2}
+              className={`w-full px-3 py-2 border ${formErrors.dueDateChangeReason ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              placeholder="Provide a reason for changing the due date..."
+            />
+            {formErrors.dueDateChangeReason && <p className="text-xs text-red-600 mt-1">{formErrors.dueDateChangeReason}</p>}
+          </div>
+        )}
 
         {isEO && !step && fileReferenceTemplates.length > 0 && (
           <FileReferenceSelector
@@ -1242,6 +1275,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
         mandatory_documents: data.mandatoryDocuments,
         optional_documents: data.optionalDocuments,
         remarks: data.remarks,
+        dueDateChangeReason: data.dueDateChangeReason || undefined,
         stepId : editingStep.id,
         stepNumber : editingStep.stepNumber
       };

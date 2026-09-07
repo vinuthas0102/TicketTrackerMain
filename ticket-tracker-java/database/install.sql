@@ -174,6 +174,14 @@ SELECT '========================================================================
 SELECT 'user_regions table created!' FROM DUAL;
 SELECT '' FROM DUAL;
 
+-- Step 12d: Add due_date_change_reason column to workflow_steps
+SELECT '==================================================================================' FROM DUAL;
+SELECT 'STEP 12d: Adding due_date_change_reason column to workflow_steps...' FROM DUAL;
+SELECT '==================================================================================' FROM DUAL;
+@25-oracle-add-due-date-change-reason.sql
+SELECT 'due_date_change_reason column added!' FROM DUAL;
+SELECT '' FROM DUAL;
+
 -- Step 13: Verification
 SELECT '==================================================================================' FROM DUAL;
 SELECT 'INSTALLATION VERIFICATION' FROM DUAL;

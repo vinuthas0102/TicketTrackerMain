@@ -442,6 +442,7 @@ export class TicketService {
       if (updates.optional_documents !== undefined) payload.optionalDocuments = updates.optional_documents;
       if (updates.completionCertificateRequired !== undefined) payload.completionCertificateRequired = updates.completionCertificateRequired;
       if (updates.remarks !== undefined) payload.remarks = updates.remarks;
+      if ((updates as any).dueDateChangeReason !== undefined) payload.dueDateChangeReason = (updates as any).dueDateChangeReason;
       if (stepId!== undefined) payload.id = stepId;
       if (stepId!== undefined) payload.stepId = stepId;
       if (updates.stepNumber !== undefined) payload.stepNumber = updates.stepNumber;
@@ -450,6 +451,21 @@ export class TicketService {
     } catch (error) {
       console.error('Error updating step:', error);
       throw error;
+    }
+  }
+
+  static async isTicketClosureByTechnicianEnabled(ticketId: string): Promise<boolean> {
+    try {
+      const ticket = await apiClient.get<any>(`/tickets/${ticketId}`);
+      if (!ticket?.moduleId) return false;
+      const module = await apiClient.get<any>(API_ENDPOINTS.MODULES.GET(ticket.moduleId));
+      let config = module?.config;
+      if (typeof config === 'string') {
+        try { config = JSON.parse(config); } catch { return false; }
+      }
+      return config?.ticketClosureByTechnician === true;
+    } catch {
+      return false;
     }
   }
 

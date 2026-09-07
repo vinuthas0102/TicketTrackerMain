@@ -332,6 +332,15 @@ public class WorkflowService {
                 }
             }
 
+            if (updateRequest.getDueDate() != null && existingStep.getDueDate() != null
+                    && !updateRequest.getDueDate().equals(existingStep.getDueDate())) {
+                if (updateRequest.getDueDateChangeReason() == null || updateRequest.getDueDateChangeReason().trim().isEmpty()) {
+                    if (isTicketClosureByTechnicianEnabled(existingStep.getTicketId())) {
+                        throw new ValidationException("dueDateChangeReason", "Reason for due date change is required when Ticket Closure by Technician is enabled");
+                    }
+                }
+            }
+
             WorkflowStep updatedStep = workflowStepDAO.updateSelective(updateRequest);
 
             String changes = buildUpdateChangeDescription(updateRequest, existingStep);
@@ -343,7 +352,7 @@ public class WorkflowService {
             }
             String newData = updateRequest.getProgress() != null ? updateRequest.getProgress().toPlainString() : null;
             String oldData = oldProgress != null ? oldProgress.toPlainString() : null;
-            String metadata = buildUpdateMetadata(updateRequest.getProgress(), updateRequest.getRemarks());
+            String metadata = buildUpdateMetadata(updateRequest.getProgress(), updateRequest.getRemarks(), updateRequest.getDueDateChangeReason());
 
             createAuditLogWithData(updatedStep.getTicketId(), updatedStep.getId(), currentUserId,
                     actionName, changes, actionCategory, oldData, newData, metadata);
@@ -832,7 +841,7 @@ public class WorkflowService {
         }
     }
 
-    private String buildUpdateMetadata(BigDecimal progress, String remarks) {
+    private String buildUpdateMetadata(BigDecimal progress, String remarks, String dueDateChangeReason) {
         StringBuilder sb = new StringBuilder("{");
         boolean hasField = false;
         if (progress != null) {
@@ -844,9 +853,16 @@ public class WorkflowService {
             String escaped = remarks.trim().replace("\\", "\\\\").replace("\"", "\\\"");
             sb.append("\"comment\":\"").append(escaped).append("\"");
             sb.append(",\"remarks\":\"").append(escaped).append("\"");
+            hasField = true;
+        }
+        if (dueDateChangeReason != null && !dueDateChangeReason.trim().isEmpty()) {
+            if (hasField) sb.append(",");
+            String escaped = dueDateChangeReason.trim().replace("\\", "\\\\").replace("\"", "\\\"");
+            sb.append("\"dueDateChangeReason\":\"").append(escaped).append("\"");
+            hasField = true;
         }
         sb.append("}");
-        return hasField || (remarks != null && !remarks.trim().isEmpty()) ? sb.toString() : null;
+        return hasField ? sb.toString() : null;
     }
 
     private String buildUpdateChangeDescription(WorkflowStepUpdateRequest updateRequest, WorkflowStep existingStep) {
@@ -885,6 +901,9 @@ public class WorkflowService {
         }
         if (updateRequest.getDueDate() != null) {
             changes.append("Due date updated; ");
+            if (updateRequest.getDueDateChangeReason() != null && !updateRequest.getDueDateChangeReason().trim().isEmpty()) {
+                changes.append(String.format("Due date change reason: %s; ", updateRequest.getDueDateChangeReason().trim()));
+            }
         }
         if (updateRequest.getStartDate() != null) {
             changes.append("Start date updated; ");

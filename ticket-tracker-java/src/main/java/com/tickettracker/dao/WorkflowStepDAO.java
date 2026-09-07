@@ -336,6 +336,12 @@ public class WorkflowStepDAO extends BaseDAO {
             hasFields = true;
         }
 
+        if (updateRequest.getDueDateChangeReason() != null) {
+            sql.append("due_date_change_reason = ?, ");
+            params.add(updateRequest.getDueDateChangeReason());
+            hasFields = true;
+        }
+
         if (!hasFields) {
             logger.warn("No fields to update for workflow step: {}", bytesToHex(updateRequest.getId()));
             return findById(updateRequest.getId());
@@ -453,6 +459,11 @@ public class WorkflowStepDAO extends BaseDAO {
         step.setStepType(rs.getString("step_type"));
         step.setRemarks(rs.getString("remarks"));
         step.setActualCompletedAt(rs.getTimestamp("actual_completed_at"));
+        try {
+            step.setDueDateChangeReason(rs.getString("due_date_change_reason"));
+        } catch (SQLException e) {
+            // Column may not exist yet in older schemas
+        }
         return step;
     }
 

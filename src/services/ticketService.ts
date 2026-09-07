@@ -189,6 +189,7 @@ export class TicketService {
               mandatory_documents: step.mandatory_documents || [],
               optional_documents: step.optional_documents || [],
               completionCertificateRequired: step.completion_certificate_required || false,
+              dueDateChangeReason: step.due_date_change_reason || '',
               comments: [],
               attachments: [],
             })),
@@ -904,7 +905,14 @@ export class TicketService {
           actionDescription = `Task status changed to ${updates.status}`;
         }
         if (updates.status === 'WIP' && !updates.startDate) {
-          updateData.start_date = new Date().toISOString();
+          const { data: existingStep } = await supabase
+            .from('workflow_steps')
+            .select('start_date')
+            .eq('id', stepId)
+            .maybeSingle();
+          if (!existingStep?.start_date) {
+            updateData.start_date = new Date().toISOString();
+          }
         }
       }
       if (updates.assignedTo !== undefined) {
@@ -915,6 +923,7 @@ export class TicketService {
         }
       }
       if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate;
+      if ((updates as any).dueDateChangeReason !== undefined) updateData.due_date_change_reason = (updates as any).dueDateChangeReason;
       if (updates.startDate !== undefined) updateData.start_date = updates.startDate;
       if (updates.is_parallel !== undefined) updateData.is_parallel = updates.is_parallel;
       if (updates.progress !== undefined) {
@@ -944,6 +953,10 @@ export class TicketService {
       if (progressChanged) {
         metadata.progress = updates.progress;
       }
+      if ((updates as any).dueDateChangeReason && (updates as any).dueDateChangeReason.trim()) {
+        metadata.dueDateChangeReason = (updates as any).dueDateChangeReason.trim();
+        actionDescription = `${actionDescription}. Due date change reason: ${(updates as any).dueDateChangeReason.trim()}`;
+      }
       if (remarks && remarks.trim()) {
         metadata.comment = remarks.trim();
         metadata.remarks = remarks.trim();
@@ -970,7 +983,7 @@ export class TicketService {
     }
   }
 
-  private static async isTicketClosureByTechnicianEnabled(ticketId: string): Promise<boolean> {
+  static async isTicketClosureByTechnicianEnabled(ticketId: string): Promise<boolean> {
     try {
       const { data: ticket } = await supabase
         .from('tickets')

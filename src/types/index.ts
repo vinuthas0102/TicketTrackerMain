@@ -99,6 +99,7 @@ export interface WorkflowStep {
   certificateUploaded?: boolean;
   stepType?: string;
   remarks?: string;
+  dueDateChangeReason?: string;
   actualCompletedAt?: Date;
   comments: WorkflowComment[];
   attachments: FileAttachment[];

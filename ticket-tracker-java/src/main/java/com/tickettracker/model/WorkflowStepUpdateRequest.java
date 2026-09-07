@@ -41,6 +41,7 @@ public class WorkflowStepUpdateRequest {
     private String data;
 
     private String remarks;
+    private String dueDateChangeReason;
 
     @JsonIgnore
     public byte[] getId() {
@@ -211,5 +212,15 @@ public class WorkflowStepUpdateRequest {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    @JsonProperty("dueDateChangeReason")
+    public String getDueDateChangeReason() {
+        return dueDateChangeReason;
+    }
+
+    @JsonProperty("dueDateChangeReason")
+    public void setDueDateChangeReason(String dueDateChangeReason) {
+        this.dueDateChangeReason = dueDateChangeReason;
     }
 }

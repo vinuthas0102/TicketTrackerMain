@@ -46,6 +46,7 @@ public class WorkflowStep {
     private Timestamp startDate;
     private String stepType;
     private String remarks;
+    private String dueDateChangeReason;
 
     // File reference fields (not persisted in workflow_steps table)
     private byte[] fileReferenceTemplateId;
@@ -381,6 +382,16 @@ public class WorkflowStep {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    @JsonProperty("dueDateChangeReason")
+    public String getDueDateChangeReason() {
+        return dueDateChangeReason;
+    }
+
+    @JsonProperty("dueDateChangeReason")
+    public void setDueDateChangeReason(String dueDateChangeReason) {
+        this.dueDateChangeReason = dueDateChangeReason;
     }
 
     public String getAssignedToName() {
