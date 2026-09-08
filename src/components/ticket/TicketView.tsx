@@ -312,7 +312,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
                 {ticket.status === 'ACTIVE' && selectedModule?.config?.ticketClosureByTechnician && ticket.workflow.some(s => s.status === 'WIP') && (
                   <span className="px-2 py-0.5 text-xs font-medium rounded-full flex items-center space-x-1.5 shadow-sm bg-blue-100 text-blue-800">
                     <Clock className="w-3.5 h-3.5" />
-                    <span>Work InProgress</span>
+                    <span>Work In-Progress</span>
                   </span>
                 )}
               </div>
