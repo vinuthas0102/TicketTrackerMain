@@ -73,30 +73,24 @@ export const TECHNICIAN_DEPARTMENTS = ['Civil Manager', 'Electrical Manager'];
 
 export type ActiveSubCategory = 'AWAITING_COMPLETION' | 'TECHNICIAN' | 'HOD';
 
-export type ActiveSubStatus = 'WIP' | 'START_TO_WORK' | null;
+export type ActiveSubStatus = 'WIP' | 'START_TO_WORK';
 
 /**
  * Returns 'WIP' if any workflow step is WIP.
- * Returns 'START_TO_WORK' if at least one step is completed or in progress (work has begun).
- * Returns null if all steps are still not started or workflow is empty.
+ * Returns 'START_TO_WORK' for all other active tickets (work has begun,
+ * steps are not yet started, or workflow is empty).
  */
 export function getActiveSubStatus(
   workflow: { status: string }[]
 ): ActiveSubStatus {
-  if (!workflow || workflow.length === 0) return null;
+  if (!workflow || workflow.length === 0) return 'START_TO_WORK';
 
   const hasWipStep = workflow.some(step =>
     step.status === 'WIP' || step.status === 'wip' || step.status === 'IN_PROGRESS' || step.status === 'in_progress'
   );
   if (hasWipStep) return 'WIP';
 
-  const hasCompletedOrInProgress = workflow.some(step =>
-    step.status === 'COMPLETED' || step.status === 'completed' ||
-    step.status === 'WIP' || step.status === 'wip'
-  );
-  if (hasCompletedOrInProgress) return 'START_TO_WORK';
-
-  return null;
+  return 'START_TO_WORK';
 }
 
 /**
