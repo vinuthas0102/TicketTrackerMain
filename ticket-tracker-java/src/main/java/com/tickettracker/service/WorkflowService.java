@@ -198,8 +198,8 @@ public class WorkflowService {
                     throw new ValidationException("Start Date is required for all steps");
                 }
                 java.util.Date today = java.sql.Date.valueOf(java.time.LocalDate.now());
-                if (!step.getStartDate().after(today)) {
-                    throw new ValidationException("Start Date must be greater than current date for all steps");
+                if (step.getStartDate().before(today)) {
+                    throw new ValidationException("Start Date must be greater than or equal to current date for all steps");
                 }
                 if (step.getDueDate() == null) {
                     throw new ValidationException("Due Date is required for all steps");
@@ -327,8 +327,8 @@ public class WorkflowService {
 
             if (updateRequest.getStartDate() != null && !startDateWasAutoSet && existingStep.getStartDate() == null) {
                 java.util.Date today = java.sql.Date.valueOf(java.time.LocalDate.now());
-                if (!updateRequest.getStartDate().after(today)) {
-                    throw new ValidationException("startDate", "Start Date must be greater than current date");
+                if (updateRequest.getStartDate().before(today)) {
+                    throw new ValidationException("startDate", "Start Date must be greater than or equal to current date");
                 }
             }
 
@@ -799,8 +799,8 @@ public class WorkflowService {
             validation.addError("Start Date is required");
         } else {
             java.util.Date today = java.sql.Date.valueOf(java.time.LocalDate.now());
-            if (!step.getStartDate().after(today)) {
-                validation.addError("Start Date must be greater than current date");
+            if (step.getStartDate().before(today)) {
+                validation.addError("Start Date must be greater than or equal to current date");
             }
         }
 
