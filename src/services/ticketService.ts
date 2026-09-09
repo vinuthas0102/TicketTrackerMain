@@ -1013,9 +1013,61 @@ export class TicketService {
       if (updates.status === 'COMPLETED') {
         await this.handleTechnicianClosureCascade(ticketId, stepId, userId, remarks);
       }
+
+      if (updates.status === 'WIP') {
+        await this.handleTechnicianWipCascade(ticketId, stepId, userId);
+      }
     } catch (error) {
       console.error('Error updating step:', error);
       throw error;
+    }
+  }
+
+  private static async handleTechnicianWipCascade(
+    ticketId: string,
+    stepId: string,
+    userId: string
+  ): Promise<void> {
+    try {
+      const enabled = await this.isTicketClosureByTechnicianEnabled(ticketId);
+      if (!enabled) return;
+
+      const { data: updatedStep } = await supabase
+        .from('workflow_steps')
+        .select('id, parent_step_id, title, step_number, status')
+        .eq('id', stepId)
+        .maybeSingle();
+
+      if (!updatedStep || !updatedStep.parent_step_id) return;
+
+      const { data: parentStep } = await supabase
+        .from('workflow_steps')
+        .select('id, status, title, step_number')
+        .eq('id', updatedStep.parent_step_id)
+        .maybeSingle();
+
+      if (!parentStep) return;
+
+      const parentStatus = (parentStep.status || '').toUpperCase();
+      if (parentStatus === 'COMPLETED' || parentStatus === 'CLOSED' || parentStatus === 'WIP') return;
+
+      await supabase
+        .from('workflow_steps')
+        .update({ status: 'wip' })
+        .eq('id', parentStep.id);
+
+      await this.createAuditLog({
+        ticketId,
+        stepId: parentStep.id,
+        action: 'STATUS_CHANGED',
+        actionCategory: 'status_change',
+        description: `Task "${parentStep.title}" auto-set to WIP because sub-task "${updatedStep.title}" was started (ticketClosureByTechnician enabled)`,
+        performedBy: userId,
+        oldData: parentStep.status || 'pending',
+        newData: 'wip',
+      });
+    } catch (error) {
+      console.error('Error in technician WIP cascade:', error);
     }
   }
 

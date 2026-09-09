@@ -381,6 +381,10 @@ public class WorkflowService {
                 handleTechnicianClosureCascade(updatedStep, currentUserId, updateRequest.getRemarks());
             }
 
+            if ("wip".equalsIgnoreCase(updateRequest.getStatus())) {
+                handleTechnicianWipCascade(updatedStep, currentUserId);
+            }
+
             return updatedStep;
         } catch (SQLException e) {
             logger.error("Error updating workflow step", e);
@@ -487,9 +491,48 @@ public class WorkflowService {
                 }
             }
 
+            if ("wip".equals(newStatus)) {
+                WorkflowStep updatedStep = workflowStepDAO.findById(stepId);
+                if (updatedStep != null) {
+                    handleTechnicianWipCascade(updatedStep, currentUserId);
+                }
+            }
+
         } catch (SQLException e) {
             logger.error("Error updating step status", e);
             throw new DatabaseException("Failed to update step status", e);
+        }
+    }
+
+    private void handleTechnicianWipCascade(WorkflowStep startedStep, byte[] currentUserId) {
+        try {
+            if (!isTicketClosureByTechnicianEnabled(startedStep.getTicketId())) {
+                return;
+            }
+
+            byte[] parentStepId = startedStep.getParentStepId();
+            if (parentStepId == null) return;
+
+            WorkflowStep parentStep = workflowStepDAO.findById(parentStepId);
+            if (parentStep == null) return;
+
+            String parentStatus = parentStep.getStatus() == null ? "" : parentStep.getStatus().toUpperCase();
+            if ("COMPLETED".equals(parentStatus) || "CLOSED".equals(parentStatus) || "WIP".equals(parentStatus)) return;
+
+            WorkflowStepUpdateRequest parentUpdate = new WorkflowStepUpdateRequest();
+            parentUpdate.setId(parentStepId);
+            parentUpdate.setStatus("wip");
+            workflowStepDAO.updateSelective(parentUpdate);
+
+            String description = String.format(
+                "Task \"%s\" auto-set to WIP because sub-task \"%s\" was started (ticketClosureByTechnician enabled)",
+                parentStep.getTitle(), startedStep.getTitle());
+            createAuditLog(parentStep.getTicketId(), parentStepId, currentUserId,
+                "STATUS_CHANGED", description, "status_change");
+
+            logger.info("Parent step {} auto-set to WIP via technician cascade", parentStep.getStepNumber());
+        } catch (Exception e) {
+            logger.error("Error in technician WIP cascade: {}", e.getMessage(), e);
         }
     }
 
