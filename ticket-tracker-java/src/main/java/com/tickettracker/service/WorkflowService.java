@@ -334,8 +334,12 @@ public class WorkflowService {
 
             if (updateRequest.getDueDate() != null && existingStep.getDueDate() != null
                     && !updateRequest.getDueDate().equals(existingStep.getDueDate())) {
-                if (updateRequest.getDueDateChangeReason() == null || updateRequest.getDueDateChangeReason().trim().isEmpty()) {
-                    if (isTicketClosureByTechnicianEnabled(existingStep.getTicketId())) {
+                if (isTicketClosureByTechnicianEnabled(existingStep.getTicketId())) {
+                    User currentUser = userDAO.findById(currentUserId);
+                    if (currentUser != null && "EO".equalsIgnoreCase(currentUser.getRole())) {
+                        throw new ForbiddenException("EO cannot change the due date when Ticket Closure by Technician is enabled. Only Technician can edit the due date.");
+                    }
+                    if (updateRequest.getDueDateChangeReason() == null || updateRequest.getDueDateChangeReason().trim().isEmpty()) {
                         throw new ValidationException("dueDateChangeReason", "Reason for due date change is required when Ticket Closure by Technician is enabled");
                     }
                 }

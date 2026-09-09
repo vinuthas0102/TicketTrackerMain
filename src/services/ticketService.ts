@@ -880,6 +880,14 @@ export class TicketService {
         throw new Error('Permission denied: You can only update workflow steps that are assigned to you');
       }
 
+      // When Ticket Closure by Technician is enabled, EO cannot change the due date on existing steps
+      if (updates.dueDate !== undefined && oldDueDate && updates.dueDate !== oldDueDate) {
+        const closureEnabled = await this.isTicketClosureByTechnicianEnabled(ticketId);
+        if (closureEnabled && userData.role.toUpperCase() === 'EO') {
+          throw new Error('EO cannot change the due date when Ticket Closure by Technician is enabled. Only Technician can edit the due date.');
+        }
+      }
+
       const updateData: any = {};
       let actionDescription = 'Workflow updated';
       let actionCategory: AuditActionCategory = 'workflow_action';

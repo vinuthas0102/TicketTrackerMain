@@ -840,14 +840,14 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date {isEO ? <span className="text-red-500">*</span> : (isTechnician && ticketClosureByTechnicianEnabled && step) ? <span className="text-xs text-blue-600">(Editable with reason)</span> : <span className="text-xs text-gray-500">(EO Only)</span>}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date {isEO && !(ticketClosureByTechnicianEnabled && step) ? <span className="text-red-500">*</span> : (isTechnician && ticketClosureByTechnicianEnabled && step) ? <span className="text-xs text-blue-600">(Editable with reason)</span> : (ticketClosureByTechnicianEnabled && step) ? <span className="text-xs text-gray-500">(Technician Only)</span> : <span className="text-xs text-gray-500">(EO Only)</span>}</label>
             <input
               type="date"
               value={formData.dueDate}
               onChange={(e) => setFormData({ ...formData, dueDate: e.target.value, dueDateChangeReason: formData.dueDate === e.target.value ? '' : formData.dueDateChangeReason })}
-              className={`w-full px-3 py-2 border ${formErrors.dueDate ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${(!step && isSubTask) || (!isEO && !(isTechnician && ticketClosureByTechnicianEnabled && step)) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              className={`w-full px-3 py-2 border ${formErrors.dueDate ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${(!step && isSubTask) || (ticketClosureByTechnicianEnabled && step && !isTechnician) || (!isEO && !(isTechnician && ticketClosureByTechnicianEnabled && step)) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               min={formData.startDate || getCurrentDateISOString()}
-              disabled={(!step && isSubTask) || (!isEO && !(isTechnician && ticketClosureByTechnicianEnabled && step))}
+              disabled={(!step && isSubTask) || (ticketClosureByTechnicianEnabled && step && !isTechnician) || (!isEO && !(isTechnician && ticketClosureByTechnicianEnabled && step))}
             />
             {formErrors.dueDate && <p className="text-xs text-red-600 mt-1">{formErrors.dueDate}</p>}
           </div>
