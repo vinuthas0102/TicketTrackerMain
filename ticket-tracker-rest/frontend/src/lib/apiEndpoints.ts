@@ -43,6 +43,7 @@ export const API_ENDPOINTS = {
     AUDIT: (id: string) => `/tickets/${id}/audit`,
     FILES: (id: string) => `/tickets/${id}/files`,
     ACCESSIBLE: '/tickets/accessible',
+    TICKET_CLOSURE_BY_TECHNICIAN: (id: string) => `/tickets/${id}/ticket-closure-by-technician`,
   },
 
   WORKFLOW_STEPS: {

@@ -74,6 +74,8 @@ public class TicketServlet extends HttpServlet {
                     handleGetTicket(pathParts[1], response);
                 } else if (pathParts.length == 3 && "files".equals(pathParts[2])) {
                     handleGetTicketFiles(pathParts[1], response);
+                } else if (pathParts.length == 3 && "ticket-closure-by-technician".equals(pathParts[2])) {
+                    handleGetTicketClosureByTechnician(pathParts[1], response);
                 } else {
                     sendError(response, 400, "Invalid request path");
                 }
@@ -417,6 +419,28 @@ public class TicketServlet extends HttpServlet {
         byte[] id = ByteArrayUtil.hexToBytes(ticketId);
         List<Document> documents = documentService.getDocumentsByTicketId(id);
         sendJsonResponse(response, documents);
+    }
+
+    private void handleGetTicketClosureByTechnician(String ticketIdHex, HttpServletResponse response)
+            throws IOException {
+        try {
+            byte[] ticketId = ByteArrayUtil.hexToBytes(ticketIdHex);
+            Ticket ticket = ticketService.getTicket(ticketId);
+            if (ticket == null || ticket.getModuleId() == null) {
+                sendJsonResponse(response, java.util.Collections.singletonMap("ticketClosureByTechnician", false));
+                return;
+            }
+            Module module = moduleDAO.findById(ticket.getModuleId());
+            boolean enabled = false;
+            if (module != null && module.getConfig() != null && !module.getConfig().trim().isEmpty()) {
+                com.fasterxml.jackson.databind.JsonNode configNode = objectMapper.readTree(module.getConfig());
+                enabled = configNode.has("ticketClosureByTechnician") && configNode.get("ticketClosureByTechnician").asBoolean();
+            }
+            sendJsonResponse(response, java.util.Collections.singletonMap("ticketClosureByTechnician", enabled));
+        } catch (Exception e) {
+            logger.error("Error checking ticketClosureByTechnician for ticket {}: {}", ticketIdHex, e.getMessage(), e);
+            sendJsonResponse(response, java.util.Collections.singletonMap("ticketClosureByTechnician", false));
+        }
     }
 
     private void handleStatusChange(HttpServletRequest request, HttpServletResponse response,

@@ -456,14 +456,10 @@ export class TicketService {
 
   static async isTicketClosureByTechnicianEnabled(ticketId: string): Promise<boolean> {
     try {
-      const ticket = await apiClient.get<any>(`/tickets/${ticketId}`);
-      if (!ticket?.moduleId) return false;
-      const module = await apiClient.get<any>(API_ENDPOINTS.MODULES.GET(ticket.moduleId));
-      let config = module?.config;
-      if (typeof config === 'string') {
-        try { config = JSON.parse(config); } catch { return false; }
-      }
-      return config?.ticketClosureByTechnician === true;
+      const response = await apiClient.get<{ ticketClosureByTechnician: boolean }>(
+        API_ENDPOINTS.TICKETS.TICKET_CLOSURE_BY_TECHNICIAN(ticketId)
+      );
+      return response?.ticketClosureByTechnician === true;
     } catch {
       return false;
     }
