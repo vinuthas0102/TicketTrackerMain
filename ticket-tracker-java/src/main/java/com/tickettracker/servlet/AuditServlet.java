@@ -159,11 +159,35 @@ public class AuditServlet extends HttpServlet {
     }
 
     private List<AuditLogResponse> enrichLogsWithProgressDocs(List<AuditLog> logs) throws SQLException {
+        if (logs.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<byte[]> auditLogIds = new ArrayList<>();
+        for (AuditLog log : logs) {
+            auditLogIds.add(log.getId());
+        }
+
+        List<WorkflowStepProgressDocumentDAO.ProgressDocument> allProgressDocs =
+            progressDocDAO.findByAuditLogIds(auditLogIds);
+        List<Document> allStepDocs = documentDAO.findByAuditLogIds(auditLogIds);
+
+        java.util.Map<byte[], List<WorkflowStepProgressDocumentDAO.ProgressDocument>> progressDocMap =
+            new java.util.HashMap<>();
+        for (WorkflowStepProgressDocumentDAO.ProgressDocument pd : allProgressDocs) {
+            progressDocMap.computeIfAbsent(pd.getAuditLogId(), k -> new ArrayList<>()).add(pd);
+        }
+
+        java.util.Map<byte[], List<Document>> stepDocMap = new java.util.HashMap<>();
+        for (Document d : allStepDocs) {
+            stepDocMap.computeIfAbsent(d.getAuditLogId(), k -> new ArrayList<>()).add(d);
+        }
+
         List<AuditLogResponse> enrichedLogs = new ArrayList<>();
         for (AuditLog log : logs) {
             List<WorkflowStepProgressDocumentDAO.ProgressDocument> progressDocs =
-                progressDocDAO.findByAuditLogId(log.getId());
-            List<Document> stepDocs = documentDAO.findByAuditLogId(log.getId());
+                progressDocMap.getOrDefault(log.getId(), new ArrayList<>());
+            List<Document> stepDocs = stepDocMap.getOrDefault(log.getId(), new ArrayList<>());
             enrichedLogs.add(new AuditLogResponse(log, progressDocs, stepDocs));
         }
         return enrichedLogs;

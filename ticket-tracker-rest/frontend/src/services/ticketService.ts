@@ -21,14 +21,14 @@ import {
 export class TicketService {
   static async refreshSingleTicket(ticketId: string): Promise<Ticket | null> {
     try {
-      const ticket = await apiClient.get<any>(API_ENDPOINTS.TICKETS.GET(ticketId));
-      if (!ticket) return null;
-
-      const [workflow, attachments, auditTrail] = await Promise.all([
+      const [ticket, workflow, attachments, auditTrail] = await Promise.all([
+        apiClient.get<any>(API_ENDPOINTS.TICKETS.GET(ticketId)),
         this.getTicketWorkflow(ticketId),
         this.getTicketDocuments(ticketId),
         this.getTicketAuditTrail(ticketId),
       ]);
+
+      if (!ticket) return null;
 
       return {
         ...transformTicketFromBackend(ticket),

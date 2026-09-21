@@ -297,6 +297,41 @@ public class DocumentDAO extends BaseDAO {
         }
     }
 
+    public List<Document> findByAuditLogIds(List<byte[]> auditLogIds) throws SQLException {
+        if (auditLogIds == null || auditLogIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < auditLogIds.size(); i++) {
+            if (i > 0) placeholders.append(",");
+            placeholders.append("?");
+        }
+        String sql = "SELECT * FROM documents WHERE audit_log_id IN (" +
+                placeholders + ") ORDER BY uploaded_at DESC";
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getConnection();
+            stmt = conn.prepareStatement(sql);
+            for (int i = 0; i < auditLogIds.size(); i++) {
+                stmt.setBytes(i + 1, auditLogIds.get(i));
+            }
+            rs = stmt.executeQuery();
+
+            List<Document> documents = new ArrayList<>();
+            while (rs.next()) {
+                documents.add(mapResultSetToDocument(rs));
+            }
+            return documents;
+        } finally {
+            closeResources(conn, stmt, rs);
+        }
+    }
+
     public boolean updateAuditLogId(byte[] documentId, byte[] auditLogId) throws SQLException {
         String sql = "UPDATE documents SET audit_log_id = ? WHERE id = ?";
 

@@ -229,6 +229,41 @@ public class WorkflowStepProgressDocumentDAO extends BaseDAO {
         }
     }
 
+    public List<ProgressDocument> findByAuditLogIds(List<byte[]> auditLogIds) throws SQLException {
+        if (auditLogIds == null || auditLogIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < auditLogIds.size(); i++) {
+            if (i > 0) placeholders.append(",");
+            placeholders.append("?");
+        }
+        String sql = "SELECT * FROM workflow_step_progress_documents WHERE audit_log_id IN (" +
+                placeholders + ") AND is_deleted = 0 ORDER BY uploaded_at DESC";
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getConnection();
+            stmt = conn.prepareStatement(sql);
+            for (int i = 0; i < auditLogIds.size(); i++) {
+                stmt.setBytes(i + 1, auditLogIds.get(i));
+            }
+            rs = stmt.executeQuery();
+
+            List<ProgressDocument> documents = new ArrayList<>();
+            while (rs.next()) {
+                documents.add(mapResultSetToProgressDocument(rs));
+            }
+            return documents;
+        } finally {
+            closeResources(conn, stmt, rs);
+        }
+    }
+
     public boolean softDelete(byte[] id, byte[] deletedBy, String deleteReason) throws SQLException {
         String sql = "UPDATE workflow_step_progress_documents SET is_deleted = 1, deleted_by = ?, " +
                 "deleted_at = CURRENT_TIMESTAMP, delete_reason = ?, updated_at = CURRENT_TIMESTAMP " +
