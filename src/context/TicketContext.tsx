@@ -62,32 +62,18 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
 
         console.log('TicketContext: Loading data for user:', user?.id, 'role:', user?.role, 'module:', selectedModule?.id);
 
-        const usersData = await AuthService.getAllUsers();
-        setUsers(usersData);
-        console.log('TicketContext: Loaded users:', usersData.length);
-
         if (selectedModule && user) {
           console.log('TicketContext: Fetching tickets for module:', selectedModule.name);
-          const ticketsData = await TicketService.getTicketsByModule(
-            selectedModule.id,
-            user.id,
-            user.role
-          );
-          console.log('TicketContext: Loaded tickets:', ticketsData.length);
-          if (ticketsData.length > 0) {
-            console.log('TicketContext: Sample ticket data:', {
-              id: ticketsData[0].id,
-              ticketNumber: ticketsData[0].ticketNumber,
-              title: ticketsData[0].title,
-              category: ticketsData[0].category,
-              department: ticketsData[0].department,
-              hasCategory: ticketsData[0].category !== undefined,
-              hasDepartment: ticketsData[0].department !== undefined
-            });
-          }
+          const [usersData, ticketsData] = await Promise.all([
+            AuthService.getAllUsers(),
+            TicketService.getTicketsByModule(selectedModule.id, user.id, user.role),
+          ]);
+          setUsers(usersData);
           setTickets(ticketsData);
         } else {
           console.log('TicketContext: No module or user selected, clearing tickets');
+          const usersData = await AuthService.getAllUsers();
+          setUsers(usersData);
           setTickets([]);
         }
       } catch (err) {
@@ -122,14 +108,9 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
 
       const ticketId = await TicketService.createTicket(effectiveTicketData, copiedFromTicketId);
 
-      // Reload tickets to get the updated list
       if (user) {
-        const updatedTickets = await TicketService.getTicketsByModule(
-          selectedModule.id,
-          user.id,
-          user.role
-        );
-        setTickets(updatedTickets);
+        const refreshed = await TicketService.refreshSingleTicket(ticketId, user.id, user.role);
+        if (refreshed) setTickets(prev => [refreshed, ...prev.filter(t => t.id !== ticketId)]);
       }
 
       return ticketId;
@@ -160,6 +141,7 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
         user.id
       );
 
+      // Only reload full list for bulk operations (multiple tickets created)
       if (user) {
         const updatedTickets = await TicketService.getTicketsByModule(
           selectedModule.id,
@@ -189,13 +171,8 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
 
       await TicketService.updateTicket(id, effectiveUpdates, user.id);
 
-      // Reload tickets to get the updated list
-      const updatedTickets = await TicketService.getTicketsByModule(
-        selectedModule.id,
-        user.id,
-        user.role
-      );
-      setTickets(updatedTickets);
+      const refreshed = await TicketService.refreshSingleTicket(id, user.id, user.role);
+      if (refreshed) setTickets(prev => prev.map(t => t.id === id ? refreshed : t));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update ticket');
       throw err;
@@ -211,14 +188,9 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
       
       await TicketService.changeTicketStatus(request, user.id);
 
-      // Reload tickets to get the updated list
-      const updatedTickets = await TicketService.getTicketsByModule(
-        selectedModule.id,
-        user.id,
-        user.role
-      );
-      setTickets(updatedTickets);
-      
+      const refreshed = await TicketService.refreshSingleTicket(request.ticketId, user.id, user.role);
+      if (refreshed) setTickets(prev => prev.map(t => t.id === request.ticketId ? refreshed : t));
+
       // Clear any previous errors
       setError(null);
       
@@ -237,15 +209,7 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
 
       await TicketService.deleteTicket(id, user.id);
 
-      // Reload tickets to get the updated list
-      if (user) {
-        const updatedTickets = await TicketService.getTicketsByModule(
-          selectedModule.id,
-          user.id,
-          user.role
-        );
-        setTickets(updatedTickets);
-      }
+      setTickets(prev => prev.filter(t => t.id !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete ticket');
       throw err;
@@ -323,15 +287,10 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
 
       const stepId = await TicketService.addStep(ticketId, stepData, user.id);
 
-      // Reload tickets to get the updated list
-      const updatedTickets = await TicketService.getTicketsByModule(
-        selectedModule.id,
-        user.id,
-        user.role
-      );
-      setTickets(updatedTickets);
+      const refreshed = await TicketService.refreshSingleTicket(ticketId, user.id, user.role);
+      if (refreshed) setTickets(prev => prev.map(t => t.id === ticketId ? refreshed : t));
 
-      console.log('Step added and tickets reloaded successfully');
+      console.log('Step added and ticket refreshed successfully');
 
       return stepId;
     } catch (err) {
@@ -348,13 +307,8 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
 
       await TicketService.updateStep(ticketId, stepId, updates, user.id, remarks);
 
-      // Reload tickets to get the updated list
-      const updatedTickets = await TicketService.getTicketsByModule(
-        selectedModule.id,
-        user.id,
-        user.role
-      );
-      setTickets(updatedTickets);
+      const refreshed = await TicketService.refreshSingleTicket(ticketId, user.id, user.role);
+      if (refreshed) setTickets(prev => prev.map(t => t.id === ticketId ? refreshed : t));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update step');
       throw err;
@@ -368,13 +322,8 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
 
       await TicketService.deleteStep(stepId, ticketId, user.id);
 
-      // Reload tickets to get the updated list
-      const updatedTickets = await TicketService.getTicketsByModule(
-        selectedModule.id,
-        user.id,
-        user.role
-      );
-      setTickets(updatedTickets);
+      const refreshed = await TicketService.refreshSingleTicket(ticketId, user.id, user.role);
+      if (refreshed) setTickets(prev => prev.map(t => t.id === ticketId ? refreshed : t));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete step');
       throw err;
@@ -394,12 +343,8 @@ export const TicketProvider: React.FC<TicketProviderProps> = ({ children }) => {
 
       const result = await TicketService.addStepsBulk(ticketId, steps, user.id, parentStepId);
 
-      const updatedTickets = await TicketService.getTicketsByModule(
-        selectedModule.id,
-        user.id,
-        user.role
-      );
-      setTickets(updatedTickets);
+      const refreshed = await TicketService.refreshSingleTicket(ticketId, user.id, user.role);
+      if (refreshed) setTickets(prev => prev.map(t => t.id === ticketId ? refreshed : t));
 
       return result;
     } catch (err) {

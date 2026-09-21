@@ -66,200 +66,204 @@ export class TicketService {
 
       if (ticketsError) throw ticketsError;
 
-      const ticketsWithWorkflow = await Promise.all(
-        (ticketsData || []).map(async (ticket) => {
-          let workflowQuery = supabase
-            .from('workflow_steps')
-            .select('*')
-            .eq('ticket_id', ticket.id);
+      const ticketIds = (ticketsData || []).map((t: any) => t.id);
+      if (ticketIds.length === 0) return [];
 
-          // For vendors, only show workflow steps assigned to them
-          // DO users see all steps within their accessible tickets (access is scoped at ticket level)
-          if (userId && userRole === 'VENDOR') {
-            workflowQuery = workflowQuery.eq('assigned_to', userId);
-          }
+      // Bulk-fetch workflow steps, audit logs, and documents for all tickets in 3 queries
+      const workflowQuery = supabase
+        .from('workflow_steps')
+        .select('*')
+        .in('ticket_id', ticketIds)
+        .order('level_1', { ascending: true })
+        .order('level_2', { ascending: true })
+        .order('level_3', { ascending: true });
 
-          const { data: workflowData, error: workflowError } = await workflowQuery
-            .order('level_1', { ascending: true })
-            .order('level_2', { ascending: true })
-            .order('level_3', { ascending: true });
+      if (userId && userRole === 'VENDOR') {
+        workflowQuery.eq('assigned_to', userId);
+      }
 
-          if (workflowError) console.error('Error loading workflow:', workflowError);
+      const [workflowResult, auditResult, docsResult] = await Promise.all([
+        workflowQuery,
+        supabase
+          .from('audit_logs')
+          .select(`
+            *,
+            progress_docs:workflow_step_progress_documents!audit_log_id(
+              id, step_id, ticket_id, audit_log_id, file_name, file_path,
+              file_size, file_type, uploaded_by, uploaded_at, is_deleted,
+              deleted_at, deleted_by, delete_reason
+            ),
+            step_docs:documents!audit_log_id(
+              id, step_id, ticket_id, audit_log_id, name, type, size, url,
+              storage_path, uploaded_by, uploaded_at, is_mandatory, is_completion_certificate
+            )
+          `)
+          .in('ticket_id', ticketIds)
+          .order('performed_at', { ascending: false }),
+        supabase
+          .from('documents')
+          .select('*')
+          .in('ticket_id', ticketIds)
+          .order('uploaded_at', { ascending: false }),
+      ]);
 
-          const { data: auditData, error: auditError } = await supabase
-            .from('audit_logs')
-            .select(`
-              *,
-              progress_docs:workflow_step_progress_documents!audit_log_id(
-                id,
-                step_id,
-                ticket_id,
-                audit_log_id,
-                file_name,
-                file_path,
-                file_size,
-                file_type,
-                uploaded_by,
-                uploaded_at,
-                is_deleted,
-                deleted_at,
-                deleted_by,
-                delete_reason
-              ),
-              step_docs:documents!audit_log_id(
-                id,
-                step_id,
-                ticket_id,
-                audit_log_id,
-                name,
-                type,
-                size,
-                url,
-                storage_path,
-                uploaded_by,
-                uploaded_at,
-                is_mandatory,
-                is_completion_certificate
-              )
-            `)
-            .eq('ticket_id', ticket.id)
-            .order('performed_at', { ascending: false });
+      if (workflowResult.error) console.error('Error loading workflow:', workflowResult.error);
+      if (auditResult.error) console.error('Error loading audit logs:', auditResult.error);
+      if (docsResult.error) console.error('Error loading documents:', docsResult.error);
 
-          if (auditError) console.error('Error loading audit logs:', auditError);
+      // Group by ticket_id for in-memory join
+      const workflowByTicket = new Map<string, any[]>();
+      (workflowResult.data || []).forEach((step: any) => {
+        if (!workflowByTicket.has(step.ticket_id)) workflowByTicket.set(step.ticket_id, []);
+        workflowByTicket.get(step.ticket_id)!.push(step);
+      });
 
-          const assignedStepIds = (workflowData || []).map((step: any) => step.id);
+      const auditByTicket = new Map<string, any[]>();
+      (auditResult.data || []).forEach((audit: any) => {
+        if (!auditByTicket.has(audit.ticket_id)) auditByTicket.set(audit.ticket_id, []);
+        auditByTicket.get(audit.ticket_id)!.push(audit);
+      });
 
-          const { data: docsData, error: docsError } = await supabase
-            .from('documents')
-            .select('*')
-            .eq('ticket_id', ticket.id)
-            .order('uploaded_at', { ascending: false });
+      const docsByTicket = new Map<string, any[]>();
+      (docsResult.data || []).forEach((doc: any) => {
+        if (!docsByTicket.has(doc.ticket_id)) docsByTicket.set(doc.ticket_id, []);
+        docsByTicket.get(doc.ticket_id)!.push(doc);
+      });
 
-          if (docsError) console.error('Error loading documents:', docsError);
+      const mapWorkflowStep = (step: any, ticket: any) => ({
+        id: step.id,
+        ticketId: step.ticket_id,
+        stepNumber: parseInt(step.step_number) || 1,
+        title: step.title,
+        description: step.description || '',
+        status: (step.status || 'pending').toUpperCase() as WorkflowStepStatus,
+        assignedTo: step.assigned_to,
+        createdBy: step.created_by || ticket.created_by,
+        stepType: step.step_type || null,
+        remarks: step.remarks || '',
+        actualCompletedAt: step.actual_completed_at ? new Date(step.actual_completed_at) : undefined,
+        createdAt: step.created_at ? new Date(step.created_at) : new Date(),
+        completedAt: step.completed_at ? new Date(step.completed_at) : undefined,
+        dueDate: step.due_date ? new Date(step.due_date) : undefined,
+        startDate: step.start_date ? new Date(step.start_date) : undefined,
+        level_1: step.level_1 || 0,
+        level_2: step.level_2 || 0,
+        level_3: step.level_3 || 0,
+        parentStepId: step.parent_step_id,
+        is_parallel: step.is_parallel !== false,
+        progress: step.progress || 0,
+        dependencies: step.dependencies || [],
+        dependency_mode: step.dependency_mode || 'all',
+        is_dependency_locked: step.is_dependency_locked || false,
+        mandatory_documents: step.mandatory_documents || [],
+        optional_documents: step.optional_documents || [],
+        completionCertificateRequired: step.completion_certificate_required || false,
+        dueDateChangeReason: step.due_date_change_reason || '',
+        comments: [],
+        attachments: [],
+      });
 
-          return {
-            id: ticket.id,
-            ticketNumber: ticket.ticket_number,
-            moduleId: ticket.module_id,
-            title: ticket.title,
-            description: ticket.description || '',
-            status: (ticket.status || 'draft').toUpperCase() as any,
-            priority: ticket.priority,
-            createdBy: ticket.created_by,
-            assignedTo: ticket.assigned_to,
-            requestType: ticket.request_type || null,
-            createdAt: ticket.created_at ? new Date(ticket.created_at) : new Date(),
-            updatedAt: ticket.updated_at ? new Date(ticket.updated_at) : new Date(),
-            dueDate: ticket.due_date ? new Date(ticket.due_date) : undefined,
-            startDate: ticket.start_date ? new Date(ticket.start_date) : undefined,
-            department: ticket.data?.department || '',
-            category: Array.isArray(ticket.data?.category) ? ticket.data.category : (ticket.data?.category ? [ticket.data.category] : ['General']),
-            propertyId: ticket.property_id || 'PROP001',
-            propertyLocation: ticket.property_location || '',
-            completionDocumentsRequired: ticket.completion_documents_required !== false,
-            financeOfficerId: ticket.finance_officer_id,
-            financeSubmissionCount: ticket.finance_submission_count || 0,
-            latestFinanceStatus: ticket.latest_finance_status,
-            requiresFinanceApproval: ticket.requires_finance_approval === true,
-            workflow: (workflowData || []).map((step: any) => ({
-              id: step.id,
-              ticketId: step.ticket_id,
-              stepNumber: parseInt(step.step_number) || 1,
-              title: step.title,
-              description: step.description || '',
-              status: (step.status || 'pending').toUpperCase() as WorkflowStepStatus,
-              assignedTo: step.assigned_to,
-              createdBy: step.created_by || ticket.created_by,
-              stepType: step.step_type || null,
-              remarks: step.remarks || '',
-              actualCompletedAt: step.actual_completed_at ? new Date(step.actual_completed_at) : undefined,
-              createdAt: step.created_at ? new Date(step.created_at) : new Date(),
-              completedAt: step.completed_at ? new Date(step.completed_at) : undefined,
-              dueDate: step.due_date ? new Date(step.due_date) : undefined,
-              startDate: step.start_date ? new Date(step.start_date) : undefined,
-              level_1: step.level_1 || 0,
-              level_2: step.level_2 || 0,
-              level_3: step.level_3 || 0,
-              parentStepId: step.parent_step_id,
-              is_parallel: step.is_parallel !== false,
-              progress: step.progress || 0,
-              dependencies: step.dependencies || [],
-              dependency_mode: step.dependency_mode || 'all',
-              is_dependency_locked: step.is_dependency_locked || false,
-              mandatory_documents: step.mandatory_documents || [],
-              optional_documents: step.optional_documents || [],
-              completionCertificateRequired: step.completion_certificate_required || false,
-              dueDateChangeReason: step.due_date_change_reason || '',
-              comments: [],
-              attachments: [],
-            })),
-            attachments: (docsData || []).map((doc: any) => ({
-              id: doc.id,
-              name: doc.name,
-              type: doc.type,
-              size: doc.size,
-              url: doc.url,
-              uploadedBy: doc.uploaded_by,
-              uploadedAt: new Date(doc.uploaded_at),
-            })),
-            auditTrail: (auditData || []).map((audit: any) => {
-              let progressDocs = audit.progress_docs?.filter((doc: any) => !doc.is_deleted) || [];
-              const stepDocs = audit.step_docs || [];
+      const mapAuditEntry = (audit: any, assignedStepIds: string[]) => {
+        let progressDocs = audit.progress_docs?.filter((doc: any) => !doc.is_deleted) || [];
+        const stepDocs = audit.step_docs || [];
 
-              if (userId && (userRole === 'DO' || userRole === 'VENDOR')) {
-                progressDocs = progressDocs.filter((doc: any) =>
-                  assignedStepIds.includes(doc.step_id)
-                );
-              }
+        if (userId && (userRole === 'DO' || userRole === 'VENDOR')) {
+          progressDocs = progressDocs.filter((doc: any) =>
+            assignedStepIds.includes(doc.step_id)
+          );
+        }
 
-              return {
-                id: audit.id,
-                ticketId: audit.ticket_id,
-                stepId: audit.step_id,
-                userId: audit.performed_by,
-                action: audit.action,
-                actionCategory: audit.action_category,
-                oldValue: audit.old_data,
-                newValue: audit.new_data,
-                remarks: audit.description || '',
-                metadata: audit.metadata || {},
-                timestamp: new Date(audit.performed_at),
-                progressDocs: progressDocs.map((doc: any) => ({
-                  id: doc.id,
-                  stepId: doc.step_id,
-                  ticketId: doc.ticket_id,
-                  auditLogId: doc.audit_log_id,
-                  fileName: doc.file_name,
-                  filePath: doc.file_path,
-                  fileSize: doc.file_size,
-                  fileType: doc.file_type,
-                  uploadedBy: doc.uploaded_by,
-                  uploadedAt: new Date(doc.uploaded_at),
-                  isDeleted: doc.is_deleted,
-                  deletedAt: doc.deleted_at ? new Date(doc.deleted_at) : undefined,
-                  deletedBy: doc.deleted_by,
-                  deleteReason: doc.delete_reason,
-                })),
-                stepDocs: stepDocs.map((doc: any) => ({
-                  id: doc.id,
-                  stepId: doc.step_id,
-                  ticketId: doc.ticket_id,
-                  auditLogId: doc.audit_log_id,
-                  fileName: doc.name,
-                  fileType: doc.type,
-                  fileSize: doc.size,
-                  url: doc.url,
-                  storagePath: doc.storage_path,
-                  uploadedBy: doc.uploaded_by,
-                  uploadedAt: new Date(doc.uploaded_at),
-                  isMandatory: doc.is_mandatory || false,
-                  isCompletionCertificate: doc.is_completion_certificate || false,
-                })),
-              };
-            }),
-          };
-        })
-      );
+        return {
+          id: audit.id,
+          ticketId: audit.ticket_id,
+          stepId: audit.step_id,
+          userId: audit.performed_by,
+          action: audit.action,
+          actionCategory: audit.action_category,
+          oldValue: audit.old_data,
+          newValue: audit.new_data,
+          remarks: audit.description || '',
+          metadata: audit.metadata || {},
+          timestamp: new Date(audit.performed_at),
+          progressDocs: progressDocs.map((doc: any) => ({
+            id: doc.id,
+            stepId: doc.step_id,
+            ticketId: doc.ticket_id,
+            auditLogId: doc.audit_log_id,
+            fileName: doc.file_name,
+            filePath: doc.file_path,
+            fileSize: doc.file_size,
+            fileType: doc.file_type,
+            uploadedBy: doc.uploaded_by,
+            uploadedAt: new Date(doc.uploaded_at),
+            isDeleted: doc.is_deleted,
+            deletedAt: doc.deleted_at ? new Date(doc.deleted_at) : undefined,
+            deletedBy: doc.deleted_by,
+            deleteReason: doc.delete_reason,
+          })),
+          stepDocs: stepDocs.map((doc: any) => ({
+            id: doc.id,
+            stepId: doc.step_id,
+            ticketId: doc.ticket_id,
+            auditLogId: doc.audit_log_id,
+            fileName: doc.name,
+            fileType: doc.type,
+            fileSize: doc.size,
+            url: doc.url,
+            storagePath: doc.storage_path,
+            uploadedBy: doc.uploaded_by,
+            uploadedAt: new Date(doc.uploaded_at),
+            isMandatory: doc.is_mandatory || false,
+            isCompletionCertificate: doc.is_completion_certificate || false,
+          })),
+        };
+      };
+
+      const mapDoc = (doc: any) => ({
+        id: doc.id,
+        name: doc.name,
+        type: doc.type,
+        size: doc.size,
+        url: doc.url,
+        uploadedBy: doc.uploaded_by,
+        uploadedAt: new Date(doc.uploaded_at),
+      });
+
+      const ticketsWithWorkflow = (ticketsData || []).map((ticket: any) => {
+        const workflowData = workflowByTicket.get(ticket.id) || [];
+        const auditData = auditByTicket.get(ticket.id) || [];
+        const docsData = docsByTicket.get(ticket.id) || [];
+        const assignedStepIds = workflowData.map((step: any) => step.id);
+
+        return {
+          id: ticket.id,
+          ticketNumber: ticket.ticket_number,
+          moduleId: ticket.module_id,
+          title: ticket.title,
+          description: ticket.description || '',
+          status: (ticket.status || 'draft').toUpperCase() as any,
+          priority: ticket.priority,
+          createdBy: ticket.created_by,
+          assignedTo: ticket.assigned_to,
+          requestType: ticket.request_type || null,
+          createdAt: ticket.created_at ? new Date(ticket.created_at) : new Date(),
+          updatedAt: ticket.updated_at ? new Date(ticket.updated_at) : new Date(),
+          dueDate: ticket.due_date ? new Date(ticket.due_date) : undefined,
+          startDate: ticket.start_date ? new Date(ticket.start_date) : undefined,
+          department: ticket.data?.department || '',
+          category: Array.isArray(ticket.data?.category) ? ticket.data.category : (ticket.data?.category ? [ticket.data.category] : ['General']),
+          propertyId: ticket.property_id || 'PROP001',
+          propertyLocation: ticket.property_location || '',
+          completionDocumentsRequired: ticket.completion_documents_required !== false,
+          financeOfficerId: ticket.finance_officer_id,
+          financeSubmissionCount: ticket.finance_submission_count || 0,
+          latestFinanceStatus: ticket.latest_finance_status,
+          requiresFinanceApproval: ticket.requires_finance_approval === true,
+          workflow: workflowData.map((step: any) => mapWorkflowStep(step, ticket)),
+          attachments: docsData.map(mapDoc),
+          auditTrail: auditData.map((audit: any) => mapAuditEntry(audit, assignedStepIds)),
+        };
+      });
 
       return ticketsWithWorkflow;
     } catch (error) {
@@ -1821,6 +1825,137 @@ export class TicketService {
     } catch (error) {
       console.error('Error checking ticket access:', error);
       return false;
+    }
+  }
+
+  static async refreshSingleTicket(ticketId: string, userId?: string, userRole?: string): Promise<Ticket | null> {
+    try {
+      const { data: ticket, error } = await supabase
+        .from('tickets')
+        .select('*')
+        .eq('id', ticketId)
+        .single();
+      if (error || !ticket) return null;
+
+      let workflowQuery = supabase
+        .from('workflow_steps')
+        .select('*')
+        .eq('ticket_id', ticketId)
+        .order('level_1', { ascending: true })
+        .order('level_2', { ascending: true })
+        .order('level_3', { ascending: true });
+      if (userId && userRole === 'VENDOR') {
+        workflowQuery = workflowQuery.eq('assigned_to', userId);
+      }
+
+      const [workflowResult, auditResult, docsResult] = await Promise.all([
+        workflowQuery,
+        supabase
+          .from('audit_logs')
+          .select(`
+            *,
+            progress_docs:workflow_step_progress_documents!audit_log_id(
+              id, step_id, ticket_id, audit_log_id, file_name, file_path,
+              file_size, file_type, uploaded_by, uploaded_at, is_deleted,
+              deleted_at, deleted_by, delete_reason
+            ),
+            step_docs:documents!audit_log_id(
+              id, step_id, ticket_id, audit_log_id, name, type, size, url,
+              storage_path, uploaded_by, uploaded_at, is_mandatory, is_completion_certificate
+            )
+          `)
+          .eq('ticket_id', ticketId)
+          .order('performed_at', { ascending: false }),
+        supabase
+          .from('documents')
+          .select('*')
+          .eq('ticket_id', ticketId)
+          .order('uploaded_at', { ascending: false }),
+      ]);
+
+      const workflowData = workflowResult.data || [];
+      const auditData = auditResult.data || [];
+      const docsData = docsResult.data || [];
+      const assignedStepIds = workflowData.map((step: any) => step.id);
+
+      const mapWorkflowStep = (step: any) => ({
+        id: step.id, ticketId: step.ticket_id, stepNumber: parseInt(step.step_number) || 1,
+        title: step.title, description: step.description || '',
+        status: (step.status || 'pending').toUpperCase() as WorkflowStepStatus,
+        assignedTo: step.assigned_to, createdBy: step.created_by || ticket.created_by,
+        stepType: step.step_type || null, remarks: step.remarks || '',
+        actualCompletedAt: step.actual_completed_at ? new Date(step.actual_completed_at) : undefined,
+        createdAt: step.created_at ? new Date(step.created_at) : new Date(),
+        completedAt: step.completed_at ? new Date(step.completed_at) : undefined,
+        dueDate: step.due_date ? new Date(step.due_date) : undefined,
+        startDate: step.start_date ? new Date(step.start_date) : undefined,
+        level_1: step.level_1 || 0, level_2: step.level_2 || 0, level_3: step.level_3 || 0,
+        parentStepId: step.parent_step_id, is_parallel: step.is_parallel !== false,
+        progress: step.progress || 0, dependencies: step.dependencies || [],
+        dependency_mode: step.dependency_mode || 'all', is_dependency_locked: step.is_dependency_locked || false,
+        mandatory_documents: step.mandatory_documents || [], optional_documents: step.optional_documents || [],
+        completionCertificateRequired: step.completion_certificate_required || false,
+        dueDateChangeReason: step.due_date_change_reason || '', comments: [], attachments: [],
+      });
+
+      const mapAuditEntry = (audit: any) => {
+        let progressDocs = audit.progress_docs?.filter((doc: any) => !doc.is_deleted) || [];
+        const stepDocs = audit.step_docs || [];
+        if (userId && (userRole === 'DO' || userRole === 'VENDOR')) {
+          progressDocs = progressDocs.filter((doc: any) => assignedStepIds.includes(doc.step_id));
+        }
+        return {
+          id: audit.id, ticketId: audit.ticket_id, stepId: audit.step_id,
+          userId: audit.performed_by, action: audit.action,
+          actionCategory: audit.action_category, oldValue: audit.old_data,
+          newValue: audit.new_data, remarks: audit.description || '',
+          metadata: audit.metadata || {}, timestamp: new Date(audit.performed_at),
+          progressDocs: progressDocs.map((doc: any) => ({
+            id: doc.id, stepId: doc.step_id, ticketId: doc.ticket_id,
+            auditLogId: doc.audit_log_id, fileName: doc.file_name, filePath: doc.file_path,
+            fileSize: doc.file_size, fileType: doc.file_type, uploadedBy: doc.uploaded_by,
+            uploadedAt: new Date(doc.uploaded_at), isDeleted: doc.is_deleted,
+            deletedAt: doc.deleted_at ? new Date(doc.deleted_at) : undefined,
+            deletedBy: doc.deleted_by, deleteReason: doc.delete_reason,
+          })),
+          stepDocs: stepDocs.map((doc: any) => ({
+            id: doc.id, stepId: doc.step_id, ticketId: doc.ticket_id,
+            auditLogId: doc.audit_log_id, fileName: doc.name, fileType: doc.type,
+            fileSize: doc.size, url: doc.url, storagePath: doc.storage_path,
+            uploadedBy: doc.uploaded_by, uploadedAt: new Date(doc.uploaded_at),
+            isMandatory: doc.is_mandatory || false, isCompletionCertificate: doc.is_completion_certificate || false,
+          })),
+        };
+      };
+
+      return {
+        id: ticket.id, ticketNumber: ticket.ticket_number, moduleId: ticket.module_id,
+        title: ticket.title, description: ticket.description || '',
+        status: (ticket.status || 'draft').toUpperCase() as any, priority: ticket.priority,
+        createdBy: ticket.created_by, assignedTo: ticket.assigned_to,
+        requestType: ticket.request_type || null,
+        createdAt: ticket.created_at ? new Date(ticket.created_at) : new Date(),
+        updatedAt: ticket.updated_at ? new Date(ticket.updated_at) : new Date(),
+        dueDate: ticket.due_date ? new Date(ticket.due_date) : undefined,
+        startDate: ticket.start_date ? new Date(ticket.start_date) : undefined,
+        department: ticket.data?.department || '',
+        category: Array.isArray(ticket.data?.category) ? ticket.data.category : (ticket.data?.category ? [ticket.data.category] : ['General']),
+        propertyId: ticket.property_id || 'PROP001', propertyLocation: ticket.property_location || '',
+        completionDocumentsRequired: ticket.completion_documents_required !== false,
+        financeOfficerId: ticket.finance_officer_id,
+        financeSubmissionCount: ticket.finance_submission_count || 0,
+        latestFinanceStatus: ticket.latest_finance_status,
+        requiresFinanceApproval: ticket.requires_finance_approval === true,
+        workflow: workflowData.map(mapWorkflowStep),
+        attachments: docsData.map((doc: any) => ({
+          id: doc.id, name: doc.name, type: doc.type, size: doc.size,
+          url: doc.url, uploadedBy: doc.uploaded_by, uploadedAt: new Date(doc.uploaded_at),
+        })),
+        auditTrail: auditData.map(mapAuditEntry),
+      } as Ticket;
+    } catch (error) {
+      console.error('Error refreshing single ticket:', error);
+      return null;
     }
   }
 

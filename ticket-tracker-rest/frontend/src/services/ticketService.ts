@@ -19,6 +19,29 @@ import {
 } from '../types';
 
 export class TicketService {
+  static async refreshSingleTicket(ticketId: string): Promise<Ticket | null> {
+    try {
+      const ticket = await apiClient.get<any>(API_ENDPOINTS.TICKETS.GET(ticketId));
+      if (!ticket) return null;
+
+      const [workflow, attachments, auditTrail] = await Promise.all([
+        this.getTicketWorkflow(ticketId),
+        this.getTicketDocuments(ticketId),
+        this.getTicketAuditTrail(ticketId),
+      ]);
+
+      return {
+        ...transformTicketFromBackend(ticket),
+        workflow,
+        attachments,
+        auditTrail,
+      } as Ticket;
+    } catch (error) {
+      console.error('Error refreshing single ticket:', error);
+      return null;
+    }
+  }
+
   static async getTicketWorkflow(ticketId: string): Promise<WorkflowStep[]> {
     try {
       const steps = await apiClient.get<any[]>(API_ENDPOINTS.WORKFLOW_STEPS.LIST(ticketId));
