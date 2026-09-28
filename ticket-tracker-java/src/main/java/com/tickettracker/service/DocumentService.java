@@ -40,7 +40,15 @@ public class DocumentService {
 
     public List<Document> getDocumentsByTicketId(byte[] ticketId) throws TicketTrackerException {
         try {
-            return documentDAO.findByTicketId(ticketId);
+            List<Document> documents = documentDAO.findByTicketId(ticketId);
+            java.util.Map<String, Document> byStoragePath = new java.util.LinkedHashMap<>();
+            for (Document doc : documents) {
+                String key = doc.getStoragePath() != null ? doc.getStoragePath() : java.util.UUID.nameUUIDFromBytes(doc.getId()).toString();
+                if (!byStoragePath.containsKey(key)) {
+                    byStoragePath.put(key, doc);
+                }
+            }
+            return new java.util.ArrayList<>(byStoragePath.values());
         } catch (SQLException e) {
             logger.error("Error fetching documents by ticket ID", e);
             throw new DatabaseException("Failed to fetch documents", e);

@@ -174,7 +174,7 @@ export class FileService {
         API_ENDPOINTS.TICKETS.FILES(ticketId)
       );
 
-      return response.map((doc: any) => ({
+      const mapped = response.map((doc: any) => ({
         id: doc.id,
         name: doc.name || doc.fileName,
         type: doc.type || doc.fileType || 'application/octet-stream',
@@ -187,6 +187,14 @@ export class FileService {
         isCompletionCertificate: doc.isCompletionCertificate ?? doc.completionCertificate ?? false,
         stepId: doc.stepId,
       }));
+
+      const seenStoragePaths = new Set<string>();
+      return mapped.filter((doc) => {
+        const key = doc.storagePath || doc.id;
+        if (seenStoragePaths.has(key)) return false;
+        seenStoragePaths.add(key);
+        return true;
+      });
     } catch (error) {
       console.error('Failed to fetch ticket attachments:', error);
       return [];

@@ -659,7 +659,14 @@ export class FileService {
 
       const dedupedProgress = progressDocsMapped.filter((d) => !existingIds.has(d.id));
 
-      return [...ticketDocs, ...dedupedProgress];
+      const combined = [...ticketDocs, ...dedupedProgress];
+      const seenStoragePaths = new Set<string>();
+      return combined.filter((doc) => {
+        const key = doc.storagePath || doc.id;
+        if (seenStoragePaths.has(key)) return false;
+        seenStoragePaths.add(key);
+        return true;
+      });
     } catch (error) {
       handleSupabaseError(error);
       return [];
