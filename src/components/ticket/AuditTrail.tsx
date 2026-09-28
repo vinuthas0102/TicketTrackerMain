@@ -122,7 +122,10 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
       }
 
       const entryUser = users.find(u => u.id === entry.userId);
-      const entryDocs = [...(entry.progressDocs || []), ...(entry.stepDocs || [])];
+      const rawDocs = [...(entry.progressDocs || []), ...(entry.stepDocs || [])];
+      const entryDocs = rawDocs.filter((doc, idx, arr) =>
+        arr.findIndex((d) => d.id === doc.id) === idx
+      );
 
       if (filterWithDocuments && entryDocs.length === 0) {
         return false;
@@ -437,7 +440,10 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
             {sortedAuditTrail.map((entry, index) => {
               const entryUser = users.find(u => u.id === entry.userId);
               const isLast = index === sortedAuditTrail.length - 1;
-              const entryDocs = [...(entry.progressDocs || []), ...(entry.stepDocs || [])];
+              const rawDocs = [...(entry.progressDocs || []), ...(entry.stepDocs || [])];
+              const entryDocs = rawDocs.filter((doc, idx, arr) =>
+                arr.findIndex((d) => d.id === doc.id) === idx
+              );
               const hasDocuments = entryDocs.length > 0;
               const isExpanded = expandedEntries.has(entry.id);
 

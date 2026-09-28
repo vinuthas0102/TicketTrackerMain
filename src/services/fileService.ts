@@ -610,14 +610,13 @@ export class FileService {
         .from('documents')
         .select('*')
         .eq('ticket_id', ticketId)
-        .is('step_id', null)
         .order('uploaded_at', { ascending: false });
 
       if (error) {
         handleSupabaseError(error);
       }
 
-      return (data || []).map((doc) => ({
+      const ticketDocs = (data || []).map((doc) => ({
         id: doc.id,
         name: doc.name,
         type: doc.type,
@@ -630,6 +629,37 @@ export class FileService {
         isCompletionCertificate: doc.is_completion_certificate || false,
         stepId: doc.step_id,
       }));
+
+      const existingIds = new Set(ticketDocs.map((d) => d.id));
+
+      const { data: progressDocs, error: progressError } = await supabase!
+        .from('workflow_step_progress_documents')
+        .select('*')
+        .eq('ticket_id', ticketId)
+        .eq('is_deleted', false)
+        .order('uploaded_at', { ascending: false });
+
+      if (progressError) {
+        handleSupabaseError(progressError);
+      }
+
+      const progressDocsMapped = (progressDocs || []).map((doc) => ({
+        id: doc.id,
+        name: doc.file_name,
+        type: doc.file_type,
+        size: doc.file_size,
+        url: null,
+        storagePath: doc.file_path,
+        uploadedBy: doc.uploaded_by,
+        uploadedAt: new Date(doc.uploaded_at),
+        isMandatory: false,
+        isCompletionCertificate: true,
+        stepId: doc.step_id,
+      }));
+
+      const dedupedProgress = progressDocsMapped.filter((d) => !existingIds.has(d.id));
+
+      return [...ticketDocs, ...dedupedProgress];
     } catch (error) {
       handleSupabaseError(error);
       return [];
