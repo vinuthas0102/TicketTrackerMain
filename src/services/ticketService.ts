@@ -1186,6 +1186,15 @@ export class TicketService {
         .eq('step_id', sourceStepId);
 
       for (const doc of (sourceDocs || [])) {
+        if (doc.storage_path) {
+          const { count } = await supabase
+            .from('documents')
+            .select('id', { count: 'exact', head: true })
+            .eq('ticket_id', ticketId)
+            .eq('storage_path', doc.storage_path);
+          if (count && count > 0) continue;
+        }
+
         await supabase.from('documents').insert({
           ticket_id: ticketId,
           step_id: targetStepId,
@@ -1216,6 +1225,15 @@ export class TicketService {
         .eq('step_id', sourceStepId);
 
       for (const doc of (sourceDocs || [])) {
+        if (doc.storage_path) {
+          const { count } = await supabase
+            .from('documents')
+            .select('id', { count: 'exact', head: true })
+            .eq('ticket_id', ticketId)
+            .eq('storage_path', doc.storage_path);
+          if (count && count > 0) continue;
+        }
+
         await supabase.from('documents').insert({
           ticket_id: ticketId,
           step_id: sourceStepId,

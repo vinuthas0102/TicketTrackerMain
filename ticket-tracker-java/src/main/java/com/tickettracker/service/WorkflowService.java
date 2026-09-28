@@ -1076,6 +1076,9 @@ public class WorkflowService {
         try {
             List<Document> sourceDocs = documentDAO.findByStepId(sourceStep.getId());
             for (Document doc : sourceDocs) {
+                if (doc.getStoragePath() != null && documentDAO.existsByStoragePathAndTicketId(doc.getStoragePath(), sourceStep.getTicketId())) {
+                    continue;
+                }
                 Document copy = new Document();
                 copy.setTicketId(sourceStep.getTicketId());
                 copy.setStepId(targetStep.getId());
@@ -1103,6 +1106,9 @@ public class WorkflowService {
         try {
             List<Document> sourceDocs = documentDAO.findByStepId(sourceStep.getId());
             for (Document doc : sourceDocs) {
+                if (doc.getStoragePath() != null && documentDAO.existsByStoragePathAndTicketId(doc.getStoragePath(), sourceStep.getTicketId())) {
+                    continue;
+                }
                 Document copy = new Document();
                 copy.setTicketId(sourceStep.getTicketId());
                 copy.setStepId(sourceStep.getId());

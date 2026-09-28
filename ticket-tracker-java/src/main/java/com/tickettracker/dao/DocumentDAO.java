@@ -274,6 +274,26 @@ public class DocumentDAO extends BaseDAO {
         return document;
     }
 
+    public boolean existsByStoragePathAndTicketId(String storagePath, byte[] ticketId) throws SQLException {
+        String sql = "SELECT COUNT(*) AS cnt FROM documents WHERE storage_path = ? AND ticket_id = ?";
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        try {
+            conn = getConnection();
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, storagePath);
+            stmt.setBytes(2, ticketId);
+            rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("cnt") > 0;
+            }
+            return false;
+        } finally {
+            closeResources(conn, stmt, rs);
+        }
+    }
+
     public List<Document> findByAuditLogId(byte[] auditLogId) throws SQLException {
         String sql = "SELECT * FROM documents WHERE audit_log_id = ? ORDER BY uploaded_at DESC";
 

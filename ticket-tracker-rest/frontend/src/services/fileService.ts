@@ -189,10 +189,14 @@ export class FileService {
       }));
 
       const seenStoragePaths = new Set<string>();
+      const seenNameSize = new Set<string>();
       return mapped.filter((doc) => {
-        const key = doc.storagePath || doc.id;
-        if (seenStoragePaths.has(key)) return false;
-        seenStoragePaths.add(key);
+        const pathKey = doc.storagePath || doc.id;
+        const nameSizeKey = `${doc.name}|${doc.size}`;
+        if (seenStoragePaths.has(pathKey)) return false;
+        if (seenNameSize.has(nameSizeKey)) return false;
+        seenStoragePaths.add(pathKey);
+        seenNameSize.add(nameSizeKey);
         return true;
       });
     } catch (error) {
