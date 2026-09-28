@@ -100,7 +100,6 @@ const TicketGrid: React.FC<TicketGridProps> = ({
             key={ticket.id}
             ticket={ticket}
             createdByUser={getUserById(ticket.createdBy)}
-            assignedToUser={ticket.assignedTo ? getUserById(ticket.assignedTo) : undefined}
             onClick={() => onTicketClick(ticket)}
             isExpanded={expandedTickets.has(ticket.id)}
             onExpand={() => onToggleExpand(ticket.id)}

@@ -31,7 +31,6 @@ const ListField: React.FC<ListFieldProps> = ({ label, value, wide, muted, urgent
 interface TicketCardProps {
   ticket: Ticket;
   createdByUser?: UserType;
-  assignedToUser?: UserType;
   onClick: () => void;
   onExpand?: (ticket: Ticket) => void;
   onModify?: (ticket: Ticket) => void;
@@ -50,7 +49,6 @@ interface TicketCardProps {
 const TicketCard: React.FC<TicketCardProps> = ({
   ticket,
   createdByUser,
-  assignedToUser,
   onClick,
   onExpand,
   onModify,
@@ -497,21 +495,6 @@ const TicketCard: React.FC<TicketCardProps> = ({
               <div>
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Description</p>
                 <p className="text-sm text-gray-700 leading-relaxed">{ticket.description}</p>
-              </div>
-            )}
-            {user?.role !== 'EMPLOYEE' && (
-              <div>
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Assigned To</p>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  {assignedToUser ? (
-                    <span className="flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-gray-400" />
-                      {assignedToUser.name}
-                    </span>
-                  ) : (
-                    <span className="text-gray-400 italic">Unassigned</span>
-                  )}
-                </p>
               </div>
             )}
             {totalWorkflows > 0 && (
