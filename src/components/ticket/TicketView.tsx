@@ -303,7 +303,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div className="flex items-center space-x-3">
-                <h1 className="text-xl font-bold text-gray-900 truncate max-w-md">{ticket.title}</h1>
+                <h1 className="text-xl font-bold text-gray-900 break-words max-w-2xl" title={ticket.title}>{ticket.title}</h1>
                 <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{ticket.ticketNumber}</span>
                 <span className={`px-2 py-0.5 text-xs font-medium rounded-full flex items-center space-x-1.5 shadow-sm ${getStatusColor(ticket.status)}`}>
                   {getStatusIcon(ticket.status)}

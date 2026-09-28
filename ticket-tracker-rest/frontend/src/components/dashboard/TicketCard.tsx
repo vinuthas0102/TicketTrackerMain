@@ -19,9 +19,9 @@ interface ListFieldProps {
 const ListField: React.FC<ListFieldProps> = ({ label, value, wide, muted, urgent }) => (
   <div className={`flex flex-col px-3 py-2 ${wide ? 'flex-1 min-w-0' : 'shrink-0'}`}>
     <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider leading-none mb-1">{label}</span>
-    <span className={`text-sm font-semibold leading-tight ${
+    <span className={`text-sm font-semibold leading-tight break-words ${
       urgent ? 'text-rose-600' : muted ? 'text-gray-400 italic font-normal' : 'text-gray-800'
-    } ${wide ? 'truncate' : 'whitespace-nowrap'}`} title={value}>
+    } ${wide ? 'line-clamp-2' : 'line-clamp-2'}`} title={value}>
       {value}
     </span>
   </div>
@@ -614,7 +614,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
                   </span>
                 )}
               </div>
-              <h3 className="text-base font-bold text-gray-900 mb-1.5 line-clamp-1 leading-snug" title={ticket.title}>
+              <h3 className="text-base font-bold text-gray-900 mb-1.5 line-clamp-2 leading-snug" title={ticket.title}>
                 {ticket.title}
               </h3>
               <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">

@@ -202,6 +202,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
             <tr className="bg-gray-50 border-b border-gray-200">
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Ticket #</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Title</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Property ID</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Status</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Priority</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Dept</th>
@@ -239,8 +240,11 @@ const TicketTable: React.FC<TicketTableProps> = ({
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-xs font-bold text-gray-500 font-mono">{ticket.ticketNumber}</span>
                   </td>
-                  <td className="px-4 py-3 max-w-xs">
-                    <span className="font-medium text-gray-900 line-clamp-1" title={ticket.title}>{ticket.title}</span>
+                  <td className="px-4 py-3 max-w-sm">
+                    <span className="font-medium text-gray-900 line-clamp-2" title={ticket.title}>{ticket.title}</span>
+                  </td>
+                  <td className="px-4 py-3 max-w-[12rem]">
+                    <span className="text-xs text-gray-700 line-clamp-2 break-words" title={ticket.propertyId || '—'}>{ticket.propertyId || '—'}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded border ${getStatusColor(ticket.status)}`}>
