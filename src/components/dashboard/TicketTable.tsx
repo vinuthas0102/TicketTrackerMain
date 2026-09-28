@@ -218,7 +218,14 @@ const TicketTable: React.FC<TicketTableProps> = ({
           <tbody className="divide-y divide-gray-100">
             {tickets.map((ticket, idx) => {
               const createdByUser = getUserById(ticket.createdBy);
-              const isOverdue = ticket.dueDate && new Date() > ticket.dueDate
+              const effectiveDueDate = ticket.dueDate || (() => {
+                const stepDueDates = ticket.workflow
+                  .map(step => step.dueDate)
+                  .filter((d): d is Date => d instanceof Date && !isNaN(d.getTime()));
+                if (stepDueDates.length === 0) return undefined;
+                return new Date(Math.max(...stepDueDates.map(d => d.getTime())));
+              })();
+              const isOverdue = effectiveDueDate && new Date() > effectiveDueDate
                 && ticket.status !== 'COMPLETED' && ticket.status !== 'CANCELLED';
 
               return (
@@ -263,7 +270,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`text-xs ${isOverdue ? 'text-rose-600 font-semibold' : 'text-gray-600'}`}>
-                      {ticket.dueDate ? formatDate(ticket.dueDate) : formatDate(ticket.createdAt)}
+                      {effectiveDueDate ? formatDate(effectiveDueDate) : 'Not set'}
                     </span>
                     {isOverdue && (
                       <span className="ml-1 inline-flex items-center gap-0.5 text-rose-600">

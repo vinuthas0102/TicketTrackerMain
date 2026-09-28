@@ -175,10 +175,18 @@ const TicketCard: React.FC<TicketCardProps> = ({
     }
   };
 
-  const isOverdue = ticket.dueDate &&
-    ticket.dueDate instanceof Date &&
-    !isNaN(ticket.dueDate.getTime()) &&
-    new Date() > ticket.dueDate &&
+  const effectiveDueDate = ticket.dueDate || (() => {
+    const stepDueDates = ticket.workflow
+      .map(step => step.dueDate)
+      .filter((d): d is Date => d instanceof Date && !isNaN(d.getTime()));
+    if (stepDueDates.length === 0) return undefined;
+    return new Date(Math.max(...stepDueDates.map(d => d.getTime())));
+  })();
+
+  const isOverdue = effectiveDueDate &&
+    effectiveDueDate instanceof Date &&
+    !isNaN(effectiveDueDate.getTime()) &&
+    new Date() > effectiveDueDate &&
     ticket.status !== 'COMPLETED' &&
     ticket.status !== 'CANCELLED';
   const completedWorkflows = ticket.workflow.filter(step => step.status === 'COMPLETED').length;
@@ -476,7 +484,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
             <ListField label="RAISED ON" value={formatDate(ticket.createdAt)} />
             <ListField
               label="DUE DATE"
-              value={ticket.dueDate ? formatDate(ticket.dueDate) : formatDate(ticket.createdAt)}
+              value={effectiveDueDate ? formatDate(effectiveDueDate) : 'Not set'}
               urgent={!!isOverdue}
             />
           </div>
@@ -666,10 +674,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
             <div className={`flex items-center gap-1 font-medium ${isOverdue ? 'text-rose-600' : ''}`}>
               <Calendar className="w-3.5 h-3.5" />
               <span>
-                {ticket.dueDate ?
-                  formatDate(ticket.dueDate) :
-                  formatDate(ticket.createdAt)
-                }
+                {effectiveDueDate ? formatDate(effectiveDueDate) : 'Not set'}
               </span>
             </div>
           </div>
