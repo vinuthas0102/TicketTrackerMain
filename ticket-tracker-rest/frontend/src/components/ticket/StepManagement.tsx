@@ -805,7 +805,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
@@ -840,7 +840,8 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date {isEO && !(ticketClosureByTechnicianEnabled && step) ? <span className="text-red-500">*</span> : (isTechnician && ticketClosureByTechnicianEnabled && step) ? <span className="text-xs text-blue-600">(Editable with reason)</span> : (ticketClosureByTechnicianEnabled && step) ? <span className="text-xs text-gray-500">(Technician Only)</span> : <span className="text-xs text-gray-500">(EO Only)</span>}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date {isEO && !(ticketClosureByTechnicianEnabled && step) && <span className="text-red-500">*</span>}</label>
+            {(isTechnician && ticketClosureByTechnicianEnabled && step) ? <p className="text-xs text-blue-600 mb-1">(Editable with reason)</p> : (ticketClosureByTechnicianEnabled && step) ? <p className="text-xs text-gray-500 mb-1">(Technician Only)</p> : (!isEO) ? <p className="text-xs text-gray-500 mb-1">(EO Only)</p> : null}
             <input
               type="date"
               value={formData.dueDate}
