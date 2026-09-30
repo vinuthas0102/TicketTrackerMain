@@ -1,3 +1,13 @@
+// Date formatting utility — DD-MM-YYYY format for all screens
+export function formatDate(date: Date | string): string {
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '—';
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+}
+
 // UUID validation and generation utilities
 
 /**

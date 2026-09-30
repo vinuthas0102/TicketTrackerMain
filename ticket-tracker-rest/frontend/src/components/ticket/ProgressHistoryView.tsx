@@ -10,6 +10,7 @@ import {
   DocumentMetadata
 } from '../../services/fileService';
 import { TicketService } from '../../services/ticketService';
+import { formatDate } from '../../lib/utils';
 
 interface ProgressHistoryViewProps {
   step: WorkflowStep;
@@ -208,13 +209,6 @@ const ProgressHistoryView: React.FC<ProgressHistoryViewProps> = ({ step, ticketI
     }
   };
 
-  const formatTimestamp = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(date);
-  };
-
   const clearFilters = () => {
     setSearchQuery('');
     setFilterType('');
@@ -336,7 +330,7 @@ const ProgressHistoryView: React.FC<ProgressHistoryViewProps> = ({ step, ticketI
                       )}
                       <span className="text-xs text-gray-500 flex items-center space-x-1">
                         <Clock className="w-3 h-3" />
-                        <span>{formatTimestamp(entry.timestamp)}</span>
+                        <span>{formatDate(entry.timestamp)}</span>
                       </span>
                     </div>
                   </div>
@@ -475,7 +469,7 @@ const ProgressHistoryView: React.FC<ProgressHistoryViewProps> = ({ step, ticketI
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">{doc.fileName}</p>
                           <p className="text-xs text-gray-500">
-                            {FileService.formatFileSize(doc.fileSize)} • {formatTimestamp(doc.uploadedAt)}
+                            {FileService.formatFileSize(doc.fileSize)} • {formatDate(doc.uploadedAt)}
                           </p>
                         </div>
                       </div>
@@ -520,7 +514,7 @@ const ProgressHistoryView: React.FC<ProgressHistoryViewProps> = ({ step, ticketI
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">{cert.name}</p>
                           <p className="text-xs text-gray-500">
-                            {FileService.formatFileSize(cert.size)} • {formatTimestamp(cert.uploadedAt)}
+                            {FileService.formatFileSize(cert.size)} • {formatDate(cert.uploadedAt)}
                           </p>
                         </div>
                       </div>

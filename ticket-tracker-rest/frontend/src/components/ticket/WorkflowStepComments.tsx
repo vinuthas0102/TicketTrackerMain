@@ -3,6 +3,7 @@ import { MessageSquare, Send, CreditCard as Edit2, Trash2, X, Paperclip, Downloa
 import { WorkflowComment, WorkflowStep } from '../../types';
 import { TicketService } from '../../services/ticketService';
 import { useAuth } from '../../context/AuthContext';
+import { formatDate } from '../../lib/utils';
 
 interface WorkflowStepCommentsProps {
   stepId: string;
@@ -217,7 +218,7 @@ const WorkflowStepComments: React.FC<WorkflowStepCommentsProps> = ({
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return formatDate(date);
   };
 
   const getRoleBadgeColor = (role?: string) => {

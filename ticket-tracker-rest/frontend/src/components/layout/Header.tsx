@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { LogOut, User, Clock, Database, Wifi, Grid3X3, Download } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getEnvironmentConfig } from '../../lib/environment';
+import { formatDate } from '../../lib/utils';
 import { htmlExportService } from '../../services/htmlExportService';
 
 const Header: React.FC = () => {
@@ -112,12 +113,7 @@ const Header: React.FC = () => {
               {user?.lastLogin && (
                 <div className="hidden md:flex items-center space-x-1 text-xs text-blue-200">
                   <Clock className="w-3 h-3 text-blue-300" />
-                  <span>Last: {new Intl.DateTimeFormat('en-US', { 
-                    month: 'short', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  }).format(user.lastLogin)}</span>
+                  <span>Last: {formatDate(user.lastLogin)}</span>
                 </div>
               )}
 

@@ -4,6 +4,7 @@ import { Ticket, AuditActionCategory, WorkflowStep } from '../../types';
 import { useTickets } from '../../context/TicketContext';
 import { useAuth } from '../../context/AuthContext';
 import { DocumentMetadata, FileService } from '../../services/fileService';
+import { formatDate } from '../../lib/utils';
 import WorkflowStepComments from './WorkflowStepComments';
 
 interface AuditTrailProps {
@@ -26,17 +27,6 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [loadingUrl, setLoadingUrl] = useState(false);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
-
-  const formatDate = (date: Date | string) => {
-    const dateObj = date instanceof Date ? date : new Date(date);
-    if (isNaN(dateObj.getTime())) {
-      return 'Invalid date';
-    }
-    return new Intl.DateTimeFormat('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(dateObj);
-  };
 
   const getActionColor = (action: string) => {
     switch (action) {
@@ -327,7 +317,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ ticket, viewingDocument, onClos
             <dt className="text-gray-600">File Size:</dt>
             <dd className="text-gray-900">{FileService.formatFileSize(viewingDocument.document.size)}</dd>
             <dt className="text-gray-600">Uploaded:</dt>
-            <dd className="text-gray-900">{new Date(viewingDocument.document.uploadedAt).toLocaleString()}</dd>
+            <dd className="text-gray-900">{formatDate(viewingDocument.document.uploadedAt)}</dd>
             <dt className="text-gray-600">Type:</dt>
             <dd className="text-gray-900">
               {viewingDocument.document.isMandatory ? (

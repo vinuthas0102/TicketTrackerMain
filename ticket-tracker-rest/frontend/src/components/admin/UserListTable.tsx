@@ -3,6 +3,7 @@ import { CreditCard as Edit, Trash2, Eye, Power, PowerOff, Key } from 'lucide-re
 import { User, ActionIconDefinition } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import IconDisplayWrapper from '../iconDisplay/IconDisplayWrapper';
+import { formatDate } from '../../lib/utils';
 
 interface UserListTableProps {
   users: User[];
@@ -182,7 +183,7 @@ const UserListTable: React.FC<UserListTableProps> = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+                    {user.lastLogin ? formatDate(user.lastLogin) : 'Never'}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">

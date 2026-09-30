@@ -8,9 +8,11 @@ import FinanceApprovalActions from './FinanceApprovalActions';
 import WorkflowManagement from './StepManagement';
 import AuditTrail from './AuditTrail';
 import CollapsibleSection from '../common/CollapsibleSection';
+import SapIdLink from '../common/SapIdLink';
 import { DocumentMetadata, FileService } from '../../services/fileService';
 import { FinanceApprovalService } from '../../services/financeApprovalService';
 import { getHierarchyLevel } from '../../lib/hierarchyColors';
+import { formatDate } from '../../lib/utils';
 
 interface TicketViewProps {
   ticket: Ticket;
@@ -280,13 +282,6 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
     level3: ticket.workflow.filter(step => getHierarchyLevel(step.level_1, step.level_2, step.level_3) === 3).length,
   };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(date);
-  };
-
   const isOverdue = ticket.dueDate && new Date() > ticket.dueDate && ticket.status !== 'COMPLETED' && ticket.status !== 'CANCELLED';
 
   return (
@@ -429,7 +424,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
 
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-0.5">SAP ID</label>
-                      <span className="text-sm text-gray-900">{createdByUser?.sapId || 'N/A'}</span>
+                      <SapIdLink user={createdByUser} fallback="N/A" className="text-sm" />
                     </div>
 
                     {ticket.requestType && (
@@ -519,7 +514,7 @@ const TicketView: React.FC<TicketViewProps> = ({ ticket, onClose, onEdit, onDele
                                   {attachment.name}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {FileService.formatFileSize(attachment.size)} • {attachment.uploadedAt.toLocaleDateString()}
+                                  {FileService.formatFileSize(attachment.size)} • {formatDate(attachment.uploadedAt)}
                                 </p>
                               </div>
                             </div>

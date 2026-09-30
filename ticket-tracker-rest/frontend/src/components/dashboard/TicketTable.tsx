@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { AlertTriangle, Calendar, Check, CheckCircle, Clock, CreditCard as Edit, Eye, FileText, IndianRupee, Play, RotateCcw, User, Users, X, XCircle } from 'lucide-react';
 import { Ticket, User as UserType } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { getActiveSubStatus } from '../../lib/utils';
+import { getActiveSubStatus, formatDate } from '../../lib/utils';
+import SapIdLink from '../common/SapIdLink';
 
 interface TicketTableProps {
   tickets: Ticket[];
@@ -61,9 +62,6 @@ const getPriorityColor = (priority: string) => {
     default: return 'text-slate-700 bg-slate-50 border-slate-300';
   }
 };
-
-const formatDate = (date: Date) =>
-  new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
 
 interface RowActionsProps {
   ticket: Ticket;
@@ -289,7 +287,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-xs text-gray-600 font-mono">{createdByUser?.sapId || '—'}</span>
+                    <SapIdLink user={createdByUser} fallback="—" className="text-xs" />
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-right">
                     <RowActions

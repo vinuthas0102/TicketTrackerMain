@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, CheckCircle, Clock, Users, Trash2, CreditCard as Edit, Eye, X, ChevronDown, ChevronRight, FileText, Upload, Layers, Search, Filter, XCircle, Workflow, ArrowRight, History, ExternalLink, AlertCircle, Calendar, ChevronUp, Lock, MessageSquare, Info } from 'lucide-react';
 import { Ticket, WorkflowStep, WorkflowStepStatus, ActionIconDefinition, FileReferenceTemplate } from '../../types';
-import { canAddTasksToTicket } from '../../lib/utils';
+import { canAddTasksToTicket, formatDate } from '../../lib/utils';
 import { FileReferenceService } from '../../services/fileReferenceService';
 import FileReferenceUpload from './FileReferenceUpload';
 import FileReferenceSelector, { SelectedFileReference } from './FileReferenceSelector';
@@ -756,7 +756,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
         {step?.actualCompletedAt && (
           <div className="bg-green-50 border border-green-200 rounded-md px-3 py-2">
             <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">Actual Completed Date: </span>
-            <span className="text-sm text-green-800">{new Date(step.actualCompletedAt).toLocaleString()}</span>
+            <span className="text-sm text-green-800">{formatDate(step.actualCompletedAt)}</span>
           </div>
         )}
 
@@ -1497,7 +1497,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                     {step.startDate && (
                       <div className="flex items-center space-x-1">
                         <Clock className="w-3 h-3" />
-                        <span>Started: {new Date(step.startDate).toLocaleDateString()}</span>
+                        <span>Started: {formatDate(step.startDate)}</span>
                       </div>
                     )}
                     {step.status === 'WIP' && step.progress !== undefined && step.progress > 0 && (
@@ -1643,7 +1643,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Start Date</p>
                         <div className="flex items-center space-x-1.5 text-sm text-gray-800">
                           <Calendar className="w-3.5 h-3.5 text-gray-500" />
-                          <span>{new Date(step.startDate).toLocaleDateString()}</span>
+                          <span>{formatDate(step.startDate)}</span>
                         </div>
                       </div>
                     )}
@@ -1652,7 +1652,7 @@ const WorkflowManagement: React.FC<WorkflowManagementProps> = ({ ticket, canMana
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Due Date</p>
                         <div className="flex items-center space-x-1.5 text-sm text-gray-800">
                           <Calendar className="w-3.5 h-3.5 text-gray-500" />
-                          <span>{new Date(step.dueDate).toLocaleDateString()}</span>
+                          <span>{formatDate(step.dueDate)}</span>
                         </div>
                       </div>
                     )}

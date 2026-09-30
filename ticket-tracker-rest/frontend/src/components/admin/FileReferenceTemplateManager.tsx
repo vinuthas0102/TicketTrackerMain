@@ -3,6 +3,7 @@ import { FileText, Plus, Edit, Trash2, Eye, Upload, X, CheckCircle, AlertCircle,
 import { User, FileReferenceTemplate, FileReferenceTemplateJSON } from '../../types';
 import { FileReferenceService } from '../../services/fileReferenceService';
 import LoadingSpinner from '../common/LoadingSpinner';
+import { formatDate } from '../../lib/utils';
 
 interface FileReferenceTemplateManagerProps {
   user: User;
@@ -173,9 +174,9 @@ export const FileReferenceTemplateManager: React.FC<FileReferenceTemplateManager
                     )}
 
                     <div className="text-xs text-gray-500">
-                      <span>Created: {new Date(template.createdAt).toLocaleDateString()}</span>
+                      <span>Created: {formatDate(template.createdAt)}</span>
                       <span className="mx-2">•</span>
-                      <span>Updated: {new Date(template.updatedAt).toLocaleDateString()}</span>
+                      <span>Updated: {formatDate(template.updatedAt)}</span>
                     </div>
 
                     <div className="mt-2">

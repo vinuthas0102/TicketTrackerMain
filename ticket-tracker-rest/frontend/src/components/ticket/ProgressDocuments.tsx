@@ -4,6 +4,7 @@ import { WorkflowStep } from '../../types';
 import { FileService, ProgressDocumentMetadata } from '../../services/fileService';
 import { useAuth } from '../../context/AuthContext';
 import { TicketService } from '../../services/ticketService';
+import { formatDate } from '../../lib/utils';
 
 interface ProgressDocumentsProps {
   step: WorkflowStep;
@@ -120,7 +121,7 @@ const ProgressDocuments: React.FC<ProgressDocumentsProps> = ({ step, ticketId, r
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{doc.fileName}</p>
                 <p className="text-xs text-gray-500">
-                  {FileService.formatFileSize(doc.fileSize)} • Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
+                  {FileService.formatFileSize(doc.fileSize)} • Uploaded {formatDate(doc.uploadedAt)}
                 </p>
               </div>
             </div>

@@ -7,6 +7,7 @@ import StatusTransitionModal from './StatusTransitionModal';
 import StepManagement from './StepManagement';
 import AuditTrail from './AuditTrail';
 import CollapsibleSection from '../common/CollapsibleSection';
+import { formatDate } from '../../lib/utils';
 
 interface TicketModalProps {
   ticket: Ticket | null;
@@ -114,13 +115,6 @@ const TicketModal: React.FC<TicketModalProps> = ({ ticket, isOpen, onClose, onEd
 
   const completedSteps = ticket.workflow.filter(step => step.status === 'COMPLETED').length;
   const totalSteps = ticket.workflow.length;
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(date);
-  };
 
   const isOverdue = ticket.dueDate && new Date() > ticket.dueDate && ticket.status !== 'COMPLETED' && ticket.status !== 'CANCELLED';
 

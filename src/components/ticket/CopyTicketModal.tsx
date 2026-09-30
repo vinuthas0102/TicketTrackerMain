@@ -5,6 +5,7 @@ import { useTickets } from '../../context/TicketContext';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { FileService } from '../../services/fileService';
+import { formatDate } from '../../lib/utils';
 
 interface CopyTicketModalProps {
   onClose: () => void;
@@ -273,7 +274,7 @@ const CopyTicketModal: React.FC<CopyTicketModalProps> = ({ onClose, onSelectTick
                 </span>
               </td>
               <td className="p-3 text-sm text-gray-700">{Array.isArray(ticket.category) ? ticket.category.join(', ') || 'N/A' : (ticket.category || 'N/A')}</td>
-              <td className="p-3 text-xs text-gray-600">{new Date(ticket.createdAt).toLocaleDateString()}</td>
+              <td className="p-3 text-xs text-gray-600">{formatDate(ticket.createdAt)}</td>
             </tr>
           ))}
         </tbody>
@@ -320,7 +321,7 @@ const CopyTicketModal: React.FC<CopyTicketModalProps> = ({ onClose, onSelectTick
                 <span className="flex items-center">
                   <span className="font-medium text-gray-700">Created:</span>
                   <span className="ml-1">
-                    {new Date(ticket.createdAt).toLocaleDateString()}
+                    {formatDate(ticket.createdAt)}
                   </span>
                 </span>
               </div>
@@ -376,7 +377,7 @@ const CopyTicketModal: React.FC<CopyTicketModalProps> = ({ onClose, onSelectTick
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-600">Created:</span>
-              <span className="font-medium text-gray-700">{new Date(ticket.createdAt).toLocaleDateString()}</span>
+              <span className="font-medium text-gray-700">{formatDate(ticket.createdAt)}</span>
             </div>
           </div>
         </div>
@@ -457,7 +458,7 @@ const CopyTicketModal: React.FC<CopyTicketModalProps> = ({ onClose, onSelectTick
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{attachment.name}</p>
                       <p className="text-xs text-gray-500">
-                        {FileService.formatFileSize(attachment.size)} • Uploaded {attachment.uploadedAt.toLocaleDateString()}
+                        {FileService.formatFileSize(attachment.size)} • Uploaded {formatDate(attachment.uploadedAt)}
                       </p>
                     </div>
                   </div>

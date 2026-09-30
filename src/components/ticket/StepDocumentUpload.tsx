@@ -3,6 +3,7 @@ import { Upload, X, File, Download, Eye, Trash2, CheckCircle, AlertCircle } from
 import { FileService, DocumentMetadata } from '../../services/fileService';
 import { useAuth } from '../../context/AuthContext';
 import { WorkflowStep } from '../../types';
+import { formatDate } from '../../lib/utils';
 
 interface WorkflowDocumentUploadProps {
   step: WorkflowStep;
@@ -341,7 +342,7 @@ const WorkflowDocumentUpload: React.FC<WorkflowDocumentUploadProps> = ({
                     </p>
                     <p className="text-xs text-gray-500">
                       {FileService.formatFileSize(doc.size)} •{' '}
-                      {new Date(doc.uploadedAt).toLocaleDateString()}
+                      {formatDate(doc.uploadedAt)}
                     </p>
                   </div>
                 </div>

@@ -4,8 +4,9 @@ import { Ticket, User as UserType, ActionIconDefinition } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTickets } from '../../context/TicketContext';
 import { getHierarchyLevel } from '../../lib/hierarchyColors';
-import { getActiveSubStatus } from '../../lib/utils';
+import { getActiveSubStatus, formatDate } from '../../lib/utils';
 import IconDisplayWrapper from '../iconDisplay/IconDisplayWrapper';
+import SapIdLink from '../common/SapIdLink';
 import { FileService, DocumentMetadata } from '../../services/fileService';
 
 interface ListFieldProps {
@@ -17,9 +18,9 @@ interface ListFieldProps {
 }
 
 const ListField: React.FC<ListFieldProps> = ({ label, value, wide, muted, urgent }) => (
-  <div className={`min-w-0 w-full overflow-hidden flex flex-col px-3 py-2 ${wide ? 'col-span-2' : 'col-span-1'}`}>
-    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider leading-none mb-1">{label}</span>
-    <span className={`min-w-0 max-w-full text-sm font-semibold leading-tight break-all line-clamp-2 overflow-hidden ${
+  <div className={`min-w-0 w-full overflow-hidden flex flex-col px-3 py-1.5 ${wide ? 'col-span-2' : 'col-span-1'}`}>
+    <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider leading-none mb-0.5">{label}</span>
+    <span className={`min-w-0 max-w-full text-xs font-semibold leading-tight break-all line-clamp-2 overflow-hidden ${
       urgent ? 'text-rose-600' : muted ? 'text-gray-400 italic font-normal' : 'text-gray-800'
     }`} title={value}>
       {value}
@@ -152,25 +153,6 @@ const TicketCard: React.FC<TicketCardProps> = ({
     };
 
     return statusColors[status as keyof typeof statusColors] || statusColors['DRAFT'];
-  };
-
-  const formatDate = (date?: Date | null): string => {
-    if (!date) return 'N/A';
-
-    if (!(date instanceof Date) || isNaN(date.getTime())) {
-      return 'N/A';
-    }
-
-    try {
-      return new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      }).format(date);
-    } catch (error) {
-      console.warn('Error formatting date:', error);
-      return 'N/A';
-    }
   };
 
   const effectiveDueDate = ticket.dueDate || (() => {
@@ -478,7 +460,10 @@ const TicketCard: React.FC<TicketCardProps> = ({
             <ListField label="DEPT" value={ticket.department} />
             <ListField label="PRIORITY" value={ticket.priority} />
             <ListField label="RAISED BY" value={createdByUser?.name || '—'} />
-            <ListField label="SAP ID" value={createdByUser?.sapId || '—'} />
+            <div className="min-w-0 w-full overflow-hidden flex flex-col px-3 py-1.5 col-span-1">
+              <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider leading-none mb-0.5">SAP ID</span>
+              <SapIdLink user={createdByUser} fallback="—" className="text-xs" />
+            </div>
             <ListField label="RAISED ON" value={formatDate(ticket.createdAt)} />
             <ListField
               label="DUE DATE"

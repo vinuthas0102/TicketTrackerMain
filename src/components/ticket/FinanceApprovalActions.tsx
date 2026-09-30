@@ -5,6 +5,7 @@ import { FinanceApprovalService } from '../../services/financeApprovalService';
 import { useAuth } from '../../context/AuthContext';
 import { FileService } from '../../services/fileService';
 import FinanceApprovalModal from './FinanceApprovalModal';
+import { formatDate } from '../../lib/utils';
 
 interface FinanceApprovalActionsProps {
   approval: FinanceApproval;
@@ -125,13 +126,6 @@ const FinanceApprovalActions: React.FC<FinanceApprovalActionsProps> = ({
       console.error('Error downloading document:', error);
       alert('Failed to download document. Please try again.');
     }
-  };
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-IN', {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(date);
   };
 
   const getStatusBadge = () => {

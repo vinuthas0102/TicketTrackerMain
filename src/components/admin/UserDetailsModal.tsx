@@ -3,6 +3,7 @@ import { X, User as UserIcon, Mail, Briefcase, Building2, Calendar, Activity, Cl
 import { User } from '../../types';
 import { UserManagementService, UserActivityLog, UserManagementAudit } from '../../services/userManagementService';
 import LoadingSpinner from '../common/LoadingSpinner';
+import { formatDate } from '../../lib/utils';
 
 interface UserDetailsModalProps {
   user: User;
@@ -119,10 +120,6 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, onClose }) =>
       'password_reset': 'Password Reset'
     };
     return labels[action] || action;
-  };
-
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleString();
   };
 
   const formatRelativeTime = (date: Date) => {
