@@ -17,11 +17,11 @@ interface ListFieldProps {
 }
 
 const ListField: React.FC<ListFieldProps> = ({ label, value, wide, muted, urgent }) => (
-  <div className={`flex flex-col px-3 py-2 ${wide ? 'flex-1 min-w-0' : 'shrink-0'}`}>
+  <div className={`min-w-0 w-full overflow-hidden flex flex-col px-3 py-2 ${wide ? 'col-span-2' : 'col-span-1'}`}>
     <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider leading-none mb-1">{label}</span>
-    <span className={`text-sm font-semibold leading-tight break-words ${
+    <span className={`min-w-0 max-w-full text-sm font-semibold leading-tight break-all line-clamp-2 overflow-hidden ${
       urgent ? 'text-rose-600' : muted ? 'text-gray-400 italic font-normal' : 'text-gray-800'
-    } ${wide ? 'line-clamp-2' : 'line-clamp-2'}`} title={value}>
+    }`} title={value}>
       {value}
     </span>
   </div>
@@ -452,11 +452,11 @@ const TicketCard: React.FC<TicketCardProps> = ({
 
         {/* Label-data fields row */}
         <div className="px-4 pb-2 cursor-pointer" onClick={onClick}>
-          <div className="flex flex-wrap divide-x divide-gray-100">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-12 divide-x divide-y divide-gray-100">
             <ListField label="TITLE" value={ticket.title} wide />
             <ListField label="PROPERTY ID" value={ticket.propertyId || '—'} />
             <ListField label="LOCATION" value={ticket.propertyLocation || '—'} />
-            <ListField label="CATEGORY" value={Array.isArray(ticket.category) ? ticket.category.join(', ') || '—' : (ticket.category || '—')} />
+            <ListField label="CATEGORY" value={Array.isArray(ticket.category) ? ticket.category.join(', ') || '—' : (ticket.category || '—')} wide />
             <ListField label="DEPT" value={ticket.department} />
             <ListField label="PRIORITY" value={ticket.priority} />
             <ListField label="RAISED BY" value={createdByUser?.name || '—'} />
