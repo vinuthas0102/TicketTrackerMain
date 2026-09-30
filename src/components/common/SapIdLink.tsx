@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { User as UserType } from '../../types';
 
 interface SapIdLinkProps {
@@ -16,24 +17,49 @@ const roleLabels: Record<string, string> = {
   TECHNICIAN: 'Technician',
 };
 
+const POPOVER_WIDTH = 256;
+const POPOVER_GAP = 6;
+
 const SapIdLink: React.FC<SapIdLinkProps> = ({ user, fallback = '—', className = '' }) => {
   const [showPopover, setShowPopover] = useState(false);
-  const containerRef = useRef<HTMLSpanElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const linkRef = useRef<HTMLAnchorElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleEnter = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setShowPopover(true);
-  };
+  const computeCoords = useCallback(() => {
+    const el = linkRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    let left = rect.left;
+    if (left + POPOVER_WIDTH > window.innerWidth - 8) {
+      left = window.innerWidth - POPOVER_WIDTH - 8;
+    }
+    if (left < 8) left = 8;
+    setCoords({ top: rect.bottom + POPOVER_GAP, left });
+  }, []);
 
-  const handleLeave = () => {
+  const open = useCallback(() => {
+    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+    computeCoords();
+    setShowPopover(true);
+  }, [computeCoords]);
+
+  const scheduleClose = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => setShowPopover(false), 200);
-  };
+  }, []);
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setShowPopover(prev => {
+      if (!prev) { computeCoords(); return true; }
+      return false;
+    });
+  }, [computeCoords]);
 
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
   }, []);
 
   if (!user || !user.sapId) {
@@ -41,26 +67,24 @@ const SapIdLink: React.FC<SapIdLinkProps> = ({ user, fallback = '—', className
   }
 
   return (
-    <span
-      ref={containerRef}
-      className="relative inline-block"
-      onMouseEnter={handleEnter}
-      onMouseLeave={handleLeave}
-      onClick={(e) => { e.stopPropagation(); setShowPopover(s => !s); }}
-    >
+    <>
       <a
+        ref={linkRef}
         href="#"
-        onClick={(e) => e.preventDefault()}
+        onClick={handleClick}
+        onMouseEnter={open}
+        onMouseLeave={scheduleClose}
         className={`text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-semibold ${className}`}
         title="Click to view user details"
       >
         {user.sapId}
       </a>
-      {showPopover && (
+      {showPopover && createPortal(
         <div
-          className="absolute z-50 left-0 top-full mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4"
-          onMouseEnter={handleEnter}
-          onMouseLeave={handleLeave}
+          style={{ position: 'fixed', top: coords.top, left: coords.left, width: POPOVER_WIDTH }}
+          className="z-[9999] bg-white rounded-lg shadow-xl border border-gray-200 p-4"
+          onMouseEnter={open}
+          onMouseLeave={scheduleClose}
         >
           <div className="flex items-center gap-3 mb-3">
             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-teal-600 flex items-center justify-center text-white font-semibold text-sm shrink-0">
@@ -91,9 +115,10 @@ const SapIdLink: React.FC<SapIdLinkProps> = ({ user, fallback = '—', className
               </div>
             )}
           </dl>
-        </div>
+        </div>,
+        document.body
       )}
-    </span>
+    </>
   );
 };
 
